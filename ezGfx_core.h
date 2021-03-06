@@ -22,7 +22,6 @@
 #include <stdio.h>
 
 
-
 /* INPUT FUNCTIONS */
 typedef struct {
 	bool pressed;
@@ -117,6 +116,7 @@ typedef struct {
 EZ_Image* canvas;
 
 EZ_Image* EZ_createImage(int w, int h);
+EZ_Image* EZ_copyImage(EZ_Image*);
 void  	  EZ_freeImage(EZ_Image*);
 
 void  EZ_redraw();

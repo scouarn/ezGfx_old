@@ -13,12 +13,13 @@
 /
 */
 
-#ifndef EZ_IMAGEFORMAT
-#define EZ_IMAGEFORMAT
+#ifndef EZ_RESSOURCES
+#define EZ_RESSOURCES
 
 
 EZ_Image* EZ_loadImage(const char* fName);
 void  	  EZ_saveImage(EZ_Image* image, const char* fName);
 
+//3D models, json parsing, etc...
 
 #endif

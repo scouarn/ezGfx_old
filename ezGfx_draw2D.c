@@ -1,16 +1,43 @@
 #include "ezGfx_draw2D.h"
 
-#include <math.h>
 
+/*
+TODO :
+
+test with actual pictures... -> png / bitmap loading
+
+cropped image -> revize the algorithm..
+resized image -> fairely easy, see interpolation
+
+transformed image (uses matrix) -> and research
+
+"any line" clipping -> kinda easy
+triangle clipping  -> see olc
+
+textriangle -> research
+
+*/
 
 enum alphaMode alphaBlending = ALPHA_BLEND;
 enum interMode interpolation = INTER_LINEAR;
+
+#define max(a,b) \
+ ({ __typeof__ (a) _a = (a); \
+    __typeof__ (b) _b = (b); \
+    _a > _b ? _a : _b; })
+
+#define min(a,b) \
+  ({ __typeof__ (a) _a = (a); \
+     __typeof__ (b) _b = (b); \
+     _a < _b ? _a : _b; })
+
+
 
 void EZ_draw2D_alphaMode(enum alphaMode mode) {
   alphaBlending = mode;
 }
 
-void EZ_draw2D_interMode(enum alphaMode mode) {
+void EZ_draw2D_interMode(enum interMode mode) {
   interpolation = mode;
 }
 
@@ -19,12 +46,7 @@ void EZ_draw2D_clear(EZ_Image* target, EZ_px col) {
     target->px[i] = col;
 }
 
-void EZ_draw2D_pixel(EZ_Image* target, EZ_px col, int x1, int y1) {
-
-  if (x1 < 0 || x1 >= target->w || y1 < 0 || y1 >= target->h)
-    return;
-
-  EZ_px* px = &(target->px[x1 + y1*target->w]);
+void _blend(EZ_px* px, EZ_px col) {
 
   switch (alphaBlending) {
     case ALPHA_IGNORE : *px = col; break;
@@ -34,15 +56,37 @@ void EZ_draw2D_pixel(EZ_Image* target, EZ_px col, int x1, int y1) {
 
 }
 
+void EZ_draw2D_pixel(EZ_Image* target, EZ_px col, int x1, int y1) {
 
-void _VLine(EZ_Image* target, EZ_px col, int x, int y1, int y2) {
-  for (int y = y1; y <= y2; y++)
-    EZ_draw2D_pixel(target, col, x, y);
+  if (x1 < 0 || x1 >= target->w || y1 < 0 || y1 >= target->h)
+    return;
+
+  EZ_px* px = &(target->px[x1 + y1*target->w]);
+  _blend(px, col);
 }
 
-void _HLine(EZ_Image* target, EZ_px col, int y, int x1, int x2) {
+
+void _VLine(EZ_Image* target, EZ_px col, int x, int _y1, int _y2) {
+  if (x < 0 || x >= target->w) return;
+
+  int y1 = max(0, _y1);
+  int y2 = min(target->h - 1, _y2);
+
+  for (int y = y1; y <= y2; y++)
+    EZ_draw2D_pixel(target, col, x, y);
+
+}
+
+void _HLine(EZ_Image* target, EZ_px col, int y, int _x1, int _x2) {
+
+  if (y < 0 || y >= target->h) return;
+
+  int x1 = max(0, _x1);
+  int x2 = min(target->w - 1, _x2);
+
   for (int x = x1; x <= x2; x++)
     EZ_draw2D_pixel(target, col, x, y);
+
 }
 
 void _line(EZ_Image* target, EZ_px col, int _x1, int _y1, int _x2, int _y2) {
@@ -53,8 +97,8 @@ void _line(EZ_Image* target, EZ_px col, int _x1, int _y1, int _x2, int _y2) {
   if (slope > 1.0f || slope < -1.0f) {
     slope = 1.0f / slope;
     float y = (_x1 < _x2) ? _y1 : _y2;
-    int x1  = (_x1 < _x2) ? _x1 : _x2;
-    int x2  = (_x1 > _x2) ? _x1 : _x2;
+    int x1  = min(_x1, _x2);
+    int x2  = max(_x1, _x2);
 
     for (int x = x1; x <= x2; x++) {
       EZ_draw2D_pixel(target, col, x, y);
@@ -64,8 +108,8 @@ void _line(EZ_Image* target, EZ_px col, int _x1, int _y1, int _x2, int _y2) {
   }
   else {
     float x = (_y1 < _y2) ? _x1 : _x2;
-    int y1  = (_y1 < _y2) ? _y1 : _y2;
-    int y2  = (_y1 > _y2) ? _y1 : _y2;
+    int y1  = min(_y1, _y2);
+    int y2  = max(_y1, _y2);
 
     for (int y = y1; y <= y2; y++) {
       EZ_draw2D_pixel(target, col, x, y);
@@ -87,15 +131,15 @@ void EZ_draw2D_line(EZ_Image* target, EZ_px col, int _x1, int _y1, int _x2, int 
 
   //vertical line
   else if (_x1 == _x2) {
-    int y1 = (_y1 < _y2) ? _y1 : _y2;
-    int y2 = (_y1 > _y2) ? _y1 : _y2;
+    int y1  = min(_y1, _y2);
+    int y2  = max(_y1, _y2);
     _VLine(target, col, _x1, y1, y2);
   }
 
   //horizontal line
   else if (_y1 == _y2) {
-    int x1 = (_x1 < _x2) ? _x1 : _x2;
-    int x2 = (_x1 > _x2) ? _x1 : _x2;
+    int x1  = min(_x1, _x2);
+    int x2  = max(_x1, _x2);
     _HLine(target, col, _y1, x1, x2);
 
   }
@@ -110,31 +154,40 @@ void EZ_draw2D_line(EZ_Image* target, EZ_px col, int _x1, int _y1, int _x2, int 
 
 void EZ_draw2D_rect(EZ_Image* target, EZ_px col, int x1, int y1, int h,  int w) {
 
-  _HLine(target, col, y1, x1, x1+w-1);       // top
-  _HLine(target, col, y1+h-1, x1, x1+w-1);   // bottom
-  _VLine(target, col, x1, y1+1, y1+h-2);     // left
-  _VLine(target, col, x1+w-1, y1+1, y1+h-2); // right
+  if (x1 >= target->w || y1 >= target->h || x1+w < 0 || y1+h < 0) return;
+
+  //Hline and Vline already implement clipping
+
+  _HLine(target, col, y1    , x1  , x1+w-1); // top
+  _VLine(target, col, x1    , y1+1, y1+w-2); // left
+  _HLine(target, col, y1+w-1, x1  , x1+w-1); // bottom
+  _VLine(target, col, x1+w-1, y1+1, y1+w-2); //right
 
 }
 
-void EZ_draw2D_fillRect(EZ_Image* target, EZ_px col, int x1, int y1, int h,  int w) {
+void EZ_draw2D_fillRect(EZ_Image* target, EZ_px col, int x0, int y0, int h,  int w) {
 
-  for (int y = y1; y < y1+h; y++)
-    _HLine(target, col, y, x1, x1+w-1);
+  if (x0 >= target->w || y0 >= target->h || x0+w < 0 || y0+h < 0) return;
+
+  int y1 = max(0, y0);
+  int y2 = max(0, y0+h-1);
+
+  for (int y = y1; y < y2; y++)
+    _HLine(target, col, y, x0, x0+w-1);
 
 }
 
 
 void EZ_draw2D_tri(EZ_Image* target, EZ_px col, int x1, int y1, int x2, int y2, int x3, int y3) {
-  _line(target, col, x1, y1, x2, y2);
-  _line(target, col, x2, y2, x3, y3);
-  _line(target, col, x3, y3, x1, y1);
+  EZ_draw2D_line(target, col, x1, y1, x2, y2);
+  EZ_draw2D_line(target, col, x2, y2, x3, y3);
+  EZ_draw2D_line(target, col, x3, y3, x1, y1);
 }
 
 void _flatTri(EZ_Image* target, EZ_px col, int x1, int x2, int xTop, int yTop, int yBase) {
 
-  float a = x1 < x2 ? x1 : x2;
-  float b = x1 > x2 ? x1 : x2;
+  float a = min(x1, x2);
+  float b = max(x1, x2);
 
   float LSlope = (float)(xTop-x1)/(yBase-yTop);
   float RSlope = (float)(xTop-x2)/(yBase-yTop);
@@ -187,10 +240,10 @@ void EZ_draw2D_fillTri(EZ_Image* target, EZ_px col, int x1, int y1, int x2, int 
       t = _x2; _x2 = _x3; _x3 = t;
     }
 
-    float ratio = (float)(_y1 - _y2) / (_y1 - _y3);
-    int xSlice  = ratio*_x3 + (1.0f - ratio)*_x1;
+    float ratio  = (float)(_y1 - _y2 - 0.5f) / (_y1 - _y3);
+    int xSlice = ratio*_x3 + (1.0f - ratio)*_x1;
 
-    _flatTri(target, col, _x2, xSlice, _x1, _y1, _y2);
+    _flatTri(target, col, _x2, xSlice, _x1, _y1, _y2 - 1);
     _flatTri(target, col, _x2, xSlice, _x3, _y3, _y2);
 
 
@@ -198,22 +251,16 @@ void EZ_draw2D_fillTri(EZ_Image* target, EZ_px col, int x1, int y1, int x2, int 
 
 }
 
+void EZ_draw2D_texTri  (EZ_Image* target, EZ_px col, int x1, int y1, int x2, int y2, int x3, int y3,
+                        EZ_Image* texture,           int u1, int v1, int u2, int v2, int u3, int v3) {
+
+                          //TODO
+}
+
+
 
 void EZ_draw2D_elli(EZ_Image* target, EZ_px col, int x1, int y1, int a,  int b) {
 
-  // //NAIVE
-  // float angle = 0;
-  // while (angle < 1.5707964) {
-  //   float x = a*cosf(angle);
-  //   float y = b*sinf(angle);
-  //
-  //   EZ_draw2D_pixel(target, EZ_RED, x1 + x, y1 + y);
-  //   EZ_draw2D_pixel(target, EZ_RED, x1 + x, y1 - y);
-  //   EZ_draw2D_pixel(target, EZ_RED, x1 - x, y1 + y);
-  //   EZ_draw2D_pixel(target, EZ_RED, x1 - x, y1 - y);
-  //
-  //   angle += 0.01f;
-  // }
 
   //https://www.geeksforgeeks.org/midpoint-ellipse-drawing-algorithm/
 
@@ -226,7 +273,7 @@ void EZ_draw2D_elli(EZ_Image* target, EZ_px col, int x1, int y1, int a,  int b) 
   dx = 0; dy = 2.0f * a2 * y;
   p  = b2 - a2*y + 0.25f*a2;
 
-  while (dx < dy) {
+  while (dx < dy && x < target->w && y >= 0) {
 
 
     if (p <= 0) {
@@ -255,7 +302,7 @@ void EZ_draw2D_elli(EZ_Image* target, EZ_px col, int x1, int y1, int a,  int b) 
   dx = 0; dy = 2.0f * a2 * y;
   p  = b2 - a2*y + 0.25f*a2;
 
-  while (dx < dy) {
+  while (dx < dy && x < target->w && y >= 0) {
 
     if (p <= 0) {
       p  += dx + b2;
@@ -283,17 +330,8 @@ void EZ_draw2D_elli(EZ_Image* target, EZ_px col, int x1, int y1, int a,  int b) 
 }
 
 void EZ_draw2D_fillElli(EZ_Image* target, EZ_px col, int x1, int y1, int a,  int b) {
-  //NAIVE
-  // float angle = 0;
-  // while (angle < 1.5707964) {
-  //   float x = a*cos(angle);
-  //   float y = b*sin(angle);
-  //
-  //   _HLine(target, col, y1 + y, x1 - x, x1 + x);
-  //   _HLine(target, col, y1 - y, x1 - x, x1 + x);
-  //
-  //   angle += 0.1f;
-  // }
+
+  //same but with Hlines
 
   int x, y;
   float p, dx, dy, a2, b2;
@@ -304,7 +342,7 @@ void EZ_draw2D_fillElli(EZ_Image* target, EZ_px col, int x1, int y1, int a,  int
   dx = 0; dy = 2.0f * a2 * y;
   p  = b2 - a2*y + 0.25f*a2;
 
-  while (dx < dy) {
+  while (dx < dy && x < target->w && y >= 0) {
 
 
     if (p <= 0) {
@@ -331,9 +369,9 @@ void EZ_draw2D_fillElli(EZ_Image* target, EZ_px col, int x1, int y1, int a,  int
   dx = 0; dy = 2.0f * a2 * y;
   p  = b2 - a2*y + 0.25f*a2;
 
-  while (dx < dy) {
+  while (dx < dy && x < target->w && y >= 0) {
 
-    if (p <= 0) {
+    if (p <= 0 && x < target->w && y >= 0) {
       p  += dx + b2;
     }
     else
@@ -352,3 +390,54 @@ void EZ_draw2D_fillElli(EZ_Image* target, EZ_px col, int x1, int y1, int a,  int
   }
 
 }
+
+
+
+void EZ_draw2D_image(EZ_Image* target, EZ_Image* source, int x0, int y0) {
+  // DOES NOT WORK !!!!!
+  //
+  // if (_x1 >= target->w || y0 >= target->h || x0+source->w < 0 || y0+source->h < 0) return;
+  //
+  // int x1 = max(0, x0);
+  // int x2 = max(0, x0+source->w-1);
+  //
+  // int y1 = max(0, y0);
+  // int y2 = max(0, y0+source->h-1);
+  //
+  // int targetY = y1*target->w;
+  // int sourceY = 0;
+  //
+  //
+  // for (int y = 0; y < y2; y++) {
+  //   targetY += target->w;
+  //   sourceY += source->w;
+  //
+  //   for (int x = 0; x < min(source->w, target->w - x1); x++)
+  //     _blend(&(target->px[x + x1 + targetY]), source->px[x + sourceY]);
+  // }
+
+
+}
+
+
+void EZ_draw2D_croppedImage(EZ_Image* target, EZ_Image* source, int x1, int y1, int u1, int v1, int u2, int v2) {
+  // DOES NOT WORK !!!!!
+
+  // int targetH = y1*target->w;
+  // int sourceH = v1*source->w;
+  //
+  // for (int y = v1; y < min(source->h, target->h - y1, v2); y++) {
+  //   targetH += target->w;
+  //   sourceH += source->w;
+  //
+  //   for (int x = u1; x < min(source->w, target->w - x1, u2); x++)
+  //     _blend(&(target->px[x + x1 + targetH]), source->px[x + sourceH]);
+  // }
+
+}
+void EZ_draw2D_resizedImage  (EZ_Image* target, EZ_Image* source, int x1, int y1, int w, int h) {
+  //TODO
+
+}
+
+void EZ_draw2D_transformImage(EZ_Image* target, EZ_Image* source, int x1, int y1, void* matrix) {} //TODO

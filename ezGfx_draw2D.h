@@ -17,7 +17,7 @@
 #define EZ_DRAW2D
 
 enum alphaMode {ALPHA_IGNORE, ALPHA_FAST, ALPHA_BLEND};
-enum interMode {INTER_LINEAR};
+enum interMode {INTER_LINEAR, INTER_NEAREST};
 
 void EZ_draw2D_alphaMode(enum alphaMode mode);
 void EZ_draw2D_interMode(enum interMode mode);
@@ -38,7 +38,7 @@ void EZ_draw2D_texTri  (EZ_Image* target, EZ_px col, int x1, int y1, int x2, int
 void EZ_draw2D_elli    (EZ_Image* target, EZ_px col, int x1, int y1, int a,  int b);
 void EZ_draw2D_fillElli(EZ_Image* target, EZ_px col, int x1, int y1, int a,  int b);
 
-void EZ_draw2D_copyImage     (EZ_Image* target, EZ_Image* source, int x1, int y1);
+void EZ_draw2D_image         (EZ_Image* target, EZ_Image* source, int x1, int y1);
 void EZ_draw2D_croppedImage  (EZ_Image* target, EZ_Image* source, int x1, int y1, int u1, int v1, int u2, int v2);
 void EZ_draw2D_resizedImage  (EZ_Image* target, EZ_Image* source, int x1, int y1, int w, int h);
 void EZ_draw2D_transformImage(EZ_Image* target, EZ_Image* source, int x1, int y1, void* matrix);

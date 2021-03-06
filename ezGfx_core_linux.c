@@ -2,6 +2,7 @@
 
 #include <time.h>
 #include <pthread.h>
+#include <string.h>
 
 #include <X11/X.h>
 #include <X11/Xlib.h>
@@ -143,6 +144,18 @@ EZ_Image* EZ_createImage(int w, int h) {
   img->w = w;
   img->h = h;
   img->px = calloc(w*h, sizeof(EZ_px));
+
+  return img;
+}
+
+EZ_Image* EZ_copyImage(EZ_Image* source) {
+
+  EZ_Image* img = malloc(sizeof(EZ_Image));
+  img->w = source->w;
+  img->h = source->h;
+
+  img->px = malloc(img->w*img->h*sizeof(EZ_px));
+  memcpy(img->px, source->px, img->w*img->h*sizeof(EZ_px));
 
   return img;
 }
