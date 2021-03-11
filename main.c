@@ -1,5 +1,7 @@
 #include "ezGfx_core.h"
 #include "ezGfx_draw2D.h"
+#include "ezGfx_matrix.h"
+
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -31,6 +33,8 @@ void mouse(void* param) {
 void kill(void* param) {
 
 }
+
+
 
 
 int main (int argc, char **argv)

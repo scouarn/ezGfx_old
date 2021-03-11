@@ -9,8 +9,6 @@ test with actual pictures... -> png / bitmap loading
 cropped image -> revize the algorithm..
 resized image -> fairely easy, see interpolation
 
-transformed image (uses matrix) -> and research
-
 "any line" clipping -> kinda easy
 triangle clipping  -> see olc
 
@@ -435,9 +433,7 @@ void EZ_draw2D_croppedImage(EZ_Image* target, EZ_Image* source, int x1, int y1, 
   // }
 
 }
-void EZ_draw2D_resizedImage  (EZ_Image* target, EZ_Image* source, int x1, int y1, int w, int h) {
+void EZ_draw2D_resizedImage(EZ_Image* target, EZ_Image* source, int x1, int y1, int w, int h) {
   //TODO
 
 }
-
-void EZ_draw2D_transformImage(EZ_Image* target, EZ_Image* source, int x1, int y1, void* matrix) {} //TODO
