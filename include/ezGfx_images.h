@@ -17,10 +17,11 @@
 #define EZ_IMAGES
 
 
-EZ_Image* EZ_images_load(const char* fName);
-void  	  EZ_images_save(EZ_Image* image, const char* fName);
+EZ_Image* EZ_images_load(const char* fname);
+void  	  EZ_images_save(EZ_Image* image, const char* fname);
 
-void EZ_images_transform(EZ_Image* target, EZ_Image* source, void* matrix);
-//3D models, json parsing, etc...
+//TODO
+//void EZ_images_transform(EZ_Image* target, EZ_Image* source, void* matrix);
+
 
 #endif

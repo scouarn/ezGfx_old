@@ -392,48 +392,86 @@ void EZ_draw2D_fillElli(EZ_Image* target, EZ_px col, int x1, int y1, int a,  int
 
 
 void EZ_draw2D_image(EZ_Image* target, EZ_Image* source, int x0, int y0) {
-  // DOES NOT WORK !!!!!
-  //
-  // if (_x1 >= target->w || y0 >= target->h || x0+source->w < 0 || y0+source->h < 0) return;
-  //
-  // int x1 = max(0, x0);
-  // int x2 = max(0, x0+source->w-1);
-  //
-  // int y1 = max(0, y0);
-  // int y2 = max(0, y0+source->h-1);
-  //
-  // int targetY = y1*target->w;
-  // int sourceY = 0;
-  //
-  //
-  // for (int y = 0; y < y2; y++) {
-  //   targetY += target->w;
-  //   sourceY += source->w;
-  //
-  //   for (int x = 0; x < min(source->w, target->w - x1); x++)
-  //     _blend(&(target->px[x + x1 + targetY]), source->px[x + sourceY]);
-  // }
+
+  if (x0 >= target->w || y0 >= target->h || x0+source->w < 0 || y0+source->h < 0) return;
+
+  int tx1 = max(0, x0);
+  int tx2 = max(0, x0+source->w);
+
+  int ty1 = max(0, y0);
+  int ty2 = max(0, y0+source->h);
+
+
+  for (int tx = tx1; tx < tx2; tx++) {
+    for (int ty = ty1; ty < ty2; ty++)
+    {
+      int sx = tx - tx1;
+      int sy = ty - ty1;
+
+      EZ_px  col = source->px[sx + sy*source->w];
+      EZ_px* px  = &(target->px[tx + ty*target->w]);
+
+      _blend(px, col);
+    }
+
+  }
 
 
 }
 
 
-void EZ_draw2D_croppedImage(EZ_Image* target, EZ_Image* source, int x1, int y1, int u1, int v1, int u2, int v2) {
-  // DOES NOT WORK !!!!!
+void EZ_draw2D_croppedImage(EZ_Image* target, EZ_Image* source, int x0, int y0, int u0, int v0, int w, int h) {
 
-  // int targetH = y1*target->w;
-  // int sourceH = v1*source->w;
-  //
-  // for (int y = v1; y < min(source->h, target->h - y1, v2); y++) {
-  //   targetH += target->w;
-  //   sourceH += source->w;
-  //
-  //   for (int x = u1; x < min(source->w, target->w - x1, u2); x++)
-  //     _blend(&(target->px[x + x1 + targetH]), source->px[x + sourceH]);
-  // }
+  if (x0 >= target->w || y0 >= target->h || x0+w < 0 || y0+h < 0) return;
+
+  int tx1 = max(0, x0);
+  int tx2 = max(0, x0+w);
+
+  int ty1 = max(0, y0);
+  int ty2 = max(0, y0+h);
+
+
+  for (int tx = tx1; tx < tx2; tx++) {
+    for (int ty = ty1; ty < ty2; ty++)
+    {
+      int sx = (tx - tx1 + u0);
+      int sy = (ty - ty1 + v0);
+
+      EZ_px  col = source->px[sx + sy*source->w];
+      EZ_px* px  = &(target->px[tx + ty*target->w]);
+
+      _blend(px, col);
+    }
+
+  }
 
 }
-void EZ_draw2D_resizedImage(EZ_Image* target, EZ_Image* source, int x1, int y1, int w, int h) {
-  //TODO
+
+void EZ_draw2D_resizedImage(EZ_Image* target, EZ_Image* source, int x0, int y0, int w, int h) {
+
+  if (x0 >= target->w || y0 >= target->h || x0+w < 0 || y0+h < 0) return;
+
+  int tx1 = max(0, x0);
+  int tx2 = max(0, x0+w);
+
+  int ty1 = max(0, y0);
+  int ty2 = max(0, y0+h);
+
+  float xRatio = (float)source->w / w;
+  float yRatio = (float)source->h / h;
+
+  for (int tx = tx1; tx < tx2; tx++) {
+    for (int ty = ty1; ty < ty2; ty++)
+    {
+      int sx = (tx - tx1)*xRatio;
+      int sy = (ty - ty1)*yRatio;
+
+      EZ_px  col = source->px[sx + sy*source->w];
+      EZ_px* px  = &(target->px[tx + ty*target->w]);
+
+      _blend(px, col);
+    }
+
+  }
 
 }

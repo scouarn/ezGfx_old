@@ -1,29 +1,20 @@
-#include "ezGfx_core.h"
-#include "ezGfx_draw2D.h"
-#include "ezGfx_matrix.h"
-
+#include <ezGfx.h>
 #include <stdlib.h>
 #include <stdio.h>
 
+EZ_Image* test;
 
 void setup(void* param) {
     EZ_window("DEMO", 600, 600);
-    canvas = EZ_createImage(100,100);
-
+    canvas = EZ_createImage(200,200);
+    //test = EZ_images_load("test.bin");
+    //EZ_draw2D_image(canvas, test, 0, 0);
 }
 
 void draw(void* param) {
     duration dt = *(double *)param;
 
-    EZ_draw2D_clear(canvas, EZ_BLUE);
-    EZ_draw2D_rect (canvas, (EZ_px)0xFFFFFF88U, 10,10,15,15);
-
-
-    EZ_draw2D_fillTri(canvas, (EZ_px)0xFFFFFF88U, 10, 75, 30, 80, 20, 60);
-    EZ_draw2D_tri(canvas, EZ_RED, 10, 75, 30, 80, 20, 60);
-    EZ_draw2D_fillElli(canvas, EZ_WHITE, 70, 70, 25, 15);
-    EZ_draw2D_line (canvas, EZ_WHITE, 50, 50, EZ_mouse.x, EZ_mouse.y);
-
+    EZ_draw2D_fillTri(canvas, EZ_WHITE, 50, 50, 150, 150, 100, 75);
 }
 
 void mouse(void* param) {
@@ -31,7 +22,8 @@ void mouse(void* param) {
 }
 
 void kill(void* param) {
-
+  //EZ_images_save(canvas, "test.bin");
+  EZ_freeImage(test);
 }
 
 
