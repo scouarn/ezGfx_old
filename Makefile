@@ -1,13 +1,13 @@
 
 #the compiler
-CC = gcc
+CC = gcc -Wall
 
 #folders
 DIR_SRC = sources
 DIR_BIN = bin
 DIR_INC = include
 
-LIBS  = -lX11 -lGL -lpthread #linux
+LIBS  = -lX11 -lGL -lpthread -lasound -lm #linux
 SOURCES := $(wildcard $(DIR_SRC)/*.c)
 OBJECTS := $(patsubst $(DIR_SRC)/%.c, $(DIR_BIN)/%.o, $(SOURCES))
 
@@ -36,3 +36,4 @@ run: demo
 #remove temp files
 clean:
 	rm bin/*.o
+	rm bin/*.a

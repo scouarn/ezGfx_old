@@ -277,55 +277,6 @@ int keyMap(int keyCode) {
 }
 
 
-/*
-const char* keyMapStr(int keyCode) {
-
-    switch (keyCode) {
-      case XK_space :       return "K_SPACE";   case XK_BackSpace :   return "K_BACKSPACE";
-      case XK_Escape :      return "K_ESCAPE";  case XK_Tab :         return "K_TAB";
-      case XK_Linefeed :    return "K_RETURN";  case XK_Return :      return "K_RETURN";
-      case XK_Shift_L :     return "K_LSHIFT";  case XK_Shift_R :     return "K_RSHIFT";
-      case XK_Control_L :   return "K_LCTRL";   case XK_Control_R :   return "K_RCTRL";
-      case XK_Alt_L :       return "K_LALT";    case XK_Alt_R :       return "K_RALT";
-      case XK_Caps_Lock :   return "K_CAPS";    case XK_Num_Lock :    return "K_NUMLOCK";
-      case XK_Scroll_Lock : return "K_SCROLL";  case XK_Pause :       return "K_PAUSE";
-      case XK_Insert :      return "K_INS";     case XK_Delete :      return "K_DEL";
-      case XK_Home :        return "K_HOME";    case XK_End :         return "K_END";
-      case XK_Page_Up :     return "K_PGUP";    case XK_Page_Down :   return "K_PGDN";
-      case XK_Left :        return "K_LEFT";    case XK_Up :          return "K_UP";
-      case XK_Right :       return "K_RIGHT";   case XK_Down :        return "K_DOWN";
-      case XK_KP_Enter :    return "K_RETURN";  case XK_period :      return "K_PERIOD";
-      case XK_KP_Multiply : return "KP_MUL";    case XK_KP_Divide :   return "KP_DIV";
-      case XK_KP_Add :      return "K_PLUS";    case XK_KP_Subtract : return "K_MINUS";
-      case XK_semicolon :   return "K_COLON";   case XK_comma:        return "K_COMMA";
-      case XK_apostrophe :  return "K_QUOTE";   case XK_grave :       return "K_TILDE";
-      case XK_slash :       return "K_SLASH";   case XK_backslash:    return "K_BACKSLASH";
-      case XK_bracketleft : return "K_OPEN";    case XK_bracketright: return "K_CLOSE";
-      case XK_equal :       return "K_PLUS";    case XK_minus:        return "K_MINUS";
-
-
-      case XK_KP_Insert :   return "KP_0";
-      case XK_KP_End :      return "KP_1";
-      case XK_KP_Down :     return "KP_2";
-      case XK_KP_Next :     return "KP_3";
-      case XK_KP_Left :     return "KP_4";
-      case XK_KP_Begin :    return "KP_5";
-      case XK_KP_Right :    return "KP_6";
-      case XK_KP_Home :     return "KP_7";
-      case XK_KP_Up :       return "KP_8";
-      case XK_KP_Prior :    return "KP_9";
-      case XK_KP_Delete :   return "KP_DEC";
-
-      default :
-        if      (keyCode >= XK_a && keyCode <= XK_z)       { return "LETTER"; }
-        else if (keyCode >= XK_0 && keyCode <= XK_9)       { return "NUMS"; }
-        else if (keyCode >= XK_F1 && keyCode <= XK_F12)    { return "FUNCTIONS"; }
-        else return "K_ERROR";
-    }
-
-}
-*/
-
 void updateBars() {
 
   //black bars

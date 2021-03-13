@@ -4,11 +4,6 @@
 /*
 TODO :
 
-test with actual pictures... -> png / bitmap loading
-
-cropped image -> revize the algorithm..
-resized image -> fairely easy, see interpolation
-
 "any line" clipping -> kinda easy
 triangle clipping  -> see olc
 
@@ -70,8 +65,8 @@ void _VLine(EZ_Image* target, EZ_px col, int x, int _y1, int _y2) {
   int y1 = max(0, _y1);
   int y2 = min(target->h - 1, _y2);
 
-  for (int y = y1; y <= y2; y++)
-    EZ_draw2D_pixel(target, col, x, y);
+  for (int h = y1*target->h; h <= y2*target->h; h+=target->h)
+    _blend(&target->px[x+h], col);
 
 }
 
@@ -81,9 +76,10 @@ void _HLine(EZ_Image* target, EZ_px col, int y, int _x1, int _x2) {
 
   int x1 = max(0, _x1);
   int x2 = min(target->w - 1, _x2);
+  int h  = target->h * y;
 
   for (int x = x1; x <= x2; x++)
-    EZ_draw2D_pixel(target, col, x, y);
+    _blend(&target->px[x+h], col);
 
 }
 
@@ -182,70 +178,81 @@ void EZ_draw2D_tri(EZ_Image* target, EZ_px col, int x1, int y1, int x2, int y2, 
   EZ_draw2D_line(target, col, x3, y3, x1, y1);
 }
 
-void _flatTri(EZ_Image* target, EZ_px col, int x1, int x2, int xTop, int yTop, int yBase) {
+void _botFlatTri(EZ_Image* target, EZ_px col, int x1, int x2, int xTop, int yTop, int yBase) {
 
   float a = min(x1, x2);
   float b = max(x1, x2);
 
-  float LSlope = (float)(xTop-x1)/(yBase-yTop);
-  float RSlope = (float)(xTop-x2)/(yBase-yTop);
+  float LSlope = (float)(xTop-a)/(yBase-yTop);
+  float RSlope = (float)(xTop-b)/(yBase-yTop);
 
-  if (yBase > yTop)
-    for (int y = yBase; y >= yTop; y--) {
-      _HLine(target, col, y, a, b);
+  for (int y = yBase; y >= yTop; y--) {
+    _HLine(target, col, y, a, b);
 
-      a += LSlope;
-      b += RSlope;
-    }
-  else for (int y = yBase; y <= yTop; y++) {
-      _HLine(target, col, y, a, b);
-
-      a -= LSlope;
-      b -= RSlope;
-    }
+    a += LSlope;
+    b += RSlope;
+  }
 
 }
 
 
-void EZ_draw2D_fillTri(EZ_Image* target, EZ_px col, int x1, int y1, int x2, int y2, int x3, int y3) {
+void _topFlatTri(EZ_Image* target, EZ_px col, int x1, int x2, int xTop, int yTop, int yBase) {
+
+  float a = min(x1, x2);
+  float b = max(x1, x2);
+
+  float LSlope = (float)(xTop-a)/(yBase-yTop);
+  float RSlope = (float)(xTop-b)/(yBase-yTop);
+
+  for (int y = yBase; y <= yTop; y++) {
+    _HLine(target, col, y, a, b);
+
+    a -= LSlope;
+    b -= RSlope;
+  }
+
+}
+
+void EZ_draw2D_fillTri(EZ_Image* target, EZ_px col, int u1, int v1, int u2, int v2, int u3, int v3) {
+
+  //sort points (y1 : top, y2 : mid, y3 : bot)
+  int y1 = v1; int y2 = v2; int y3 = v3;
+  int x1 = u1; int x2 = u2; int x3 = u3;
+
+  if (y1 > y2) {
+    int t;
+    t = y1; y1 = y2; y2 = t;
+    t = x1; x1 = x2; x2 = t;
+  }
+  if (y1 > y3) {
+    int t;
+    t = y1; y1 = y3; y3 = t;
+    t = x1; x1 = x3; x3 = t;
+  }
+  if (y2 > y3) {
+    int t;
+    t = y2; y2 = y3; y3 = t;
+    t = x2; x2 = x3; x3 = t;
+  }
 
 
   if (y1 == y2)
-    _flatTri(target, col, x1, x2, x3, y3, y1);
+    _topFlatTri(target, col, x1, x2, x3, y3, y1);
 
   else if (y2 == y3)
-    _flatTri(target, col, x2, x3, x1, y1, y3);
+    _botFlatTri(target, col, x2, x3, x1, y1, y3);
 
-  else {
+  else
+  {
 
-    //sort points (y1 : top, y2 : mid, y3 : bot)
-    int _y1 = y1; int _y2 = y2; int _y3 = y3;
-    int _x1 = x1; int _x2 = x2; int _x3 = x3;
+    float ratio  = (float)(y1 - y2 - 0.5f) / (y1 - y3);
+    int xSlice = ratio*x3 + (1.0f - ratio)*x1;
 
-    if (_y1 > _y2) {
-      int t;
-      t = _y1; _y1 = _y2; _y2 = t;
-      t = _x1; _x1 = _x2; _x2 = t;
-    }
-    if (_y1 > _y3) {
-      int t;
-      t = _y1; _y1 = _y3; _y3 = t;
-      t = _x1; _x1 = _x3; _x3 = t;
-    }
-    if (_y2 > _y3) {
-      int t;
-      t = _y2; _y2 = _y3; _y3 = t;
-      t = _x2; _x2 = _x3; _x3 = t;
-    }
-
-    float ratio  = (float)(_y1 - _y2 - 0.5f) / (_y1 - _y3);
-    int xSlice = ratio*_x3 + (1.0f - ratio)*_x1;
-
-    _flatTri(target, col, _x2, xSlice, _x1, _y1, _y2 - 1);
-    _flatTri(target, col, _x2, xSlice, _x3, _y3, _y2);
-
+    _botFlatTri(target, col, x2, xSlice, x1, y1, y2 - 1);
+    _topFlatTri(target, col, x2, xSlice, x3, y3, y2);
 
   }
+
 
 }
 
