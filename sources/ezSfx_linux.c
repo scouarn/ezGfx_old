@@ -123,7 +123,7 @@ void EZ_sfx_join()  {
 
 
 void* sfxThread(void* arg) {
-  //   //!!\\ sample vs frame trickery
+  //   //!!\\ sample vs "frame" trickery
 
   pthread_detach(pthread_self());
 
@@ -148,15 +148,15 @@ void* sfxThread(void* arg) {
 
 
    //render the block
-   snd_pcm_uframes_t n_samples = info.blockSize / info.channels;
+   snd_pcm_uframes_t frames = info.blockSize / info.channels;
    EZ_sample *current = block;
 
-   while (n_samples > 0) {
+   while (frames > 0) {
 
-      int rc = snd_pcm_writei(device, current, n_samples);
+      int rc = snd_pcm_writei(device, current, frames);
       if (rc > 0) {
       	current   += rc * info.channels;
-      	n_samples -= rc;
+      	frames -= rc;
       }
 
       if (rc == -EAGAIN) continue;
