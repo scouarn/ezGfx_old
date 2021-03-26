@@ -63,6 +63,11 @@ void EZ_sfx_pcmFree(EZ_pcmArray* array) {
   free(array->data);
 }
 
+double EZ_sfx_fastSine(double time, double freq) {
+  return sin(time*freq*3.141592*2.0);
+
+}
+
 
 void EZ_sfx_init(int sampleRate, int channels, int blockQueueLength, int blockSize,
                  EZ_sample(*callback)(double time, int channel)) {

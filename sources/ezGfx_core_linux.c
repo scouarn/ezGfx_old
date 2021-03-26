@@ -340,7 +340,7 @@ void* mainThread(void* arg) {
               EZ_Key* key = &EZ_keyStates[keyMap(sym)];
 
               key->pressed = true;
-              key->pressed = false;
+              key->held    = true;
 
               if (EZ_callbacks[ON_KEYPRESSED]) EZ_callbacks[ON_KEYPRESSED](NULL);
               break;

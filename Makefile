@@ -1,13 +1,13 @@
 
-#the compiler
-CC = gcc -Wall
+#the compiler and some flags
+CC = gcc -Wall -O2
+LIBS  = -lX11 -lGL -lpthread -lasound -lm #linux
 
 #folders
 DIR_SRC = sources
 DIR_BIN = bin
 DIR_INC = include
 
-LIBS  = -lX11 -lGL -lpthread -lasound -lm #linux
 SOURCES := $(wildcard $(DIR_SRC)/*.c)
 OBJECTS := $(patsubst $(DIR_SRC)/%.c, $(DIR_BIN)/%.o, $(SOURCES))
 

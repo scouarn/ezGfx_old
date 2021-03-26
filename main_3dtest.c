@@ -4,8 +4,13 @@
 #include <stdio.h>
 #include <math.h>
 
+EZ_Image* test;
 
+EZ_poly cubeMesh[12];
 EZ_pcmArray tada;
+
+
+
 
 
 void setup(void* param) {
@@ -14,11 +19,36 @@ void setup(void* param) {
 
     EZ_draw2D_clear(canvas, EZ_BLUE);
 
+
+    EZ_draw3D_unitCube(cubeMesh, EZ_WHITE);
+
+    float fov = 3.141592 / 2.0f;
+    float aRatio = 1.0f;
+    float zNear = 0.1f;
+    float zFar = 1000.0f;
+
+    EZ_mat projection[4*4];
+    EZ_draw3D_projTransform(projection, fov, aRatio, zNear, zFar);
+
+    EZ_mat transform[3] = { -0.5f, -0.5f, 2.0f};
+
+    EZ_draw3D_wireframe(canvas, cubeMesh, 12, projection, transform);
+
+
+    //test = EZ_images_load("test.bin");
+    //EZ_draw2D_image(canvas, test, 0, 0);
+
+
 }
 
 
 void draw(void* param) {
     //duration dt = *(double *)param;
+
+
+    //EZ_draw2D_fillTri(canvas, EZ_WHITE , 50, 50, 75, 150, 125, 75);
+
+
 
 }
 
@@ -33,10 +63,20 @@ void key(void* param) {
 
 }
 
+
 void kill(void* param) {
 
+  //EZ_images_save(canvas, "test.bin");
+  //EZ_freeImage(test);
 }
 
+
+
+
+EZ_sample playRaw(double sampleTime, int channel) {
+
+	return EZ_sfx_pcmNextSample(&tada);
+}
 
 double sineOscillator(double time, double freq) {
 	return sin(time*freq*3.141592*2.0);
