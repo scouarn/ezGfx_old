@@ -21,7 +21,6 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-
 #define CD41KHZ 44100
 #define SAMPLE_MAX 32767
 typedef int16_t EZ_sample;
@@ -40,7 +39,6 @@ void EZ_sfx_init(int sampleRate, int channels, int blockQueueLength, int blockSi
                  EZ_sample(*callback)(double time, int channel)
 );
 
-double EZ_sfx_fastSine(double time, double freq);
 
 
 void EZ_sfx_start();

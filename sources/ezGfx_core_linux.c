@@ -230,6 +230,7 @@ void EZ_redraw() {
 
 
 int keyMap(int keyCode) {
+  //https://cgit.freedesktop.org/xorg/proto/x11proto/tree/keysymdef.h
 
   switch (keyCode) {
     case XK_space :       return K_SPACE;   case XK_BackSpace :   return K_BACKSPACE;
@@ -270,7 +271,7 @@ int keyMap(int keyCode) {
     default :
       if      (keyCode >= XK_a && keyCode <= XK_z)       { return keyCode - XK_a  + K_A; }
       else if (keyCode >= XK_0 && keyCode <= XK_9)       { return keyCode - XK_0  + K_0; }
-      else if (keyCode >= XK_F1 && keyCode <= XK_F12)    { return keyCode - XK_F1 + K_0; }
+      else if (keyCode >= XK_F1 && keyCode <= XK_F12)    { return keyCode - XK_F1 + K_F1; }
       else return K_ERROR;
   }
 
@@ -342,7 +343,7 @@ void* mainThread(void* arg) {
               key->pressed = true;
               key->held    = true;
 
-              if (EZ_callbacks[ON_KEYPRESSED]) EZ_callbacks[ON_KEYPRESSED](NULL);
+              if (EZ_callbacks[ON_KEYPRESSED]) EZ_callbacks[ON_KEYPRESSED](keyMap(sym));
               break;
             }
 
@@ -354,7 +355,7 @@ void* mainThread(void* arg) {
               key->released = true;
               key->held = false;
 
-              if (EZ_callbacks[ON_KEYRELEASED]) EZ_callbacks[ON_KEYRELEASED](NULL);
+              if (EZ_callbacks[ON_KEYRELEASED]) EZ_callbacks[ON_KEYRELEASED](keyMap(sym));
               break;
             }
 

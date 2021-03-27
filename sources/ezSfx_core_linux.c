@@ -1,4 +1,4 @@
-#include "ezSfx.h"
+#include "ezSfx_core.h"
 
 #include <pthread.h>
 #include <string.h>
@@ -13,6 +13,7 @@ pthread_t thread;
 void* sfxThread(void* arg);
 EZ_sample(*sample_callback)(double time, int channel);
 snd_pcm_t *device;
+
 
 struct {
   int sampleRate;
@@ -62,12 +63,6 @@ EZ_pcmArray EZ_sfx_pcmLoad(const char* fname) {
 void EZ_sfx_pcmFree(EZ_pcmArray* array) {
   free(array->data);
 }
-
-double EZ_sfx_fastSine(double time, double freq) {
-  return sin(time*freq*3.141592*2.0);
-
-}
-
 
 void EZ_sfx_init(int sampleRate, int channels, int blockQueueLength, int blockSize,
                  EZ_sample(*callback)(double time, int channel)) {
@@ -124,15 +119,12 @@ void EZ_sfx_join()  {
 }
 
 
-
-
-
 void* sfxThread(void* arg) {
   //   //!!\\ sample vs "frame" trickery
 
   pthread_detach(pthread_self());
 
-  double globalTime = 0;
+  double globalTime = 0.0;
   double dt = 1.0 / info.sampleRate;
 
   //init block

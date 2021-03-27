@@ -3,3 +3,6 @@
 #include "ezGfx_draw3D.h"
 #include "ezGfx_images.h"
 #include "ezGfx_matrix.h"
+
+#include "ezSfx_core.h"
+#include "ezSfx_plus.h"

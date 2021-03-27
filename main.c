@@ -1,11 +1,9 @@
 #include <ezGfx.h>
-#include <ezSfx.h>
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
 
-
-EZ_pcmArray tada;
 
 
 void setup(void* param) {
@@ -13,6 +11,9 @@ void setup(void* param) {
     canvas = EZ_createImage(200,200);
 
     EZ_draw2D_clear(canvas, EZ_BLUE);
+
+
+
 
 }
 
@@ -23,12 +24,29 @@ void draw(void* param) {
 }
 
 
-void key(void* param) {
+EZ_sfx_note basicSine = {0};
+double pitchTable[12] = {110.00, 116.54, 123.47, 130.81, 138.59, 146.83, 155.56, 164.81, 174.61, 185.00, 196.00, 207.65};
 
-  for (int i = 0; i < _numberOfKeys; i++) {
-    if (EZ_keyStates[i].pressed)
-      printf("found key\n");
-  }
+void key(void* param) {
+  int lastPressed = (int)param;
+  int index = lastPressed - K_F1;
+
+  printf("index %d\n",index);
+  double octave = 2.0f;
+
+
+  basicSine.callback = &EZ_sfx_fastSine;
+  basicSine.length = 1.0;
+  basicSine.pitch = pitchTable[index] * octave;
+  EZ_sfx_play(basicSine);
+
+}
+
+void keyRelease(void* param) {
+
+}
+
+void mouse(void* param) {
 
 
 }
@@ -38,40 +56,17 @@ void kill(void* param) {
 }
 
 
-double sineOscillator(double time, double freq) {
-	return sin(time*freq*3.141592*2.0);
-
-}
-
-
-EZ_sample sampleClbk(double time, int channel) {
-
-  double sf = 0;
-
-
-
-  if (EZ_keyStates[K_A].held)
-    sf += sineOscillator(time, 440.0);
-
-  //mix
-
-
-  //
-  return (EZ_sample)(sf*SAMPLE_MAX);
-}
-
-
 
 int main (int argc, char **argv) {
 
     EZ_callbacks[ON_CREATE] = &setup;
     EZ_callbacks[ON_DRAW]   = &draw;
     EZ_callbacks[ON_CLOSE]  = &kill;
-    //EZ_callbacks[ON_MOUSEMOVE] = &mouse;
+    EZ_callbacks[ON_MOUSEMOVE]  = &mouse;
     EZ_callbacks[ON_KEYPRESSED] = &key;
+    EZ_callbacks[ON_KEYRELEASED] = &keyRelease;
 
-    EZ_sfx_init(CD41KHZ, 2, 16, 512, &sampleClbk);
-    tada = EZ_sfx_pcmLoad("audio/war.raw");
+    EZ_sfx_init(CD41KHZ, 2, 16, 512, &EZ_sfx_plusCallback);
 
     EZ_start();
     EZ_sfx_start();
@@ -80,7 +75,6 @@ int main (int argc, char **argv) {
 
     EZ_sfx_stop();
 
-    EZ_sfx_pcmFree(&tada);
 
     return 0;
 }

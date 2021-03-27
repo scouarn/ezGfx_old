@@ -1,6 +1,6 @@
 
 #the compiler and some flags
-CC = gcc -Wall -O2
+CC = gcc #-Wall -O2
 LIBS  = -lX11 -lGL -lpthread -lasound -lm #linux
 
 #folders
@@ -13,16 +13,16 @@ OBJECTS := $(patsubst $(DIR_SRC)/%.c, $(DIR_BIN)/%.o, $(SOURCES))
 
 
 #link main file with ezGfx and make the demo exectuable
-demo: $(DIR_BIN)/main.o $(DIR_BIN)/ezGfx.a
-	$(CC) $(DIR_BIN)/main.o $(DIR_BIN)/ezGfx.a -o demo $(LIBS)
+demo: $(DIR_BIN)/main.o $(OBJECTS)
+	$(CC) $(DIR_BIN)/main.o $(OBJECTS) -o demo $(LIBS)
 
 #compile main file to object
 $(DIR_BIN)/main.o: main.c
 	$(CC) -I$(DIR_INC) -c main.c  -o $(DIR_BIN)/main.o
 
 #compile ezGfx to a library file
-$(DIR_BIN)/ezGfx.a: $(OBJECTS)
-	ar cr $(DIR_BIN)/ezGfx.a $(OBJECTS)
+#$(DIR_BIN)/ezGfx.a: $(OBJECTS)
+#	ar cr $(DIR_BIN)/ezGfx.a $(OBJECTS)
 
 #Compile ezGfx to object files
 $(OBJECTS): $(DIR_BIN)/%.o : $(DIR_SRC)/%.c
