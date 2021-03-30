@@ -76,7 +76,7 @@ void _HLine(EZ_Image* target, EZ_px col, int y, int _x1, int _x2) {
 
   int x1 = max(0, _x1);
   int x2 = min(target->w - 1, _x2);
-  int h  = target->h * y;
+  int h  = target->w * y;
 
   for (int x = x1; x <= x2; x++)
     _blend(&target->px[x+h], col);
