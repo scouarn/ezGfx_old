@@ -65,7 +65,7 @@ void _VLine(EZ_Image* target, EZ_px col, int x, int _y1, int _y2) {
   int y1 = max(0, _y1);
   int y2 = min(target->h - 1, _y2);
 
-  for (int h = y1*target->h; h <= y2*target->h; h+=target->h)
+  for (int h = y1*target->w; h <= y2*target->w; h+=target->w)
     _blend(&target->px[x+h], col);
 
 }
