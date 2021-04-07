@@ -19,6 +19,9 @@
 enum alphaMode {ALPHA_IGNORE, ALPHA_FAST, ALPHA_BLEND};
 enum interMode {INTER_LINEAR, INTER_NEAREST};
 
+EZ_Image* EZ_images_load(const char* fname);
+void  	  EZ_images_save(EZ_Image* image, const char* fname);
+
 void EZ_draw2D_alphaMode(enum alphaMode mode);
 void EZ_draw2D_interMode(enum interMode mode);
 

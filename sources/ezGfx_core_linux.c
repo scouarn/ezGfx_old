@@ -10,32 +10,37 @@
 #include <GL/glx.h>
 
 
-struct timespec startTime;
-struct timespec lastTime;
-bool running;
-pthread_t thread;
-void* mainThread(void* arg);
+static struct timespec startTime;
+static struct timespec lastTime;
+static bool running;
+static pthread_t thread;
+static void* mainThread(void* arg);
+static void(*callbacks[_numberOfKeys])(void*param); //array of function pointers
 
-GLXContext glContext;
-GLuint texture;
+static GLXContext glContext;
+static GLuint texture;
+static EZ_Image* canvas;
+static bool stretched;
+static int winWidth;
+static int winHeight;
+static float canvasX = 1.0f;
+static float canvasY = 1.0f;
 
-bool stretched;
-int winWidth;  int winHeight;
-float canvasX = 1.0f; float canvasY = 1.0f;
+static XVisualInfo* visualInfo;
+static Display *disp;
+static int screen;
+static Window win;
+static Atom wm_delete;
 
-int keyMap(int keyCode);
-
-XVisualInfo* visualInfo;
-Display *disp;
-int screen;
-Window win;
-Atom wm_delete;
+static int keyMap(int keyCode);
+static EZ_Key keyStates[_numberOfKeys];
+static EZ_mouseState mouseState;
 
 
-
-void EZ_window(const char* name, int w, int h) {
+void EZ_window(const char* name, int w, int h, EZ_Image* cnvs) {
 
   winWidth  = w; winHeight  = h;
+  canvas = cnvs;
 
   //init X window
   disp   = XOpenDisplay(NULL);
@@ -90,6 +95,18 @@ duration EZ_getTime() {
   duration time = (now.tv_sec - startTime.tv_sec) + (now.tv_nsec - startTime.tv_nsec) / 1000000000.0;
 
   return time;
+}
+
+EZ_Key* EZ_getKey(enum EZ_KeyCodes code) {
+  return &keyStates[code];
+}
+
+EZ_mouseState* EZ_getMouse() {
+  return &mouseState;
+}
+
+void EZ_setCallbak(enum EZ_callbacks clbk, void(*function)(void*param)) {
+  callbacks[clbk] = function;
 }
 
 
@@ -201,7 +218,7 @@ void EZ_redraw() {
   lastTime = now;
 
   //user function
-  if (EZ_callbacks[ON_DRAW]) EZ_callbacks[ON_DRAW](&elapsedTime);
+  if (callbacks[ON_DRAW]) callbacks[ON_DRAW](&elapsedTime);
 
 
   //display
@@ -221,6 +238,7 @@ void EZ_redraw() {
   glXSwapBuffers(disp, win);
 
 }
+
 
 
 
@@ -313,7 +331,7 @@ void* mainThread(void* arg) {
    clock_gettime(CLOCK_MONOTONIC, &startTime);
    clock_gettime(CLOCK_MONOTONIC, &lastTime);
 
-   if (EZ_callbacks[ON_CREATE]) EZ_callbacks[ON_CREATE](NULL);
+   if (callbacks[ON_CREATE]) callbacks[ON_CREATE](NULL);
 
    //main loop
    while (running) {
@@ -322,8 +340,8 @@ void* mainThread(void* arg) {
 
         //reset keystate stuff
         for (int i = 0; i < _numberOfKeys; i++) {
-          EZ_keyStates[i].pressed  = false;
-          EZ_keyStates[i].released = false;
+          keyStates[i].pressed  = false;
+          keyStates[i].released = false;
         }
 
         //events and inputs
@@ -338,24 +356,31 @@ void* mainThread(void* arg) {
             case KeyPress:
             {
               KeySym sym = XLookupKeysym(&e.xkey, 0);
-              EZ_Key* key = &EZ_keyStates[keyMap(sym)];
+
+
+              int index = keyMap(sym);
+              EZ_Key* key = &keyStates[index];
+
 
               key->pressed = true;
               key->held    = true;
+              XLookupString(&e.xkey, &key->typed, 1, NULL, NULL);
 
-              if (EZ_callbacks[ON_KEYPRESSED]) EZ_callbacks[ON_KEYPRESSED](keyMap(sym));
+              if (callbacks[ON_KEYPRESSED]) callbacks[ON_KEYPRESSED](&index);
               break;
             }
 
             case KeyRelease:
             {
               KeySym sym = XLookupKeysym(&e.xkey, 0);
-              EZ_Key* key = &EZ_keyStates[keyMap(sym)];
+              int index = keyMap(sym);
+              EZ_Key* key = &keyStates[index];
 
               key->released = true;
               key->held = false;
+              XLookupString(&e.xkey, &key->typed, 1, NULL, NULL);
 
-              if (EZ_callbacks[ON_KEYRELEASED]) EZ_callbacks[ON_KEYRELEASED](keyMap(sym));
+              if (callbacks[ON_KEYRELEASED]) callbacks[ON_KEYRELEASED](&index);
               break;
             }
 
@@ -374,25 +399,25 @@ void* mainThread(void* arg) {
             case ButtonPress:
               switch (e.xbutton.button)
       					{
-      					case 1:	EZ_keyStates[K_LMB].pressed = true; EZ_keyStates[K_LMB].held = true; break;
-      					case 2:	EZ_keyStates[K_MMB].pressed = true; EZ_keyStates[K_MMB].held = true; break;
-      					case 3:	EZ_keyStates[K_RMB].pressed = true; EZ_keyStates[K_RMB].held = true; break;
-      					case 4:	EZ_mouse.wheel = 1; break;
-      					case 5:	EZ_mouse.wheel =-1; break;
+      					case 1:	keyStates[K_LMB].pressed = true; keyStates[K_LMB].held = true; break;
+      					case 2:	keyStates[K_MMB].pressed = true; keyStates[K_MMB].held = true; break;
+      					case 3:	keyStates[K_RMB].pressed = true; keyStates[K_RMB].held = true; break;
+      					case 4:	mouseState.wheel = 1; break;
+      					case 5:	mouseState.wheel =-1; break;
       					default: break;
       					}
-              if (EZ_callbacks[ON_KEYPRESSED]) EZ_callbacks[ON_KEYPRESSED](NULL);
+              if (callbacks[ON_KEYPRESSED]) callbacks[ON_KEYPRESSED](&mouseState);
               break;
 
             case ButtonRelease:
               switch (e.xbutton.button)
                 {
-                case 1:	EZ_keyStates[K_LMB].released = true; EZ_keyStates[K_LMB].held = false; break;
-                case 2:	EZ_keyStates[K_MMB].released = true; EZ_keyStates[K_MMB].held = false; break;
-                case 3:	EZ_keyStates[K_RMB].released = true; EZ_keyStates[K_RMB].held = false; break;
+                case 1:	keyStates[K_LMB].released = true; keyStates[K_LMB].held = false; break;
+                case 2:	keyStates[K_MMB].released = true; keyStates[K_MMB].held = false; break;
+                case 3:	keyStates[K_RMB].released = true; keyStates[K_RMB].held = false; break;
                 default: break;
                 }
-              if (EZ_callbacks[ON_KEYRELEASED]) EZ_callbacks[ON_KEYRELEASED](NULL);
+              if (callbacks[ON_KEYRELEASED]) callbacks[ON_KEYRELEASED](&mouseState);
               break;
 
 
@@ -402,12 +427,12 @@ void* mainThread(void* arg) {
               int newx = (e.xmotion.x + 0.5f*(canvasX - 1.0f) * winWidth ) * canvas->w / ((float)winWidth  * canvasX);
               int newy = (e.xmotion.y + 0.5f*(canvasY - 1.0f) * winHeight) * canvas->h / ((float)winHeight * canvasY);
 
-              EZ_mouse.dx = newx - EZ_mouse.x;
-              EZ_mouse.dy = newy - EZ_mouse.y;
-              EZ_mouse.x  = newx;
-              EZ_mouse.y  = newy;
+              mouseState.dx = newx - mouseState.x;
+              mouseState.dy = newy - mouseState.y;
+              mouseState.x  = newx;
+              mouseState.y  = newy;
 
-              if (EZ_callbacks[ON_MOUSEMOVE]) EZ_callbacks[ON_MOUSEMOVE](NULL);
+              if (callbacks[ON_MOUSEMOVE]) callbacks[ON_MOUSEMOVE](NULL);
 
               break;
             }
@@ -444,7 +469,7 @@ void* mainThread(void* arg) {
    }
 
 
-   if (EZ_callbacks[ON_CLOSE]) EZ_callbacks[ON_CLOSE](NULL);
+   if (callbacks[ON_CLOSE]) callbacks[ON_CLOSE](NULL);
 
    //free everything
    EZ_freeImage(canvas);

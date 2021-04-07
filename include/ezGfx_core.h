@@ -27,6 +27,7 @@ typedef struct {
 	bool pressed;
 	bool released;
 	bool held;
+	char typed;
 } EZ_Key;
 
 enum EZ_KeyCodes {
@@ -43,16 +44,16 @@ enum EZ_KeyCodes {
 	KP_0, KP_1, KP_2, KP_3, KP_4, KP_5, KP_6, KP_7, KP_8, KP_9, KP_DIV, KP_MUL, KP_PLUS, KP_MINUS, KP_ENTER, KP_DEC,
 	_numberOfKeys
 };
-EZ_Key EZ_keyStates[_numberOfKeys];
+EZ_Key* EZ_getKey(enum EZ_KeyCodes code);
 
-struct {
+typedef struct {
 	int x;
 	int y;
 	int dx;
 	int dy;
 	int wheel;
-} EZ_mouse;
-
+} EZ_mouseState;
+EZ_mouseState* EZ_getMouse();
 
 /* CALLBACKS */
 enum EZ_callbacks {
@@ -65,30 +66,7 @@ enum EZ_callbacks {
 
 	_numberOfCallbacks //too lazy to change the function pointer declaration each time i add a callback in the enum
 };
-void(*EZ_callbacks[_numberOfKeys])(void*param); //array of function pointers
-
-
-/* MAIN FUNCTIONS */
-void EZ_start();	//start the loop
-void EZ_stop();		//force it to stop
-void EZ_join(); 	//wait for it to stop by itself
-
-
-/* UTILITY */
-void EZ_window(const char* name, int w, int h);
-void EZ_rename(const char*);
-void EZ_resize(int w, int h);
-
-void EZ_setMaximized(bool);
-void EZ_setFullscreen(bool);
-void EZ_setStretching(bool);
-
-
-/* TIME FUNCTIONS */
-typedef double duration;
-duration EZ_getTime();
-
-
+void EZ_setCallbak(enum EZ_callbacks clbk, void(*function)(void*param));
 
 /* GRAPHIC FUNCITONS */
 typedef union {
@@ -113,7 +91,6 @@ typedef struct {
 
 } EZ_Image;
 
-EZ_Image* canvas;
 
 EZ_Image* EZ_createImage(int w, int h);
 EZ_Image* EZ_copyImage(EZ_Image*);
@@ -135,7 +112,24 @@ EZ_px EZ_blend(EZ_px colA, EZ_px colB);
 
 
 
+/* MAIN FUNCTIONS */
+void EZ_start();	//start the loop
+void EZ_stop();		//force it to stop
+void EZ_join(); 	//wait for it to stop by itself
 
 
+/* UTILITY */
+void EZ_window(const char* name, int w, int h, EZ_Image* canvas);
+void EZ_rename(const char*);
+void EZ_resize(int w, int h);
+
+void EZ_setMaximized(bool);
+void EZ_setFullscreen(bool);
+void EZ_setStretching(bool);
+
+
+/* TIME FUNCTIONS */
+typedef double duration;
+duration EZ_getTime();
 
 #endif

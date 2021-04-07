@@ -3,14 +3,14 @@
 
 #include <stdio.h>
 
-double globalTime;
+static double globalTime;
 
 typedef struct node {
   EZ_sfx_note note;
   struct node *next;
 
 } EZ_sfx_listNode;
-EZ_sfx_listNode* listHead = NULL;
+static EZ_sfx_listNode* listHead = NULL;
 
 
 EZ_sample EZ_sfx_play(EZ_sfx_note note) {
@@ -38,6 +38,7 @@ EZ_sample EZ_sfx_plusCallback(double time, int channel) {
 	EZ_sfx_listNode* current = listHead;
 	EZ_sfx_listNode* last = NULL;
 
+
 	while (current != NULL) {
 
 		sf += current->note.callback(time, current->note.pitch) * 0.25;
@@ -63,6 +64,7 @@ EZ_sample EZ_sfx_plusCallback(double time, int channel) {
 
 		current = current->next;
 	}
+
 
 
   return (EZ_sample)(sf*SAMPLE_MAX);

@@ -8,14 +8,14 @@
 
 
 //Globals
-bool running;
-pthread_t thread;
-void* sfxThread(void* arg);
-EZ_sample(*sample_callback)(double time, int channel);
-snd_pcm_t *device;
+static bool running;
+static pthread_t thread;
+static void* sfxThread(void* arg);
+static EZ_sample(*sample_callback)(double time, int channel);
+static snd_pcm_t *device;
 
 
-struct {
+static struct {
   int sampleRate;
   int channels;
   int blockQueueLength;

@@ -20,14 +20,9 @@ demo: $(DIR_BIN)/main.o $(OBJECTS)
 $(DIR_BIN)/main.o: main.c
 	$(CC) -I$(DIR_INC) -c main.c  -o $(DIR_BIN)/main.o
 
-#compile ezGfx to a library file
-#$(DIR_BIN)/ezGfx.a: $(OBJECTS)
-#	ar cr $(DIR_BIN)/ezGfx.a $(OBJECTS)
-
-#Compile ezGfx to object files
+# Compile to object files
 $(OBJECTS): $(DIR_BIN)/%.o : $(DIR_SRC)/%.c
 	$(CC) -I$(DIR_INC) -c $< -o $@
-
 
 #run the demo
 run: demo
@@ -36,4 +31,3 @@ run: demo
 #remove temp files
 clean:
 	rm bin/*.o
-	rm bin/*.a
