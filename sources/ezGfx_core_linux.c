@@ -288,7 +288,7 @@ int keyMap(int keyCode) {
 
     default :
       if      (keyCode >= XK_a && keyCode <= XK_z)       { return keyCode - XK_a  + K_A; }
-      else if (keyCode >= XK_0 && keyCode <= XK_9)       { return keyCode - XK_0  + K_0; }
+      else if (keyCode >= XK_0 && keyCode <= XK_9)       { return keyCode - XK_0  + K_0; }  //Not working right
       else if (keyCode >= XK_F1 && keyCode <= XK_F12)    { return keyCode - XK_F1 + K_F1; }
       else return K_ERROR;
   }
@@ -357,7 +357,6 @@ void* mainThread(void* arg) {
             {
               KeySym sym = XLookupKeysym(&e.xkey, 0);
 
-
               int index = keyMap(sym);
               EZ_Key* key = &keyStates[index];
 
@@ -397,29 +396,36 @@ void* mainThread(void* arg) {
             }
 
             case ButtonPress:
-              switch (e.xbutton.button)
+              {
+              int sym = e.xbutton.button;
+              int index = 0;
+              switch (sym)
       					{
-      					case 1:	keyStates[K_LMB].pressed = true; keyStates[K_LMB].held = true; break;
-      					case 2:	keyStates[K_MMB].pressed = true; keyStates[K_MMB].held = true; break;
-      					case 3:	keyStates[K_RMB].pressed = true; keyStates[K_RMB].held = true; break;
+      					case 1:	keyStates[K_LMB].pressed = true; keyStates[K_LMB].held = true; index = 1; break;
+      					case 2:	keyStates[K_MMB].pressed = true; keyStates[K_MMB].held = true; index = 3; break;
+      					case 3:	keyStates[K_RMB].pressed = true; keyStates[K_RMB].held = true; index = 2; break;
       					case 4:	mouseState.wheel = 1; break;
       					case 5:	mouseState.wheel =-1; break;
       					default: break;
       					}
-              if (callbacks[ON_KEYPRESSED]) callbacks[ON_KEYPRESSED](&mouseState);
+              if (callbacks[ON_KEYPRESSED]) callbacks[ON_KEYPRESSED](&index);
               break;
+              }
 
             case ButtonRelease:
-              switch (e.xbutton.button)
+              {
+              int sym = e.xbutton.button;
+              int index = 0;
+              switch (sym)
                 {
-                case 1:	keyStates[K_LMB].released = true; keyStates[K_LMB].held = false; break;
-                case 2:	keyStates[K_MMB].released = true; keyStates[K_MMB].held = false; break;
-                case 3:	keyStates[K_RMB].released = true; keyStates[K_RMB].held = false; break;
+                case 1:	keyStates[K_LMB].released = true; keyStates[K_LMB].held = false; index = 1; break;
+                case 2:	keyStates[K_MMB].released = true; keyStates[K_MMB].held = false; index = 3; break;
+                case 3:	keyStates[K_RMB].released = true; keyStates[K_RMB].held = false; index = 2; break;
                 default: break;
                 }
-              if (callbacks[ON_KEYRELEASED]) callbacks[ON_KEYRELEASED](&mouseState);
+              if (callbacks[ON_KEYRELEASED]) callbacks[ON_KEYRELEASED](&index);
               break;
-
+              }
 
             case MotionNotify:
             {
@@ -472,7 +478,6 @@ void* mainThread(void* arg) {
    if (callbacks[ON_CLOSE]) callbacks[ON_CLOSE](NULL);
 
    //free everything
-   EZ_freeImage(canvas);
    glXMakeCurrent(disp, None, NULL);
    glXDestroyContext(disp, glContext);
    XAutoRepeatOn(disp); //put it back on so other apps are not affected

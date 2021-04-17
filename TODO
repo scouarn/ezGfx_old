@@ -3,5 +3,7 @@
 
 -EZ_font maybe
 -Textbox, "windows"
+-tty
+-dithering
 
 -Textured triangle / "advanced" 3D

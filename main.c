@@ -35,7 +35,7 @@ void mouse(void* param) {
 }
 
 void kill(void* param) {
-  free(canvas);
+  EZ_freeImage(canvas);
 }
 
 
