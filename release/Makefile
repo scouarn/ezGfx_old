@@ -28,7 +28,7 @@ $(OBJECTS): $(DIR_BIN)/%.o : $(DIR_SRC)/%.c
 run: demo
 	./demo
 
-
+#copy useful stuff in release dir
 build: $(SOURCES)
 	cp -r sources release/
 	cp -r include release/
@@ -38,10 +38,6 @@ build: $(SOURCES)
 	cp     main.c release/
 	cp       TODO release/
 
-
-
-
-
 #remove temp files
 clean:
-	rm -f bin/*.o release/*
+	rm bin/*.o
