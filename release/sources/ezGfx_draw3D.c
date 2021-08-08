@@ -4,7 +4,7 @@
 
 
 
-void EZ_draw3D_wireframe(EZ_Image* target, EZ_poly mesh[], int nPoly, EZ_mat projection[], EZ_mat transform[]) {
+void EZ_draw3D_wireframe(EZ_Image target, EZ_poly mesh[], int nPoly, EZ_mat projection[], EZ_mat transform[]) {
 
   for (int i = 0; i < nPoly; i++) {
 
@@ -25,8 +25,8 @@ void EZ_draw3D_wireframe(EZ_Image* target, EZ_poly mesh[], int nPoly, EZ_mat pro
 
       //scale to screen space
       EZ_mat_vecAdd  (proj[j], proj[j], (EZ_mat[]){ 1.0f, 1.0f }, 3);
-      proj[j][0] *= target->w * 0.5f;
-      proj[j][1] *= target->h * 0.5f;
+      proj[j][0] *= target.w * 0.5f;
+      proj[j][1] *= target.h * 0.5f;
 
     }
 

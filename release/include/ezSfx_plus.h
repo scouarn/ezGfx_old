@@ -7,26 +7,26 @@
 
 
 typedef struct {
-  double(*callback)(double time, double pitch);
-  double startTime;
-  double endTime;
-  double length;
+	double(*callback)(double time, double pitch);
+	double startTime;
+	double endTime;
+	double length;
 
-  double pitch;
+	double pitch;
 
-  double vibrato;
-  double vibratoAmp;
+	double vibrato;
+	double vibratoAmp;
 
-  double tremolo;
-  double tremoloAmp;
+	double tremolo;
+	double tremoloAmp;
 
-  double panning;
-  double panningAmp;
+	double panning;
+	double panningAmp;
 
-  double attack;
-  double decay;
-  double sustain;
-  double release;
+	double attack;
+	double decay;
+	double sustain;
+	double release;
 
 } EZ_sfx_note;
 

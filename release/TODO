@@ -5,3 +5,6 @@
 -Textured triangle / "advanced" 3D
 -ms windows support
 -wasm support
+-fragment shaders
+-load png
+-wave sound format

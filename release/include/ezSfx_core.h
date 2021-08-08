@@ -26,9 +26,9 @@
 typedef int16_t EZ_sample;
 
 typedef struct {
-  EZ_sample* data;
-  uint32_t   size;
-  uint32_t   curr;
+	EZ_sample* data;
+	uint32_t   size;
+	uint32_t   curr;
 } EZ_pcmArray;
 
 EZ_sample   EZ_sfx_pcmNextSample(EZ_pcmArray* array);
@@ -36,7 +36,7 @@ EZ_pcmArray EZ_sfx_pcmLoad(const char* filename);
 void EZ_sfx_pcmFree(EZ_pcmArray* array);
 
 void EZ_sfx_init(int sampleRate, int channels, int blockQueueLength, int blockSize,
-                 EZ_sample(*callback)(double time, int channel)
+								 EZ_sample(*callback)(double time, int channel)
 );
 
 

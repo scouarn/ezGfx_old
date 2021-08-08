@@ -34,7 +34,7 @@ typedef struct {
 } EZ_poly;
 
 
-void EZ_draw3D_wireframe(EZ_Image* target, EZ_poly mesh[], int nPoly, EZ_mat projection[], EZ_mat transform[]);
+void EZ_draw3D_wireframe(EZ_Image target, EZ_poly mesh[], int nPoly, EZ_mat projection[], EZ_mat transform[]);
 
 void EZ_draw3D_projTransform(EZ_mat matrix[], float fov, float aRatio, float zNear, float zFar);
 
