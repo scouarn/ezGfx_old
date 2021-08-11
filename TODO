@@ -1,6 +1,6 @@
 
--EZ_font maybe -> tty stuff
--Textbox, "windows"
+-font ttf
+-Textbox, "windows", buttons
 -dithering
 -Textured triangle / "advanced" 3D
 -ms windows support
@@ -8,3 +8,7 @@
 -fragment shaders
 -load png
 -wave sound format
+
+
+-textri ???
+

@@ -1,17 +1,17 @@
 
-EZ_Image canvas;
-EZ_Font  font;
-EZ_Font  editor_font;
+static EZ_Image canvas;
+static EZ_Font  font;
+static EZ_Font  editor_font;
 
-char fname[256];
+static char fname[256];
 
-unsigned int edit_char = 'A';
-unsigned int cursor_x, cursor_y, char_cursor_x, char_cursor_y;
-unsigned char buffer[64];
+static unsigned int edit_char = 'A';
+static unsigned int cursor_x, cursor_y, char_cursor_x, char_cursor_y;
+static unsigned char buffer[64];
 
 
 const int RES = 16, FW = 32, FH = 8;
-int x_cols, y_cols;
+static int x_cols, y_cols;
 
 const char* ipsum = "\tLorem ipsum dolor sit amet, consectetur adipiscing elit. Donec quis quam sollicitudin, convallis nisl quis, varius metus. Nullam tempus sit amet odio quis euismod. Suspendisse consequat, neque quis sollicitudin fermentum, erat tortor ultricies erat, volutpat finibus leo tortor non sem. Quisque vehicula mauris suscipit sem porttitor, vel dignissim enim placerat. Aenean maximus vel ipsum eget consequat. Vestibulum suscipit lorem a blandit pellentesque. Nam faucibus tortor nec augue congue rhoncus. Vivamus et metus in eros tincidunt lacinia ac at est. Donec finibus facilisis neque, sed sagittis velit laoreet at. Nullam porta id lectus eget convallis. Pellentesque sagittis erat ipsum.\r\v\t"
 					"Vivamus dignissim metus ut molestie mattis. Fusce cursus, turpis ac pulvinar pulvinar, tellus leo volutpat libero, et cursus sem magna quis nisl. Praesent vel blandit elit, non auctor mi. Mauris id lacus ac odio lacinia molestie vitae at urna. Mauris lectus leo, tincidunt vel pretium eget, sollicitudin at dui. Vestibulum eleifend velit justo, eget volutpat lacus convallis sit amet. Aenean orci libero, lobortis at mauris dapibus, consequat rutrum ipsum. Mauris vel sem magna. Integer pretium consectetur velit, ac pharetra metus. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Interdum et malesuada fames ac ante ipsum primis in faucibus.\r\v\t"
@@ -27,8 +27,7 @@ const char* help  = "EZ_GFX BITMAP FONT EDITOR v0.1\nScouarn August 2021\n"
 ;
 
 
-/* enum */
-enum {HELP, EDIT, TEST, _ntabs} active_tab = EDIT;
+static enum {HELP, EDIT, TEST, _ntabs} active_tab = EDIT;
 
 
 /* string tab names */
@@ -41,56 +40,65 @@ const char* const TAB_NAMES[] = {NAME_HELP, NAME_EDIT, NAME_TEST};
 
 /* draw routines */
 static void DRAW_HELP() {
-	EZ_fonts_printStr(canvas, help, editor_font, EZ_WHITE, EZ_BLUE, 0, 2*editor_font.h_px, x_cols, y_cols-2);
+	EZ_draw2D_printStr(canvas, help, editor_font, EZ_WHITE, EZ_BLUE, 0, 0, x_cols, y_cols-2);
 }
 
 
 static void DRAW_EDIT() {
-	
+
 	//font info
 	char info[64];
 	sprintf(info, "Height : %dpx\nWidth  : %dpx (%db)\nCurrent char : %d x%x \'%c\'", font.h_px, font.w_px, font.w_bytes, edit_char, edit_char, edit_char);
-	EZ_fonts_printStr(canvas, info, editor_font, EZ_WHITE, EZ_BLUE, (RES+1)*font.w_px, 2*editor_font.h_px, x_cols/2, 4);
+	
+	EZ_draw2D_printStr(canvas, info, editor_font, EZ_WHITE, EZ_BLUE, (RES+1)*font.w_px, 0, x_cols/2, 4);
 
 	//display field
 	for (int y = 0; y < FH; y++) for (int x = 0; x < FW; x++)    
-		EZ_fonts_printChar(canvas, x+y*FW, font, EZ_WHITE, EZ_BLUE, x*font.w_px, editor_font.h_px*2 + RES*font.h_px + y*font.h_px);   
+		EZ_draw2D_printChar(canvas, x+y*FW, font, EZ_WHITE, EZ_BLUE, x*font.w_px, RES*font.h_px + y*font.h_px);   
 
 	//edit char
 	for (int y = 0; y < font.h_px; y++)
 		for (int xByte = 0; xByte < font.w_bytes; xByte++)
 			for (int x = 0; x < 8 && x + 8*xByte < font.w_px; x++)
 				if ((font.data[edit_char][xByte + y*font.w_bytes] << x) & 0x80)
-					EZ_draw2D_fillRect(canvas, EZ_WHITE, (x + 8*xByte)*RES, editor_font.h_px*2 + y*RES, RES,  RES);
+					EZ_draw2D_fillRect(canvas, EZ_WHITE, (x + 8*xByte)*RES, y*RES, RES,  RES);
 
 	//cursors
-	EZ_draw2D_rect(canvas, EZ_WHITE, 0, editor_font.h_px*2, RES*font.w_px, RES*font.h_px);
-	EZ_draw2D_rect(canvas, EZ_RED, RES*cursor_x, editor_font.h_px*2 + RES*cursor_y, RES,  RES);
-	EZ_draw2D_rect(canvas, EZ_GREEN, char_cursor_x*font.w_px, editor_font.h_px*2 + char_cursor_y*font.h_px + RES*font.h_px, font.w_px, font.h_px);
+	EZ_draw2D_rect(canvas, EZ_WHITE, 0, 0, RES*font.w_px, RES*font.h_px);
+	EZ_draw2D_rect(canvas, EZ_RED, RES*cursor_x, RES*cursor_y, RES,  RES);
+	EZ_draw2D_rect(canvas, EZ_GREEN, char_cursor_x*font.w_px, char_cursor_y*font.h_px + RES*font.h_px, font.w_px, font.h_px);
 }
 
 static void DRAW_TEST() {
-	EZ_fonts_printStr(canvas, ipsum, font, EZ_WHITE, EZ_BLUE, 0, 2*editor_font.h_px, x_cols, y_cols-2);
+	EZ_draw2D_printStr(canvas, ipsum, font, EZ_WHITE, EZ_BLUE, 0, 0, x_cols, y_cols-2);
 }
+
+static void DRAW_ALWAYS() {
+
+	for (int i = 0; i < _ntabs; i++) 
+		EZ_draw2D_printStr(canvas, TAB_NAMES[i], editor_font, 
+			i == active_tab ? EZ_BLUE : EZ_WHITE, i == active_tab ? EZ_WHITE : EZ_BLUE, //COL
+			i*editor_font.w_px*8, 0, 8, 1); //POS
+
+}
+
 
 void (*DRAW_ROUTINES[]) () = {DRAW_HELP, DRAW_EDIT, DRAW_TEST};
 
 
-
-
 /* key handling routines */
-static void KEY_HELP(int key) {
+static void KEY_HELP(EZ_Key key) {
 
 }
 
-static void KEY_EDIT(int key) {
+static void KEY_EDIT(EZ_Key key) {
 
-	switch (key) {
+	switch (key.keyCode) {
 
 
 
 	#define SET() font.data[edit_char][cursor_y] ^= 0x80 >> cursor_x;
-	#define SETIF() if (EZ_getKey(K_SPACE).held) SET();
+	#define SETIF() if (key.held) SET();
 	
 	case K_LEFT  : cursor_x--; cursor_x %= font.w_px; SETIF(); break;
 	case K_UP    : cursor_y--; cursor_y %= font.h_px; SETIF(); break;
@@ -142,8 +150,39 @@ static void KEY_EDIT(int key) {
 	}
 }
 
-static void KEY_TEST(int key) {
+static void KEY_TEST(EZ_Key key) {
 
 }
 
-void (*KEY_ROUTINES[]) (int) = {KEY_HELP, KEY_EDIT, KEY_TEST};
+
+static void KEY_ALWAYS(EZ_Key key) {
+
+	switch (key.keyCode) {
+
+	case K_F1 ... K_F3 : active_tab = key.keyCode - K_F1; break;
+
+	case K_ESCAPE : EZ_stop(); break; //exit
+
+	case K_S : //save
+		printf("Saving %s\n", fname);
+		EZ_draw2D_saveFont(font, fname);
+		break;
+
+	case K_O : //open
+		break;
+
+	case K_N : //new
+		break;
+
+	case K_R : //reload
+		break;
+
+	case K_F12 : //screenshot
+		printf("Saving screenshot\n");
+		EZ_draw2D_saveBMP(canvas, "./screenshot.bmp");
+		break;
+
+}
+}
+
+void (*KEY_ROUTINES[]) (EZ_Key) = {KEY_HELP, KEY_EDIT, KEY_TEST};

@@ -7,19 +7,12 @@
 #include <string.h>
 
 
+void EZ_callback_init() {
 
+	font = EZ_draw2D_loadFont(fname);
+	editor_font = EZ_draw2D_loadFont("res/fonts/norm816.bmpf");
 
-void setup(void* param) {
-
-	printf("Loading font %s\n", fname);
-	font = EZ_fonts_load(fname);
-	editor_font = EZ_fonts_load("res/fonts/norm816.bmpf");
-
-	if (!font.data) {
-		printf("Couldn't load font\n");
-		exit(EXIT_FAILURE);
-	}
-
+	ASSERTM(font.data && editor_font.data, "File error, exit");
 
 	canvas = EZ_createImage(512,512);
 	EZ_window("DEMO", 512, 512, canvas);
@@ -30,14 +23,14 @@ void setup(void* param) {
 }
 
 
-void draw(void* param) {
+void EZ_callback_draw(double dt) {
 
 	EZ_draw2D_clear(canvas, EZ_BLUE);
+	EZ_draw2D_setTranslate(0, 0);
 
-	for (int i = 0; i < _ntabs; i++) EZ_fonts_printStr(canvas, TAB_NAMES[i], editor_font, 
-		i == active_tab ? EZ_BLUE : EZ_WHITE, i == active_tab ? EZ_WHITE : EZ_BLUE, 
-		i*editor_font.w_px*8, 0, 8, 1);
+	DRAW_ALWAYS();
 
+	EZ_draw2D_setTranslate(0, 2*editor_font.h_px);
 	DRAW_ROUTINES[active_tab]();
 }
 
@@ -46,71 +39,29 @@ void draw(void* param) {
 
 
 
-void key(void* param) {
+void EZ_callback_keyPressed(EZ_Key key) {
 
-	int index = *((int*)param);
-
-	switch (index) {
-
-		case K_F1 ... K_F3 : active_tab = index - K_F1;	break;
-
-		case K_ESCAPE : EZ_stop(); break; //exit
-
-		case K_S : //save
-			printf("Saving %s\n", fname);
-			EZ_fonts_save(font, fname);
-			break;
-
-		case K_O : //open
-			break;
-
-		case K_N : //new
-			break;
-
-		case K_R : //reload
-			break;
-
-		case K_F12 : //screenshot
-			printf("Saving screenshot\n");
-			EZ_draw2D_saveBMP(canvas, "./screenshot.bmp");
-			break;
-
-	}
-
-	KEY_ROUTINES[active_tab](index);
+	KEY_ALWAYS(key);
+	KEY_ROUTINES[active_tab](key);
 
 
 }
 
-void keyRelease(void* param) {}
+void EZ_callback_keyReleased(EZ_Key key) {}
 
-void mouse(void* param) {}
+void EZ_callback_mouseMoved(EZ_Mouse mouse) {}
 
-void kill(void* param) {
+void EZ_callback_kill() {
   EZ_freeImage(canvas);
-  EZ_fonts_free(font);
+  EZ_draw2D_freeFont(font);
 }
 
 
 
 int main (int argc, char **argv) {
 
-
-	if (argc == 1) {
-		printf("No file\n");
-		exit(EXIT_FAILURE);
-	}
-	else {
-		strcpy(fname, argv[1]);
-	}
-
-
-	EZ_setCallbak(ON_CREATE, &setup);
-	EZ_setCallbak(ON_DRAW,   &draw);
-	EZ_setCallbak(ON_CLOSE,  &kill);
-	EZ_setCallbak(ON_MOUSEMOVE,   &mouse);
-	EZ_setCallbak(ON_KEYPRESSED,  &key);
-	EZ_setCallbak(ON_KEYRELEASED, &keyRelease);
+	ASSERTM(argc > 1, "No file");
+	strcpy(fname, argv[1]);
 
 	EZ_start();
 	EZ_join();

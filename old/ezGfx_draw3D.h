@@ -1,3 +1,5 @@
+
+
 #include "ezGfx_core.h"
 #include "ezGfx_matrix.h"
 
@@ -17,7 +19,7 @@
 #ifndef EZ_DRAW3D
 #define EZ_DRAW3D
 
-
+/*
 typedef struct {
   EZ_mat pos[3];
   EZ_mat uv [3];
@@ -39,7 +41,7 @@ void EZ_draw3D_wireframe(EZ_Image target, EZ_poly mesh[], int nPoly, EZ_mat proj
 void EZ_draw3D_projTransform(EZ_mat matrix[], float fov, float aRatio, float zNear, float zFar);
 
 void EZ_draw3D_unitCube(EZ_poly mesh[], EZ_px col);
-
+*/
 
 
 #endif

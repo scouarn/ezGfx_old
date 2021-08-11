@@ -17,9 +17,8 @@
 #ifndef EZSFX_CORE
 #define EZSFX_CORE
 
-#include <stdbool.h>
-#include <stdint.h>
 #include <stdlib.h>
+#include <utils.h>
 
 #define CD41KHZ 44100
 #define SAMPLE_MAX 32767
@@ -35,11 +34,8 @@ EZ_sample   EZ_sfx_pcmNextSample(EZ_pcmArray* array);
 EZ_pcmArray EZ_sfx_pcmLoad(const char* filename);
 void EZ_sfx_pcmFree(EZ_pcmArray* array);
 
-void EZ_sfx_init(int sampleRate, int channels, int blockQueueLength, int blockSize,
-								 EZ_sample(*callback)(double time, int channel)
-);
-
-
+void EZ_sfx_init(int sampleRate, int channels, int blockQueueLength, int blockSize);
+extern EZ_sample EZ_sfx_callback(double time, int channel);
 
 void EZ_sfx_start();
 void EZ_sfx_stop();

@@ -3,7 +3,7 @@
 #include <math.h>
 
 
-
+/*
 void EZ_draw3D_wireframe(EZ_Image target, EZ_poly mesh[], int nPoly, EZ_mat projection[], EZ_mat transform[]) {
 
   for (int i = 0; i < nPoly; i++) {
@@ -100,3 +100,4 @@ void EZ_draw3D_unitCube(EZ_poly mesh[], EZ_px col) {
 
 
 }
+*/

@@ -19,7 +19,6 @@
 #include "utils.h"
 
 #include <stdlib.h>
-#include <stdbool.h>
 #include <stdio.h>
 
 
@@ -29,6 +28,7 @@ typedef struct {
 	bool released;
 	bool held;
 	char typed;
+	int  keyCode;
 } EZ_Key;
 
 enum EZ_KeyCodes {
@@ -53,21 +53,20 @@ typedef struct {
 	int dx;
 	int dy;
 	int wheel;
-} EZ_mouseState;
-EZ_mouseState EZ_getMouse();
+} EZ_Mouse;
+EZ_Mouse EZ_getMouse();
+
 
 /* CALLBACKS */
-enum EZ_callbacks {
-	ON_CREATE,
-	ON_DRAW,
-	ON_CLOSE,
-	ON_KEYPRESSED,
-	ON_KEYRELEASED,
-	ON_MOUSEMOVE,
+extern void EZ_callback_init();
+extern void EZ_callback_draw(double dt);
+extern void EZ_callback_kill();
+extern void EZ_callback_keyPressed(EZ_Key key);
+extern void EZ_callback_keyReleased(EZ_Key key);
+extern void EZ_callback_mouseMoved(EZ_Mouse mouse);
 
-	_numberOfCallbacks //too lazy to change the function pointer declaration each time i add a callback in the enum
-};
-void EZ_setCallbak(enum EZ_callbacks clbk, void(*function)(void*param));
+
+
 
 /* GRAPHIC FUNCITONS */
 typedef union {
@@ -80,7 +79,7 @@ typedef union {
 
 
 typedef struct {
-	unsigned int w, h;
+	int w, h;
 
 	EZ_px* px; //pixel array
 	void* reserved; //left to implementation
@@ -94,10 +93,7 @@ EZ_Image EZ_copyImage(EZ_Image);
 void  	 EZ_freeImage(EZ_Image);
 
 void  EZ_redraw();
-EZ_px EZ_colorRGB(int r, int g, int b);
-EZ_px EZ_colorRGBA(int r, int g, int b, int a);
-EZ_px EZ_colorBW(int c);
-EZ_px EZ_randCol();
+
 
 enum EZ_blendMode {ALPHA_BLEND, ALPHA_IGNORE, ALPHA_FAST};
 EZ_px EZ_blend(EZ_px fg, EZ_px bg, enum EZ_blendMode mode);
@@ -111,7 +107,10 @@ EZ_px EZ_blend(EZ_px fg, EZ_px bg, enum EZ_blendMode mode);
 #define EZ_YELLOW  (EZ_px)0xFFFF00FFU
 #define EZ_WHITE   (EZ_px)0xFFFFFFFFU
 
-
+#define EZ_RGB(r,g,b) 	 ((EZ_px){.col = {255, b, g, r}})
+#define EZ_RGBA(r,g,b,a) ((EZ_px){.col = {  a, b, g, r}})
+#define EZ_BW(c) 		 ((EZ_px){.col = {255, c, c, c}})
+EZ_px EZ_randCol();
 
 /* MAIN FUNCTIONS */
 void EZ_start();	//start the loop
@@ -128,9 +127,6 @@ void EZ_setMaximized(bool);
 void EZ_setFullscreen(bool);
 void EZ_setStretching(bool);
 
-
-/* TIME FUNCTIONS */
-typedef double duration;
-duration EZ_getTime();
+double EZ_getTime();
 
 #endif

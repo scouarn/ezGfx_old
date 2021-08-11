@@ -11,7 +11,6 @@
 static bool running;
 static pthread_t thread;
 static void* sfxThread(void* arg);
-static EZ_sample(*sample_callback)(double time, int channel);
 static snd_pcm_t *device;
 
 
@@ -64,22 +63,12 @@ void EZ_sfx_pcmFree(EZ_pcmArray* array) {
   free(array->data);
 }
 
-void EZ_sfx_init(int sampleRate, int channels, int blockQueueLength, int blockSize,
-                 EZ_sample(*callback)(double time, int channel)) {
+void EZ_sfx_init(int sampleRate, int channels, int blockQueueLength, int blockSize) {
 
     info.sampleRate = sampleRate;
     info.channels   = channels;
     info.blockSize  = blockSize;
     info.blockQueueLength = blockQueueLength;
-
-    if (callback)
-      sample_callback = callback;
-    else {
-      printf("Null callback function, fool !");
-      exit(EXIT_FAILURE);
-    }
-
-
 
 
     //init alsa  https://github.com/OneLoneCoder/olcPixelGameEngine/blob/master/Extensions/olcPGEX_Sound.h
@@ -138,7 +127,7 @@ void* sfxThread(void* arg) {
   for (uint32_t i = 0; i < info.blockSize; i+= info.channels) {
 
     for (int chan = 0; chan < info.channels; chan++)
-      block[i + chan] = sample_callback(globalTime, chan);
+      block[i + chan] = EZ_sfx_callback(globalTime, chan);
 
     globalTime += dt;
   }

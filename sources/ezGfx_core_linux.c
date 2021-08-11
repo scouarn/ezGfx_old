@@ -15,7 +15,6 @@ static struct timespec lastTime;
 static bool running;
 static pthread_t thread;
 static void* mainThread(void* arg);
-static void(*callbacks[_numberOfKeys])(void*param); //array of function pointers
 
 static GLXContext glContext;
 static GLuint texture;
@@ -35,7 +34,7 @@ static Atom wm_delete;
 
 static int keyMap(int keyCode);
 static EZ_Key keyStates[_numberOfKeys];
-static EZ_mouseState mouseState;
+static EZ_Mouse mouseState;
 
 
 void EZ_window(const char* name, int w, int h, EZ_Image cnvs) {
@@ -45,26 +44,35 @@ void EZ_window(const char* name, int w, int h, EZ_Image cnvs) {
 
 	//init X window
 	disp   = XOpenDisplay(NULL);
+	ASSERTM(disp, "Couldn't initialize X display");
+
 	screen = DefaultScreen(disp);
-	win    = XCreateSimpleWindow(disp, RootWindow(disp, screen), 10, 10, w, h, 1,
-													BlackPixel(disp, screen), BlackPixel(disp, screen));
+	win    = XCreateSimpleWindow(disp, RootWindow(disp, screen), 10, 10, w, h, 1, BlackPixel(disp, screen), BlackPixel(disp, screen));
+
 	EZ_rename(name);
 	XSelectInput(disp, win, StructureNotifyMask | KeyPressMask | KeyReleaseMask | ButtonPressMask | ButtonReleaseMask | PointerMotionMask | ExposureMask | FocusChangeMask);
 	XMapWindow(disp, win);
 
 	wm_delete = XInternAtom(disp, "WM_DELETE_WINDOW", True);
-	XSetWMProtocols(disp, win, &wm_delete, 1);
+	ASSERTM(
+		XSetWMProtocols(disp, win, &wm_delete, 1), 
+		"Couldn't set XWM protocol for handling window destruction");
 
 
 	//init opengl
 	GLint GLAttribs[] = { GLX_RGBA, GLX_DEPTH_SIZE, 24, GLX_DOUBLEBUFFER, None };
+	
 	visualInfo = glXChooseVisual(disp, 0, GLAttribs);
+	ASSERTM(visualInfo, "Couldn't find visual to initialize openGL");
+
 	glContext  = glXCreateContext(disp, visualInfo, NULL, GL_TRUE);
+	ASSERTM(glContext, "Couldn't create openGL context");
 
 	glXMakeCurrent(disp, win, glContext);
 	glViewport(0, 0, w, h);
 
 	glGenTextures(1, &texture);
+	ASSERTM(texture != GL_INVALID_VALUE, "Couldn't generate openGL texture");
 	glBindTexture(GL_TEXTURE_2D, texture);
 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -72,8 +80,6 @@ void EZ_window(const char* name, int w, int h, EZ_Image cnvs) {
 
 	glBindTexture(GL_TEXTURE_2D, texture);
 	glEnable(GL_TEXTURE_2D);
-
-
 }
 
 void EZ_start() {
@@ -89,11 +95,11 @@ void EZ_join() {
 	pthread_join(thread, NULL);
 }
 
-duration EZ_getTime() {
+double EZ_getTime() {
 	struct timespec now;
 	clock_gettime(CLOCK_MONOTONIC, &now);
 
-	duration time = (now.tv_sec - startTime.tv_sec) + (now.tv_nsec - startTime.tv_nsec) / 1000000000.0;
+	double time = (now.tv_sec - startTime.tv_sec) + (now.tv_nsec - startTime.tv_nsec) / 1000000000.0;
 
 	return time;
 }
@@ -102,12 +108,8 @@ EZ_Key EZ_getKey(enum EZ_KeyCodes code) {
 	return keyStates[code];
 }
 
-EZ_mouseState EZ_getMouse() {
+EZ_Mouse EZ_getMouse() {
 	return mouseState;
-}
-
-void EZ_setCallbak(enum EZ_callbacks clbk, void(*function)(void*param)) {
-	callbacks[clbk] = function;
 }
 
 
@@ -182,23 +184,6 @@ void EZ_freeImage(EZ_Image img) {
 	if (img.px != NULL) free(img.px);
 }
 
-EZ_px EZ_colorRGB(int r, int g, int b) {
-	EZ_px col;
-	col.col.r = r; col.col.g = g; col.col.b = b; col.col.a = 255;
-	return col;
-}
-
-EZ_px EZ_colorRGBA(int r, int g, int b, int a) {
-	EZ_px col;
-	col.col.r = r; col.col.g = g; col.col.b = b; col.col.a = a;
-	return col;
-}
-
-EZ_px EZ_colorBW(int c) {
-	EZ_px col;
-	col.col.r = c; col.col.g = c; col.col.b = c; col.col.a = 255;
-	return col;
-}
 
 EZ_px EZ_randCol() {
 	EZ_px col;
@@ -217,11 +202,12 @@ EZ_px EZ_blend(EZ_px fg, EZ_px bg, enum EZ_blendMode mode) {
 		default :
 		case ALPHA_BLEND  : 
 		
+		
 		result.col.a = fg.col.a + (255 - fg.col.a) * bg.col.a;
-		//result.col.a = bg.col.a;
 		result.col.r = (fg.col.a * fg.col.r + (255 - fg.col.a) * bg.col.r) >> 8;
 		result.col.g = (fg.col.a * fg.col.g + (255 - fg.col.a) * bg.col.g) >> 8;
 		result.col.b = (fg.col.a * fg.col.b + (255 - fg.col.a) * bg.col.b) >> 8;
+
 
 		break;
 
@@ -238,11 +224,11 @@ void EZ_redraw() {
 	//time
 	struct timespec now;
 	clock_gettime(CLOCK_MONOTONIC, &now);
-	duration elapsedTime = (now.tv_sec - lastTime.tv_sec) + (now.tv_nsec - lastTime.tv_nsec) / 1000000000.0;
+	double elapsedTime = (now.tv_sec - lastTime.tv_sec) + (now.tv_nsec - lastTime.tv_nsec) / 1000000000.0;
 	lastTime = now;
 
 	//user function
-	if (callbacks[ON_DRAW]) callbacks[ON_DRAW](&elapsedTime);
+	EZ_callback_draw(elapsedTime);
 
 
 	//display
@@ -409,155 +395,157 @@ static void updateBars() {
 
 static void* mainThread(void* arg) {
 
-	 pthread_detach(pthread_self());
+	pthread_detach(pthread_self());
 
-	 clock_gettime(CLOCK_MONOTONIC, &startTime);
-	 clock_gettime(CLOCK_MONOTONIC, &lastTime);
+	//init time
+	clock_gettime(CLOCK_MONOTONIC, &startTime);
+	clock_gettime(CLOCK_MONOTONIC, &lastTime);
 
-	 if (callbacks[ON_CREATE]) callbacks[ON_CREATE](NULL);
+	//init keys
+	for (int i = 0; i < _numberOfKeys; i++)
+		keyStates[i].keyCode = i;
 
-	 //main loop
-	 while (running) {
-
-			if (disp) {
-
-				//reset keystate stuff
-				for (int i = 0; i < _numberOfKeys; i++) {
-					keyStates[i].pressed  = false;
-					keyStates[i].released = false;
-				}
-
-				//events and inputs
-				while (XPending(disp)) {
-					XEvent e;
-					XNextEvent(disp, &e);
-
-					switch (e.type) {
-						case Expose:
-							break;
-
-						case KeyPress:
-						{
-							int index = keyMap(e.xkey.keycode);
-							EZ_Key* key = &keyStates[index];
-
-							key->pressed = true;
-							key->held    = true;
-
-							XLookupString(&e.xkey, &key->typed, 1, NULL, NULL);
-
-							if (callbacks[ON_KEYPRESSED]) callbacks[ON_KEYPRESSED](&index);
+	//client init callback
+	EZ_callback_init();
 
 
-							break;
-						}
+	//main loop
+	while (running && disp) {
 
-						case KeyRelease:
-						{
-							int index = keyMap(e.xkey.keycode);
-							EZ_Key* key = &keyStates[index];
+		//reset keystate stuff
+		for (int i = 0; i < _numberOfKeys; i++) {
+			keyStates[i].pressed  = false;
+			keyStates[i].released = false;
+		}
 
-							key->released = true;
-							key->held = false;
-							XLookupString(&e.xkey, &key->typed, 1, NULL, NULL);
+		//events and inputs
+		while (XPending(disp)) {
+			XEvent e;
+			XNextEvent(disp, &e);
 
-							if (callbacks[ON_KEYRELEASED]) callbacks[ON_KEYRELEASED](&index);
-							break;
-						}
-
-						case FocusIn :
-						{
-							XAutoRepeatOff(disp); //turn off autistic keyboard inputs
-							break;
-						}
-
-						case FocusOut:
-						{
-							XAutoRepeatOn(disp); //put it back on so other apps are not affected
-							break;
-						}
-
-						case ButtonPress:
-							{
-							int sym = e.xbutton.button;
-							int index = 0;
-							switch (sym)
-								{
-								case 1:	keyStates[K_LMB].pressed = true; keyStates[K_LMB].held = true; index = 1; break;
-								case 2:	keyStates[K_MMB].pressed = true; keyStates[K_MMB].held = true; index = 3; break;
-								case 3:	keyStates[K_RMB].pressed = true; keyStates[K_RMB].held = true; index = 2; break;
-								case 4:	mouseState.wheel = 1; break;
-								case 5:	mouseState.wheel =-1; break;
-								default: break;
-								}
-							if (callbacks[ON_KEYPRESSED]) callbacks[ON_KEYPRESSED](&index);
-							break;
-							}
-
-						case ButtonRelease:
-							{
-							int sym = e.xbutton.button;
-							int index = 0;
-							switch (sym)
-								{
-								case 1:	keyStates[K_LMB].released = true; keyStates[K_LMB].held = false; index = 1; break;
-								case 2:	keyStates[K_MMB].released = true; keyStates[K_MMB].held = false; index = 3; break;
-								case 3:	keyStates[K_RMB].released = true; keyStates[K_RMB].held = false; index = 2; break;
-								default: break;
-								}
-							if (callbacks[ON_KEYRELEASED]) callbacks[ON_KEYRELEASED](&index);
-							break;
-							}
-
-						case MotionNotify:
-						{
-
-							int newx = (e.xmotion.x + 0.5f*(canvasX - 1.0f) * winWidth ) * canvas.w / ((float)winWidth  * canvasX);
-							int newy = (e.xmotion.y + 0.5f*(canvasY - 1.0f) * winHeight) * canvas.h / ((float)winHeight * canvasY);
-
-							mouseState.dx = newx - mouseState.x;
-							mouseState.dy = newy - mouseState.y;
-							mouseState.x  = newx;
-							mouseState.y  = newy;
-
-							if (callbacks[ON_MOUSEMOVE]) callbacks[ON_MOUSEMOVE](NULL);
-
-							break;
-						}
-
-						case ConfigureNotify: //resize
-						{
-							XConfigureEvent req = e.xconfigure;
-							winWidth = req.width; winHeight = req.height;
-							glViewport(0, 0, req.width, req.height);
-							updateBars();
-
-							break;
-						}
-
-						case ClientMessage: //on destroy
-						{
-							if ((Atom)e.xclient.data.l[0] == wm_delete)
-								EZ_stop();
-
-							break;
-						}
+			switch (e.type) {
 
 
-					}
-				}
 
-				//display
-				EZ_redraw();
+			case KeyPress:
+			{
+				int index = keyMap(e.xkey.keycode);
+				EZ_Key* key = &keyStates[index];
 
+				key->pressed = true;
+				key->held    = true;
+
+				XLookupString(&e.xkey, &key->typed, 1, NULL, NULL);
+
+				EZ_callback_keyPressed(*key);
+
+
+				break;
 			}
 
+			case KeyRelease:
+			{
+				int index = keyMap(e.xkey.keycode);
+				EZ_Key* key = &keyStates[index];
+
+				key->released = true;
+				key->held = false;
+				XLookupString(&e.xkey, &key->typed, 1, NULL, NULL);
+
+				EZ_callback_keyReleased(*key);
+				break;
+			}
+
+			case FocusIn :
+			{
+				XAutoRepeatOff(disp); //turn off autistic keyboard inputs
+				break;
+			}
+
+			case FocusOut:
+			{
+				XAutoRepeatOn(disp); //put it back on so other apps are not affected
+				break;
+			}
+
+			case ButtonPress:
+				{
+				int sym = e.xbutton.button;
+				int index = 0;
+				switch (sym)
+					{
+					case 1:	keyStates[K_LMB].pressed = true; keyStates[K_LMB].held = true; index = K_LMB; break;
+					case 2:	keyStates[K_MMB].pressed = true; keyStates[K_MMB].held = true; index = K_MMB; break;
+					case 3:	keyStates[K_RMB].pressed = true; keyStates[K_RMB].held = true; index = K_RMB; break;
+					case 4:	mouseState.wheel = 1; break;
+					case 5:	mouseState.wheel =-1; break;
+					default: break;
+					}
+				EZ_callback_keyPressed(keyStates[index]);
+				break;
+				}
+
+			case ButtonRelease:
+				{
+				int sym = e.xbutton.button;
+				int index = 0;
+				switch (sym)
+					{
+					case 1:	keyStates[K_LMB].released = true; keyStates[K_LMB].held = false; index = K_LMB; break;
+					case 2:	keyStates[K_MMB].released = true; keyStates[K_MMB].held = false; index = K_MMB; break;
+					case 3:	keyStates[K_RMB].released = true; keyStates[K_RMB].held = false; index = K_RMB; break;
+					default: break;
+					}
+				EZ_callback_keyReleased(keyStates[index]);
+				break;
+				}
+
+			case MotionNotify:
+			{
+
+				int newx = (e.xmotion.x + 0.5f*(canvasX - 1.0f) * winWidth ) * canvas.w / ((float)winWidth  * canvasX);
+				int newy = (e.xmotion.y + 0.5f*(canvasY - 1.0f) * winHeight) * canvas.h / ((float)winHeight * canvasY);
+
+				mouseState.dx = newx - mouseState.x;
+				mouseState.dy = newy - mouseState.y;
+				mouseState.x  = newx;
+				mouseState.y  = newy;
+
+				EZ_callback_mouseMoved(mouseState);
+
+				break;
+			}
+
+			case ConfigureNotify: //resize
+			{
+				XConfigureEvent req = e.xconfigure;
+				winWidth = req.width; winHeight = req.height;
+				glViewport(0, 0, req.width, req.height);
+				updateBars();
+
+				break;
+			}
+
+			case ClientMessage: //on destroy
+			{
+				if ((Atom)e.xclient.data.l[0] == wm_delete)
+					EZ_stop();
+
+				break;
+			}
+
+
+			}
+		}
+
+		//display
+		EZ_redraw();
 
 
 	 }
 
 
-	if (callbacks[ON_CLOSE]) callbacks[ON_CLOSE](NULL);
+	EZ_callback_kill();
 	
 	if (disp) {
 		//free everything
@@ -566,6 +554,9 @@ static void* mainThread(void* arg) {
 		XAutoRepeatOn(disp); //put it back on so other apps are not affected
 		XCloseDisplay(disp);
 	}
+
+	XFree(visualInfo);
+
 	
 	pthread_exit(NULL);
 

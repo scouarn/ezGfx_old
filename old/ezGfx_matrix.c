@@ -1,6 +1,6 @@
 #include "ezGfx_matrix.h"
 
-
+/*
 
 void EZ_mat_add(EZ_mat C[], EZ_mat A[], EZ_mat B[], int rows, int cols) {
 
@@ -95,3 +95,4 @@ void EZ_mat_print(EZ_mat *A, int rows, int cols) {
 
 
 }
+*/

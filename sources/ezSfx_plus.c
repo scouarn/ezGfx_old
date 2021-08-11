@@ -13,7 +13,7 @@ typedef struct node {
 static EZ_sfx_listNode* listHead = NULL;
 
 
-EZ_sample EZ_sfx_play(EZ_sfx_note note) {
+void EZ_sfx_play(EZ_sfx_note note) {
 
 	EZ_sfx_listNode* new = (EZ_sfx_listNode*) malloc(sizeof(EZ_sfx_listNode));
 
@@ -28,7 +28,7 @@ EZ_sample EZ_sfx_play(EZ_sfx_note note) {
 
 
 
-EZ_sample EZ_sfx_plusCallback(double time, int channel) {
+EZ_sample EZ_sfx_callback(double time, int channel) {
 
 	globalTime = time;
 

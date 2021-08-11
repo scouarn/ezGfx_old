@@ -7,29 +7,48 @@ DIR_INC = include
 DIR_REL = release
 DIR_BAK = bak
 
-RELEASE = TODO Makefile README.md $(DIR_SRC) $(DIR_BIN) $(DIR_TGT) $(DIR_INC) 
-BACKUP  = $(RELEASE)
+RELEASE = TODO Makefile README.md res $(DIR_SRC) $(DIR_BIN) $(DIR_TGT) $(DIR_INC) 
+BACKUP  = $(RELEASE) $(DIR_REL) .git .gitignore 
+
 
 #the compiler and some flags
-CC = gcc -I$(DIR_INC) #-Wall -O2
+CC = gcc -I$(DIR_INC) -Wall -O2
 LIBS  = -lX11 -lGL -lpthread -lasound -lm #linux
 
 
-
+#files handled at some point
 MAINSRC := $(wildcard $(DIR_TGT)/*.c)
-MAINOBJ := $(patsubst $(DIR_TGT)/%.c, $(DIR_BIN)/%.main, $(MAINSRC))
-TARGETS := $(patsubst $(DIR_TGT)/%.c, $(DIR_BIN)/%,  $(MAINSRC))
+SOURCES := $(wildcard $(DIR_SRC)/*.c) 
+HEADERS := $(wildcard $(DIR_INC)/*.h)
 
-SOURCES := $(wildcard $(DIR_SRC)/*.c)
 OBJECTS := $(patsubst $(DIR_SRC)/%.c, $(DIR_BIN)/%.o, $(SOURCES))
+MAINOBJ := $(patsubst $(DIR_TGT)/%.c, $(DIR_BIN)/%.o, $(MAINSRC))
+TARGETS := $(patsubst $(DIR_TGT)/%.c, $(DIR_BIN)/%,   $(MAINSRC))
+
+COMPILE_ALL = $(OBJECTS) $(MAINOBJ) $(TARGETS)
+
+all : $(COMPILE_ALL)
+
+#compile objects to executable
+$(DIR_BIN)/% : $(DIR_TGT)/%.c
+	$(CC) -o $@ $< $(OBJECTS) $(LIBS)
+
+# Compile sources to objects
+$(DIR_BIN)/%.o : $(DIR_SRC)/%.c
+	$(CC) -c $< -o $@
 
 
+$(DIR_BIN)/%.o : $(DIR_TGT)/%.c
+	$(CC) -c $< -o $@ 
 
-all: $(OBJECTS) $(TARGETS)
+#recompile if header has changed
+# $(SOURCES) : $(HEADERS)
+# $(MAINSRC) : $(HEADERS)
 
 
 #copy useful stuff in release dir
-build: $(OBJECTS) $(TARGETS)
+.PHONY: build
+build: $(COMPILE_ALL)
 	rm -rf $(DIR_REL)
 	mkdir -p $(DIR_REL)
 
@@ -40,26 +59,23 @@ build: $(OBJECTS) $(TARGETS)
 
 	tar -czf master.tar.gz release/*
 
-
-
-bak:
+#make backup
+.PHONY: back
+back:
 	mkdir -p $(DIR_BAK)
-	cp -r $(BACKUP) $(DIR_BAK)/
+	tar -czf $(DIR_BAK)/backup_$(shell date +'%Y_%d%m_%H%M').tar.gz $(BACKUP)
 
 
-#remove temp files
+#remove compiled/built
+.PHONY: hardclean
+hardclean:
+	rm -f $(DIR_BIN)/*
+	rm -rf $(DIR_REL)/*
+	rm -f master.tar.gz
+
+
+#remove obj files
+.PHONY: clean
 clean:
-	rm -f bin/*
+	rm -f $(DIR_BIN)/*
 
-
-#link objects to make executables
-$(TARGETS) : $(DIR_BIN)/% : $(DIR_BIN)/%.main
-	$(CC) -o $@ $< $(OBJECTS) $(LIBS)
-
-#compile main files to object files
-$(MAINOBJ) : $(DIR_BIN)/%.main : $(DIR_TGT)/%.c
-	$(CC) -c -o $@ $<
-
-# Compile sources to object files
-$(OBJECTS) : $(DIR_BIN)/%.o : $(DIR_SRC)/%.c
-	$(CC) -c -o $@ $< 
