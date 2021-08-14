@@ -1,18 +1,22 @@
+
+#define SFX_CLIENT_CALLBACK //assume the client has defined EZ_sfx_callback()
 #include "ezSfx_core.h"
 
 #include <pthread.h>
 #include <string.h>
 #include <unistd.h>
+#include <math.h>
 
 #include <alsa/asoundlib.h>
 
 
-//Globals
-static bool running;
+static volatile bool running;
 static pthread_t thread;
 static void* sfxThread(void* arg);
 static snd_pcm_t *device;
 
+static double globalTime;
+static EZ_Sample note_mixer(double time, int channel); 
 
 static struct {
   int sampleRate;
@@ -22,18 +26,18 @@ static struct {
 } info;
 
 
-EZ_sample EZ_sfx_pcmNextSample(EZ_pcmArray* array) {
+EZ_Sample EZ_sfx_pcmNextSample(EZ_pcmArray array) {
 
-  if (array->data == NULL) return 0;
+  if (array.data == NULL) return 0;
 
-	EZ_sample sample = array->data[array->curr];
+	EZ_Sample sample = *array.curr;
 
-  if (array->curr < array->size)
-    array->curr ++;
+  if (array.curr - array.data < array.size) array.curr++;
 
 	return sample;
 
 }
+
 
 EZ_pcmArray EZ_sfx_pcmLoad(const char* fname) {
 
@@ -49,19 +53,20 @@ EZ_pcmArray EZ_sfx_pcmLoad(const char* fname) {
   EZ_pcmArray chunk = {0};
   chunk.curr = 0;
   chunk.data = malloc(fileSize);
-  chunk.size = fileSize / sizeof(EZ_sample);
+  chunk.size = fileSize / sizeof(EZ_Sample);
 
   //read samples
   if (chunk.size != 0 && chunk.data != NULL)
-    fread(chunk.data, sizeof(EZ_sample), chunk.size, file);
+    fread(chunk.data, sizeof(EZ_Sample), chunk.size, file);
 
   fclose(file);
   return chunk;
 }
 
-void EZ_sfx_pcmFree(EZ_pcmArray* array) {
-  free(array->data);
+void EZ_sfx_pcmFree(EZ_pcmArray array) {
+  free(array.data);
 }
+
 
 void EZ_sfx_init(int sampleRate, int channels, int blockQueueLength, int blockSize) {
 
@@ -109,15 +114,15 @@ void EZ_sfx_join()  {
 
 
 void* sfxThread(void* arg) {
-  //   //!!\\ sample vs "frame" trickery
+  //!!\\ sample vs "frame" trickery
 
   pthread_detach(pthread_self());
 
-  double globalTime = 0.0;
+  globalTime = 0.0;
   double dt = 1.0 / info.sampleRate;
 
   //init block
-  EZ_sample block[info.blockSize];
+  EZ_Sample block[info.blockSize];
   snd_pcm_start(device);
 
   //main loop
@@ -127,7 +132,7 @@ void* sfxThread(void* arg) {
   for (uint32_t i = 0; i < info.blockSize; i+= info.channels) {
 
     for (int chan = 0; chan < info.channels; chan++)
-      block[i + chan] = EZ_sfx_callback(globalTime, chan);
+      block[i + chan] = note_mixer(globalTime, chan) + EZ_sfx_callback(globalTime, chan);
 
     globalTime += dt;
   }
@@ -135,7 +140,7 @@ void* sfxThread(void* arg) {
 
    //render the block
    snd_pcm_uframes_t frames = info.blockSize / info.channels;
-   EZ_sample *current = block;
+   EZ_Sample *current = block;
 
    while (frames > 0) {
 
@@ -160,4 +165,79 @@ void* sfxThread(void* arg) {
   pthread_exit(NULL);
   return NULL;
 
+}
+
+
+
+
+double EZ_sfx_sine(double time, double freq) {
+  return sin(time*freq*PI*2.0);
+
+}
+
+
+double EZ_sfx_fastSine(double time, double freq) {
+
+  double j = time*freq;                        // = time * 2 pi * f   / (2*pi)
+  j -= (int)j;                                 //garder la partie décimale pour avoir la périodicité
+  return 20.785 * j * (j - 0.5) * (j - 1.0f);  //approx de sin par x(x-pi)(x-2pi) en gros...
+
+}
+
+
+typedef LIST_OF(EZ_Note) node_t;
+static node_t* note_list_head = NULL;
+
+
+void EZ_sfx_play(EZ_Note* note) {
+
+  node_t* new = (node_t*) malloc(sizeof(node_t));
+
+  new->hd = *note;
+  new->hd.startTime = globalTime;
+  new->hd.endTime   = globalTime + note->length;
+  
+  new->tl = note_list_head; note_list_head = new;
+
+}
+
+
+static EZ_Sample note_mixer(double time, int channel) {
+
+  double sf = 0;
+  int length = 0;
+
+  node_t* current = note_list_head;
+  node_t* last = NULL;
+
+
+  while (current != NULL) {
+
+    sf += current->hd.oscillator(time, current->hd.pitch) * 0.25;
+    length ++;
+
+
+    //REMOVE ELEMENT FROM LIST
+    if (time >= current->hd.endTime) {
+
+      if (last == NULL) //IF CURRENT IS THE HEAD THEN CHANGE THE HEAD
+        note_list_head = current->tl;
+
+      else //OTHERWISE, CHANGE THE PREVIOUS LINK
+        last->tl  = current->tl;
+  
+
+      free(current);
+
+    }
+    else {
+      last = current;
+    }
+
+    current = current->tl;
+  }
+
+
+
+  return (EZ_Sample)(sf*SAMPLE_MAX);
 }

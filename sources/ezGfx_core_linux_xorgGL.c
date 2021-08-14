@@ -12,7 +12,7 @@
 
 static struct timespec startTime;
 static struct timespec lastTime;
-static bool running;
+static volatile bool running;
 static pthread_t thread;
 static void* mainThread(void* arg);
 
@@ -32,14 +32,14 @@ static int screen;
 static Window win;
 static Atom wm_delete;
 
-static int keyMap(int keyCode);
+static enum EZ_KeyCode keyMap(int keyCode);
 static EZ_Key keyStates[_numberOfKeys];
 static EZ_Mouse mouseState;
 
 
-void EZ_window(const char* name, int w, int h, EZ_Image cnvs) {
+void EZ_window(EZ_Image cnvs, int w, int h) {
 
-	winWidth  = w; winHeight  = h;
+	winWidth = w; winHeight = h;
 	canvas = cnvs;
 
 	//init X window
@@ -49,14 +49,13 @@ void EZ_window(const char* name, int w, int h, EZ_Image cnvs) {
 	screen = DefaultScreen(disp);
 	win    = XCreateSimpleWindow(disp, RootWindow(disp, screen), 10, 10, w, h, 1, BlackPixel(disp, screen), BlackPixel(disp, screen));
 
-	EZ_rename(name);
+	XStoreName(disp, win, "EZGFX");
 	XSelectInput(disp, win, StructureNotifyMask | KeyPressMask | KeyReleaseMask | ButtonPressMask | ButtonReleaseMask | PointerMotionMask | ExposureMask | FocusChangeMask);
 	XMapWindow(disp, win);
 
 	wm_delete = XInternAtom(disp, "WM_DELETE_WINDOW", True);
-	ASSERTM(
-		XSetWMProtocols(disp, win, &wm_delete, 1), 
-		"Couldn't set XWM protocol for handling window destruction");
+	ASSERTM(XSetWMProtocols(disp, win, &wm_delete, 1), 
+			"Couldn't set XWM protocol for handling window destruction");
 
 
 	//init opengl
@@ -80,6 +79,8 @@ void EZ_window(const char* name, int w, int h, EZ_Image cnvs) {
 
 	glBindTexture(GL_TEXTURE_2D, texture);
 	glEnable(GL_TEXTURE_2D);
+
+
 }
 
 void EZ_start() {
@@ -104,7 +105,7 @@ double EZ_getTime() {
 	return time;
 }
 
-EZ_Key EZ_getKey(enum EZ_KeyCodes code) {
+EZ_Key EZ_getKey(enum EZ_KeyCode code) {
 	return keyStates[code];
 }
 
@@ -163,10 +164,11 @@ EZ_Image EZ_createImage(int w, int h) {
 	EZ_Image img = {0};
 	img.w = w;
 	img.h = h;
-	img.px = calloc(w*h, sizeof(EZ_px));
+	img.px = calloc(w*h, sizeof(EZ_Px));
 
 	return img;
 }
+
 
 EZ_Image EZ_copyImage(EZ_Image source) {
 
@@ -174,8 +176,8 @@ EZ_Image EZ_copyImage(EZ_Image source) {
 	img.w = source.w;
 	img.h = source.h;
 
-	img.px = malloc(img.w*img.h*sizeof(EZ_px));
-	memcpy(img.px, source.px, img.w*img.h*sizeof(EZ_px));
+	img.px = malloc(img.w*img.h*sizeof(EZ_Px));
+	memcpy(img.px, source.px, img.w*img.h*sizeof(EZ_Px));
 
 	return img;
 }
@@ -185,15 +187,16 @@ void EZ_freeImage(EZ_Image img) {
 }
 
 
-EZ_px EZ_randCol() {
-	EZ_px col;
-	col.ref = (long)rand() << 8;
+EZ_Px EZ_randCol() {
+	EZ_Px col;
+	col.ref = (u64)rand() << 8;
 	return col;
 }
 
-EZ_px EZ_blend(EZ_px fg, EZ_px bg, enum EZ_blendMode mode) {
+EZ_Px EZ_blend(EZ_Px fg, EZ_Px bg, enum EZ_BlendMode mode) {
+
 	//https://love2d.org/wiki/BlendMode_Formulas
-	EZ_px result;
+	EZ_Px result;
 
 	switch (mode) {
 		case ALPHA_IGNORE : result = fg; break;
@@ -210,7 +213,6 @@ EZ_px EZ_blend(EZ_px fg, EZ_px bg, enum EZ_blendMode mode) {
 
 
 		break;
-
 
 	}
 
@@ -256,58 +258,8 @@ void EZ_redraw() {
 
 /* PRIVATE */
 
-/*
-DOESNT WORK WITH KEYMAPS
-static int keyMap(int keyCode) {
-	//https://cgit.freedesktop.org/xorg/proto/x11proto/tree/keysymdef.h
 
-	switch (keyCode) {
-		case XK_space :       return K_SPACE;   case XK_BackSpace :   return K_BACKSPACE;
-		case XK_Escape :      return K_ESCAPE;  case XK_Tab :         return K_TAB;
-		case XK_Linefeed :    return K_RETURN;  case XK_Return :      return K_RETURN;
-		case XK_Shift_L :     return K_LSHIFT;  case XK_Shift_R :     return K_RSHIFT;
-		case XK_Control_L :   return K_LCTRL;   case XK_Control_R :   return K_RCTRL;
-		case XK_Alt_L :       return K_LALT;    case XK_Alt_R :       return K_RALT;
-		case XK_Caps_Lock :   return K_CAPS;    case XK_Num_Lock :    return K_NUMLOCK;
-		case XK_Scroll_Lock : return K_SCROLL;  case XK_Pause :       return K_PAUSE;
-		case XK_Insert :      return K_INS;     case XK_Delete :      return K_DEL;
-		case XK_Home :        return K_HOME;    case XK_End :         return K_END;
-		case XK_Page_Up :     return K_PGUP;    case XK_Page_Down :   return K_PGDN;
-		case XK_Left :        return K_LEFT;    case XK_Up :          return K_UP;
-		case XK_Right :       return K_RIGHT;   case XK_Down :        return K_DOWN;
-		case XK_KP_Enter :    return K_RETURN;  case XK_period :      return K_PERIOD;
-		case XK_KP_Multiply : return KP_MUL;    case XK_KP_Divide :   return KP_DIV;
-		case XK_KP_Add :      return K_PLUS;    case XK_KP_Subtract : return K_MINUS;
-		case XK_semicolon :   return K_COLON;   case XK_comma:        return K_COMMA;
-		case XK_apostrophe :  return K_QUOTE;   case XK_grave :       return K_TILDE;
-		case XK_slash :       return K_SLASH;   case XK_backslash:    return K_BACKSLASH;
-		case XK_bracketleft : return K_OPEN;    case XK_bracketright: return K_CLOSE;
-		case XK_equal :       return K_PLUS;    case XK_minus:        return K_MINUS;
-
-
-		case XK_KP_Insert :   return KP_0;
-		case XK_KP_End :      return KP_1;
-		case XK_KP_Down :     return KP_2;
-		case XK_KP_Next :     return KP_3;
-		case XK_KP_Left :     return KP_4;
-		case XK_KP_Begin :    return KP_5;
-		case XK_KP_Right :    return KP_6;
-		case XK_KP_Home :     return KP_7;
-		case XK_KP_Up :       return KP_8;
-		case XK_KP_Prior :    return KP_9;
-		case XK_KP_Delete :   return KP_DEC;
-
-		default :
-			if      (keyCode >= XK_a && keyCode <= XK_z)       { return keyCode - XK_a  + K_A; }
-			else if (keyCode >= XK_0 && keyCode <= XK_9)       { return keyCode - XK_0  + K_0; }  //Not working right
-			else if (keyCode >= XK_F1 && keyCode <= XK_F12)    { return keyCode - XK_F1 + K_F1; }
-			else return K_ERROR;
-	}
-
-}
-*/
-
-static int keyMap(int keyCode) {
+static enum EZ_KeyCode keyMap(int keyCode) {
 	//https://cgit.freedesktop.org/xorg/proto/x11proto/tree/keysymdef.h
 
 	switch (keyCode) {
@@ -365,6 +317,8 @@ static int keyMap(int keyCode) {
 	}
 }
 
+
+
 static void updateBars() {
 
 	//black bars
@@ -380,12 +334,11 @@ static void updateBars() {
 		canvasX = canvasRatio / windowRatio;
 		canvasY = windowRatio / canvasRatio;
 
-		if (canvasX > 1.0f) {
+		if (canvasX > 1.0f)
 			canvasX = 1.0f;
-		}
-		else {
+
+		else
 			canvasY = 1.0f;
-		}
 
 
 	}
@@ -429,76 +382,72 @@ static void* mainThread(void* arg) {
 
 			case KeyPress:
 			{
-				int index = keyMap(e.xkey.keycode);
-				EZ_Key* key = &keyStates[index];
+			int index = keyMap(e.xkey.keycode);
+			EZ_Key* key = &keyStates[index];
 
-				key->pressed = true;
-				key->held    = true;
+			key->pressed = true;
+			key->held    = true;
 
-				XLookupString(&e.xkey, &key->typed, 1, NULL, NULL);
+			XLookupString(&e.xkey, &key->typed, 1, NULL, NULL);
 
-				EZ_callback_keyPressed(*key);
+			EZ_callback_keyPressed(*key);
 
-
-				break;
+			break;
 			}
+
 
 			case KeyRelease:
 			{
-				int index = keyMap(e.xkey.keycode);
-				EZ_Key* key = &keyStates[index];
+			enum EZ_KeyCode index = keyMap(e.xkey.keycode);
+			EZ_Key* key = &keyStates[index];
 
-				key->released = true;
-				key->held = false;
-				XLookupString(&e.xkey, &key->typed, 1, NULL, NULL);
+			key->released = true;
+			key->held = false;
+			XLookupString(&e.xkey, &key->typed, 1, NULL, NULL);
 
-				EZ_callback_keyReleased(*key);
-				break;
+			EZ_callback_keyReleased(*key);
+			break;
 			}
 
 			case FocusIn :
-			{
 				XAutoRepeatOff(disp); //turn off autistic keyboard inputs
 				break;
-			}
 
 			case FocusOut:
-			{
 				XAutoRepeatOn(disp); //put it back on so other apps are not affected
 				break;
-			}
 
 			case ButtonPress:
+			{
+			int sym = e.xbutton.button;
+			enum EZ_KeyCode index = 0;
+			switch (sym)
 				{
-				int sym = e.xbutton.button;
-				int index = 0;
-				switch (sym)
-					{
-					case 1:	keyStates[K_LMB].pressed = true; keyStates[K_LMB].held = true; index = K_LMB; break;
-					case 2:	keyStates[K_MMB].pressed = true; keyStates[K_MMB].held = true; index = K_MMB; break;
-					case 3:	keyStates[K_RMB].pressed = true; keyStates[K_RMB].held = true; index = K_RMB; break;
-					case 4:	mouseState.wheel = 1; break;
-					case 5:	mouseState.wheel =-1; break;
-					default: break;
-					}
-				EZ_callback_keyPressed(keyStates[index]);
-				break;
+				case 1:	keyStates[K_LMB].pressed = true; keyStates[K_LMB].held = true; index = K_LMB; break;
+				case 2:	keyStates[K_MMB].pressed = true; keyStates[K_MMB].held = true; index = K_MMB; break;
+				case 3:	keyStates[K_RMB].pressed = true; keyStates[K_RMB].held = true; index = K_RMB; break;
+				case 4:	mouseState.wheel = 1; break;
+				case 5:	mouseState.wheel =-1; break;
+				default: break;
 				}
+			EZ_callback_keyPressed(keyStates[index]);
+			break;
+			}
 
 			case ButtonRelease:
+			{
+			int sym = e.xbutton.button;
+			enum EZ_KeyCode index = 0;
+			switch (sym)
 				{
-				int sym = e.xbutton.button;
-				int index = 0;
-				switch (sym)
-					{
-					case 1:	keyStates[K_LMB].released = true; keyStates[K_LMB].held = false; index = K_LMB; break;
-					case 2:	keyStates[K_MMB].released = true; keyStates[K_MMB].held = false; index = K_MMB; break;
-					case 3:	keyStates[K_RMB].released = true; keyStates[K_RMB].held = false; index = K_RMB; break;
-					default: break;
-					}
-				EZ_callback_keyReleased(keyStates[index]);
-				break;
+				case 1:	keyStates[K_LMB].released = true; keyStates[K_LMB].held = false; index = K_LMB; break;
+				case 2:	keyStates[K_MMB].released = true; keyStates[K_MMB].held = false; index = K_MMB; break;
+				case 3:	keyStates[K_RMB].released = true; keyStates[K_RMB].held = false; index = K_RMB; break;
+				default: break;
 				}
+			EZ_callback_keyReleased(keyStates[index]);
+			break;
+			}
 
 			case MotionNotify:
 			{
@@ -528,9 +477,7 @@ static void* mainThread(void* arg) {
 
 			case ClientMessage: //on destroy
 			{
-				if ((Atom)e.xclient.data.l[0] == wm_delete)
-					EZ_stop();
-
+				if ((Atom)e.xclient.data.l[0] == wm_delete)	EZ_stop();
 				break;
 			}
 

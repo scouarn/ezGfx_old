@@ -13,10 +13,15 @@ typedef uint32_t u32;
 typedef int64_t  i64;
 typedef uint64_t u64;
 
+
+
+#define LIST_OF(T) struct __list_of_##T {T hd; struct __list_of_##T *tl;}
+
+
 #define PI 3.1415926535
-#define HALF_PI (0.5 * PI)
+#define HALF_PI (PI * 0.5)
 #define TWO_PI  (2.0 * PI)
-#define QUARTER_PI  (0.75 * PI)
+#define QUARTER_PI  (0.25 * PI)
 
 
 #define MAX(a,b) \
@@ -29,8 +34,11 @@ typedef uint64_t u64;
 		 __typeof__ (b) _b = (b); \
 		 _a < _b ? _a : _b; })
 
-#define CLAMP(x, a, b) MAX(a, MIN(b, x));
 
+#define CLAMP(x, a, b) MAX((a), MIN((b), (x)));
+#define SWAP(a, b) ({const __typeof__(a) t = (a); (a) = (b); (b) = t;})
+#define LERP(x, a, b) ((x)*(a) + (1.0 - (x))*(b))
+#define ABS(x) (((x) < 0) ? -(x) : (x))
 
 
 #define ERROR(m, ...) {printf("[%s] [FATAL ERROR] " m " (in %s::%d)\n", __TIME__, ##__VA_ARGS__, __FILE__, __LINE__); exit(1);}

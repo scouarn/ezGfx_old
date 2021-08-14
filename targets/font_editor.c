@@ -1,21 +1,15 @@
-#include "ezGfx.h"
 #include "font_editor.h"
-
-#include <stdlib.h>
-#include <stdio.h>
-#include <math.h>
-#include <string.h>
 
 
 void EZ_callback_init() {
 
 	font = EZ_draw2D_loadFont(fname);
-	editor_font = EZ_draw2D_loadFont("res/fonts/norm816.bmpf");
+	editor_font = EZ_draw2D_loadFont("assets/fonts/norm816.bmpf");
 
 	ASSERTM(font.data && editor_font.data, "File error, exit");
 
 	canvas = EZ_createImage(512,512);
-	EZ_window("DEMO", 512, 512, canvas);
+	EZ_window(canvas, 512, 512);
 
 	x_cols = canvas.w / font.w_px;
 	y_cols = canvas.h / font.h_px;

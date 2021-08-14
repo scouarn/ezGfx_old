@@ -7,12 +7,12 @@ DIR_INC = include
 DIR_REL = release
 DIR_BAK = bak
 
-RELEASE = TODO Makefile README.md res $(DIR_SRC) $(DIR_BIN) $(DIR_TGT) $(DIR_INC) 
+RELEASE = TODO Makefile README.md assets $(DIR_SRC) $(DIR_BIN) $(DIR_TGT) $(DIR_INC) 
 BACKUP  = $(RELEASE) $(DIR_REL) .git .gitignore 
 
 
 #the compiler and some flags
-CC = gcc -I$(DIR_INC) -Wall -O2
+CC = gcc -I$(DIR_INC) -Wall -O3
 LIBS  = -lX11 -lGL -lpthread -lasound -lm #linux
 
 

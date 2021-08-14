@@ -1,25 +1,10 @@
 #include "ezGfx_draw2D.h"
 
 
-/*
-TODO :
 
-"any line" clipping -> kinda easy
-triangle clipping  -> see olc
+static enum EZ_BlendMode alphaBlending = ALPHA_BLEND;
 
-textriangle -> research
-
-transformed image -> redo the matrix thing
-
-sampling on stuff...
-
-*/
-
-
-static enum EZ_blendMode alphaBlending = ALPHA_BLEND;
-static enum interMode interpolation = INTER_NEAREST;
-
-static void _blend(EZ_px*, EZ_px);
+static void _blend(EZ_Px*, EZ_Px);
 
 static int TX, TY;
 
@@ -86,7 +71,7 @@ EZ_Image EZ_draw2D_loadBMP(const char* fname) {
 	
 	//read pixels
 
-	bitmap.px = calloc(bitmap.w*bitmap.h, sizeof(EZ_px));
+	bitmap.px = calloc(bitmap.w*bitmap.h, sizeof(EZ_Px));
 
 	if (bitmap.px == NULL) {
 		WARNING("Couldn't allocate memory for image %s\n", fname);
@@ -105,7 +90,7 @@ EZ_Image EZ_draw2D_loadBMP(const char* fname) {
 
 		for (int x = 0; x < bitmap.w; x++) {
 
-			EZ_px* px = &bitmap.px[x+y*bitmap.w];
+			EZ_Px* px = &bitmap.px[x+y*bitmap.w];
 
 			//test each color byte against each byte of each bitmask
 			for (int c = 0; c < bytes_ppx; c++) {
@@ -184,7 +169,7 @@ void EZ_draw2D_saveBMP(EZ_Image img, const char* fname) {
 	fwrite(&b_mask,   4, 1, file); //colormask
 	fwrite(&a_mask,   4, 1, file); //colormask
 
-	fputs("BGRs", file); //color space type
+	fputs("BGRs", file); //color space ype
 
 	for (int i = 0; i < 36; i++) //color space endpoints
 		fputc('\0', file); 
@@ -204,7 +189,7 @@ void EZ_draw2D_saveBMP(EZ_Image img, const char* fname) {
 	//no padding, RGBA already 4bytes-aligned
 
 	for (int y = img.h-1; y >= 0; y--) //y axis mirroring
-		fwrite(img.px + y*img.w, sizeof(EZ_px), img.w,  file); 
+		fwrite(img.px + y*img.w, sizeof(EZ_Px), img.w,  file); 
 
 
 	fclose(file);
@@ -287,14 +272,14 @@ void EZ_draw2D_freeFont(EZ_Font font) {
 }
 
 
-void EZ_draw2D_printChar(EZ_Image target, unsigned int c, EZ_Font font, EZ_px fg, EZ_px bg, int x0, int y0) {
+void EZ_draw2D_printChar(EZ_Image target, unsigned int c, const EZ_Font font, EZ_Px fg, EZ_Px bg, int x0, int y0) {
 
 	x0 += TX; y0 += TY;
 
 	for (int y = 0; y < font.h_px; y++)
 		for (int xByte = 0; xByte < font.w_bytes; xByte++)
 			for (int x = 0; x < 8; x++) {
-				EZ_px* dest = &target.px[x0 + x + 8*xByte + (y0 + y)*target.w];
+				EZ_Px* dest = &target.px[x0 + x + 8*xByte + (y0 + y)*target.w];
 
 				_blend(dest, (font.data[c][xByte + y*font.w_bytes] << x) & 0x80 ? fg : bg);
 			}
@@ -303,7 +288,7 @@ void EZ_draw2D_printChar(EZ_Image target, unsigned int c, EZ_Font font, EZ_px fg
 }
 
 
-const char* EZ_draw2D_printStr(EZ_Image target, const char* str, EZ_Font font, EZ_px fg, EZ_px bg, int x0, int y0, int w_chars, int h_chars) {
+const char* EZ_draw2D_printStr(EZ_Image target, const char* str, const EZ_Font font, EZ_Px fg, EZ_Px bg, int x0, int y0, int w_chars, int h_chars) {
 
 	int x = 0, y = 0;
 	const unsigned char* c;
@@ -352,52 +337,49 @@ const char* EZ_draw2D_printStr(EZ_Image target, const char* str, EZ_Font font, E
 }
 
 
-void EZ_draw2D_alphaMode(enum EZ_blendMode mode) {
+void EZ_draw2D_setBlendMode(enum EZ_BlendMode mode) {
 	alphaBlending = mode;
 }
 
-void EZ_draw2D_interMode(enum interMode mode) {
-	interpolation = mode;
-}
 
-void EZ_draw2D_clear(EZ_Image target, EZ_px col) {
+void EZ_draw2D_clear(EZ_Image target, EZ_Px col) {
 	for (int i = 0; i < target.h * target.w; i++)
 		target.px[i] = col;
 }
 
-static void _blend(EZ_px* px, EZ_px col) {
+static void _blend(EZ_Px* px, EZ_Px col) {
 	*px = EZ_blend(col, *px, alphaBlending);
 }
 
-void EZ_draw2D_pixel(EZ_Image target, EZ_px col, int x0, int y0) {
+void EZ_draw2D_pixel(EZ_Image target, EZ_Px col, int x0, int y0) {
 	x0 += TX; y0 += TY;
 
 	if (x0 < 0 || x0 >= target.w || y0 < 0 || y0 >= target.h)
 		return;
 
-	EZ_px* px = &(target.px[x0 + y0*target.w]);
+	EZ_Px* px = &(target.px[x0 + y0*target.w]);
 	_blend(px, col);
 }
 
 
-static void _VLine(EZ_Image target, EZ_px col, int x, int _y1, int _y2) {
+static void _VLine(EZ_Image target, EZ_Px col, int x, int _y1, int _y2) {
 	
 	if (x < 0 || x >= target.w) return;
 
-	int y1 = MAX(0, _y1);
-	int y2 = MIN(target.h - 1, _y2);
+	int y1 = CLAMP(_y1, 0, target.h);
+	int y2 = CLAMP(_y2, 0, target.h);
 
 	for (int h = y1*target.w; h <= y2*target.w; h+=target.w)
 		_blend(&target.px[x+h], col);
 
 }
 
-static  void _HLine(EZ_Image target, EZ_px col, int y, int _x1, int _x2) {
+static  void _HLine(EZ_Image target, EZ_Px col, int y, int _x1, int _x2) {
 
 	if (y < 0 || y >= target.h) return;
 
-	int x1 = MAX(0, _x1);
-	int x2 = MIN(target.w - 1, _x2);
+	int x1 = CLAMP(_x1, 0, target.w);
+	int x2 = CLAMP(_x2, 0, target.w);
 
 	int h  = target.w * y;
 	for (int x = x1; x <= x2; x++)
@@ -405,7 +387,7 @@ static  void _HLine(EZ_Image target, EZ_px col, int y, int _x1, int _x2) {
 
 }
 
-static void _line(EZ_Image target, EZ_px col, int x1, int y1, int x2, int y2) {
+static void _line(EZ_Image target, EZ_Px col, int x1, int y1, int x2, int y2) {
 
 	float slope = (float)(y2-y1)/(x2-x1);
 	float ordog = y1 - x1 * slope;
@@ -444,7 +426,7 @@ static void _line(EZ_Image target, EZ_px col, int x1, int y1, int x2, int y2) {
 
 }
 
-void EZ_draw2D_line(EZ_Image target, EZ_px col, int x1, int y1, int x2, int y2) {
+void EZ_draw2D_line(EZ_Image target, EZ_Px col, int x1, int y1, int x2, int y2) {
 
 	x1 += TX; y1 += TY; x2 += TX; y2 += TY;
 
@@ -467,7 +449,7 @@ void EZ_draw2D_line(EZ_Image target, EZ_px col, int x1, int y1, int x2, int y2) 
 
 }
 
-void EZ_draw2D_rect(EZ_Image target, EZ_px col, int x0, int y0, int w,  int h) {
+void EZ_draw2D_rect(EZ_Image target, EZ_Px col, int x0, int y0, int w,  int h) {
 
 	x0 += TX; y0 += TY;
 
@@ -481,7 +463,7 @@ void EZ_draw2D_rect(EZ_Image target, EZ_px col, int x0, int y0, int w,  int h) {
 
 }
 
-void EZ_draw2D_fillRect(EZ_Image target, EZ_px col, int x0, int y0, int w,  int h) {
+void EZ_draw2D_fillRect(EZ_Image target, EZ_Px col, int x0, int y0, int w,  int h) {
 	
 	x0 += TX; y0 += TY;
 
@@ -496,14 +478,14 @@ void EZ_draw2D_fillRect(EZ_Image target, EZ_px col, int x0, int y0, int w,  int 
 }
 
 
-void EZ_draw2D_tri(EZ_Image target, EZ_px col, int x1, int y1, int x2, int y2, int x3, int y3) {
+void EZ_draw2D_tri(EZ_Image target, EZ_Px col, int x1, int y1, int x2, int y2, int x3, int y3) {
 	EZ_draw2D_line(target, col, x1, y1, x2, y2);
 	EZ_draw2D_line(target, col, x2, y2, x3, y3);
 	EZ_draw2D_line(target, col, x3, y3, x1, y1);
 }
 
 
-static void _flatTri(EZ_Image target, EZ_px col, int x1, int x2, int xTop, int yTop, int yBase) {
+static void _flatTri(EZ_Image target, EZ_Px col, int x1, int x2, int xTop, int yTop, int yBase) {
 	
 
 	float Lslope = (float)(x1-xTop)/(yBase-yTop);
@@ -512,13 +494,13 @@ static void _flatTri(EZ_Image target, EZ_px col, int x1, int x2, int xTop, int y
 	float Lordog = xTop - yTop * Lslope;
 	float Rordog = xTop - yTop * Rslope;
 
-	int ty1 = CLAMP(MIN(yTop, yBase),  0, target.h);
-	int ty2 = CLAMP(MAX(yTop, yBase),   0, target.h);
+	int y1 = CLAMP(MIN(yTop, yBase),  0, target.h);
+	int y2 = CLAMP(MAX(yTop, yBase),   0, target.h);
 
-	float Lx = Lordog + ty1 * Lslope;
-	float Rx = Rordog + ty1 * Rslope;
+	float Lx = Lordog + y1 * Lslope;
+	float Rx = Rordog + y1 * Rslope;
 
-	for (int y = ty1; y <= ty2; y++) {
+	for (int y = y1; y <= y2; y++) {
 		_HLine(target, col, y, Lx, Rx);
 		Lx += Lslope; Rx += Rslope;
 	}
@@ -526,7 +508,7 @@ static void _flatTri(EZ_Image target, EZ_px col, int x1, int x2, int xTop, int y
 
 }
 
-void EZ_draw2D_fillTri(EZ_Image target, EZ_px col, int x1, int y1, int x2, int y2, int x3, int y3) {
+void EZ_draw2D_fillTri(EZ_Image target, EZ_Px col, int x1, int y1, int x2, int y2, int x3, int y3) {
 
 	//sort points (y1 : top, y2 : mid, y3 : bot)
 	
@@ -570,15 +552,8 @@ void EZ_draw2D_fillTri(EZ_Image target, EZ_px col, int x1, int y1, int x2, int y
 
 }
 
-void EZ_draw2D_texTri  (EZ_Image target, EZ_px col, int x1, int y1, int x2, int y2, int x3, int y3,
-												EZ_Image texture,           int u1, int v1, int u2, int v2, int u3, int v3) {
 
-													//TODO
-}
-
-
-
-void EZ_draw2D_ellipse(EZ_Image target, EZ_px col, int x0, int y0, int a,  int b) {
+void EZ_draw2D_ellipse(EZ_Image target, EZ_Px col, int x0, int y0, int a,  int b) {
 
 
 	//https://www.geeksforgeeks.org/midpoint-ellipse-drawing-algorithm/
@@ -648,7 +623,7 @@ void EZ_draw2D_ellipse(EZ_Image target, EZ_px col, int x0, int y0, int a,  int b
 
 }
 
-void EZ_draw2D_fillEllipse(EZ_Image target, EZ_px col, int x0, int y0, int a,  int b) {
+void EZ_draw2D_fillEllipse(EZ_Image target, EZ_Px col, int x0, int y0, int a,  int b) {
 
 	//same but with Hlines
 
@@ -715,7 +690,7 @@ void EZ_draw2D_fillEllipse(EZ_Image target, EZ_px col, int x0, int y0, int a,  i
 
 
 
-void EZ_draw2D_image(EZ_Image target, EZ_Image source, int x0, int y0) {
+void EZ_draw2D_image(EZ_Image target, const EZ_Image source, int x0, int y0) {
 
 	x0 += TX; y0 += TY;
 
@@ -724,18 +699,18 @@ void EZ_draw2D_image(EZ_Image target, EZ_Image source, int x0, int y0) {
 	int tx1 = MAX(0, x0);
 	int tx2 = CLAMP(x0+source.w, 0, target.w);
 
-	int ty1 = MAX(0, y0);
-	int ty2 = CLAMP(y0+source.h, 0, target.h);
+	int y1 = MAX(0, y0);
+	int y2 = CLAMP(y0+source.h, 0, target.h);
 
 
 	for (int tx = tx1; tx < tx2; tx++) {
-		for (int ty = ty1; ty < ty2; ty++)
+		for (int y = y1; y < y2; y++)
 		{
 			int sx = tx - x0;
-			int sy = ty - y0;
+			int sy = y - y0;
 
-			EZ_px  col = source.px[sx + sy*source.w];
-			EZ_px* px  = &(target.px[tx + ty*target.w]);
+			EZ_Px  col = source.px[sx + sy*source.w];
+			EZ_Px* px  = &(target.px[tx + y*target.w]);
 
 			_blend(px, col);
 		}
@@ -746,7 +721,7 @@ void EZ_draw2D_image(EZ_Image target, EZ_Image source, int x0, int y0) {
 }
 
 
-void EZ_draw2D_croppedImage(EZ_Image target, EZ_Image source, int x0, int y0, int u0, int v0, int w, int h) {
+void EZ_draw2D_croppedImage(EZ_Image target, const EZ_Image source, int x0, int y0, int u0, int v0, int w, int h) {
 
 	x0 += TX; y0 += TY;
 
@@ -755,18 +730,18 @@ void EZ_draw2D_croppedImage(EZ_Image target, EZ_Image source, int x0, int y0, in
 	int tx1 = MAX(0, x0);
 	int tx2 = CLAMP(x0+w, 0, target.w);
 
-	int ty1 = MAX(0, y0);
-	int ty2 = CLAMP(y0+h, 0, target.h);
+	int y1 = MAX(0, y0);
+	int y2 = CLAMP(y0+h, 0, target.h);
 
 
 	for (int tx = tx1; tx < tx2; tx++) {
-		for (int ty = ty1; ty < ty2; ty++)
+		for (int y = y1; y < y2; y++)
 		{
 			int sx = (tx - x0 + u0);
-			int sy = (ty - y0 + v0);
+			int sy = (y - y0 + v0);
 
-			EZ_px  col = source.px[sx + sy*source.w];
-			EZ_px* px  = &(target.px[tx + ty*target.w]);
+			EZ_Px  col = source.px[sx + sy*source.w];
+			EZ_Px* px  = &(target.px[tx + y*target.w]);
 
 			_blend(px, col);
 		}
@@ -775,7 +750,7 @@ void EZ_draw2D_croppedImage(EZ_Image target, EZ_Image source, int x0, int y0, in
 
 }
 
-void EZ_draw2D_resizedImage(EZ_Image target, EZ_Image source, int x0, int y0, int w, int h) {
+void EZ_draw2D_resizedImage(EZ_Image target, const EZ_Image source, int x0, int y0, int w, int h) {
 
 	x0 += TX; y0 += TY;
 
@@ -784,20 +759,20 @@ void EZ_draw2D_resizedImage(EZ_Image target, EZ_Image source, int x0, int y0, in
 	int tx1 = MAX(0, x0);
 	int tx2 = CLAMP(x0+w, 0, target.w);
 
-	int ty1 = MAX(0, y0);
-	int ty2 = CLAMP(y0+h, 0, target.h);
+	int y1 = MAX(0, y0);
+	int y2 = CLAMP(y0+h, 0, target.h);
 
 	float xRatio = (float)source.w / w;
 	float yRatio = (float)source.h / h;
 
 	for (int tx = tx1; tx < tx2; tx++) {
-		for (int ty = ty1; ty < ty2; ty++)
+		for (int y = y1; y < y2; y++)
 		{
 			int sx = (tx - x0)*xRatio;
-			int sy = (ty - y0)*yRatio;
+			int sy = (y - y0)*yRatio;
 
-			EZ_px  col = source.px[sx + sy*source.w];
-			EZ_px* px  = &(target.px[tx + ty*target.w]);
+			EZ_Px  col = source.px[sx + sy*source.w];
+			EZ_Px* px  = &(target.px[tx + y*target.w]);
 
 			_blend(px, col);
 		}
@@ -807,4 +782,57 @@ void EZ_draw2D_resizedImage(EZ_Image target, EZ_Image source, int x0, int y0, in
 }
 
 
-void EZ_draw2D_transformImage(EZ_Image target, EZ_Image source, mat3x3* transformation) {}
+void EZ_draw2D_transformedImage(EZ_Image target, const EZ_Image source, const mat3x3* trans) {
+
+
+	//compute target-space bounding box
+	int x1, x2, y1, y2;
+	vec2f dst, src;
+
+	src = (vec2f){0.0f, 0.0f};
+	dst = AFFFWD(*trans, src);
+	x1 = dst.x; x2 = dst.x;
+	y1 = dst.y; y2 = dst.y;
+
+	src.x = source.w;
+	dst = AFFFWD(*trans, src);
+	x1 = MIN(x1, dst.x); x2 = MAX(x2,dst.x);
+	y1 = MIN(y1, dst.y); y2 = MAX(y2,dst.y);
+
+	src.y = source.h;
+	dst = AFFFWD(*trans, src);
+	x1 = MIN(x1, dst.x); x2 = MAX(x2,dst.x);
+	y1 = MIN(y1, dst.y); y2 = MAX(y2,dst.y);
+
+	src.x = 0.0f;
+	dst = AFFFWD(*trans, src);
+	x1 = MIN(x1, dst.x); x2 = MAX(x2,dst.x);
+	y1 = MIN(y1, dst.y); y2 = MAX(y2,dst.y);
+
+	//clip to target size
+	x1 = CLAMP(x1, 0, target.w); x2 = CLAMP(x2, 0, target.w);
+	y1 = CLAMP(y1, 0, target.h); y2 = CLAMP(y2, 0, target.h);
+
+
+	//fill bounding box by sampling source image
+	mat3x3 inv = MINV3x3(*trans);
+
+	for (int x = x1; x < x2; x++)
+	for (int y = y1; y < y2; y++)
+	{
+		src.x = x; src.y = y;
+		dst = AFFFWD(inv, src);
+
+		//skip if outside of the source image
+		if (dst.x < 0 || dst.x >= source.w || dst.y < 0 || dst.y >= source.h)
+			continue;
+
+		//draw
+		EZ_Px* bg = &target.px[x + y * target.w];
+		EZ_Px  fg =  source.px[(int)(dst.x) + (int)(dst.y) * source.w];
+
+		_blend(bg, fg);
+
+	}
+
+}

@@ -1,3 +1,9 @@
+#include "ezGfx.h"
+#include <stdlib.h>
+#include <stdio.h>
+#include <math.h>
+#include <string.h>
+
 
 static EZ_Image canvas;
 static EZ_Font  font;
@@ -147,6 +153,9 @@ static void KEY_EDIT(EZ_Key key) {
 		break;
 
 
+	default : 
+		break;
+
 	}
 }
 
@@ -182,7 +191,9 @@ static void KEY_ALWAYS(EZ_Key key) {
 		EZ_draw2D_saveBMP(canvas, "./screenshot.bmp");
 		break;
 
-}
+	default : 
+		break;
+	}
 }
 
 void (*KEY_ROUTINES[]) (EZ_Key) = {KEY_HELP, KEY_EDIT, KEY_TEST};

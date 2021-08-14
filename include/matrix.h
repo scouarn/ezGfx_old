@@ -49,6 +49,11 @@ typedef struct {float a0, a1, a2, a3,
 #define VDOT3(u, v) ((vec3f) {u.x * v.x,  u.y * v.y,	 u.z * v.z})
 #define VDOT4(u, v) ((vec4f) {u.x * v.x,  u.y * v.y,	 u.z * v.z,  u.w * v.w})
 
+#define VSCA2(u, c) ((__typeof__(u)){(u).x * c, (u).y * c})
+#define VSCA3(u, c) ((__typeof__(u)){(u).x * c, (u).y * c, (u).z * c})
+#define VSCA4(u, c) ((__typeof__(u)){(u).x * c, (u).y * c, (u).z * c, (u).w * c})
+
+
 #define NUL2i ((vec2i){0, 0})
 #define NUL3i ((vec3i){0, 0, 0})
 #define NUL4i ((vec4i){0, 0, 0, 0})
@@ -90,6 +95,7 @@ typedef struct {float a0, a1, a2, a3,
 #define MMUL2x2(a, b) ((mat2x2){(a).a0*(b).a0 + (a).a1*(b).b0, 	(a).a0*(b).a1 + (a).a1*(b).b1,	\
 							    (a).b0*(b).a0 + (a).b1*(b).b0, 	(a).b0*(b).a1 + (a).b1*(b).b1})
 
+//mat3x3 * mat3x3 => mat3x3
 #define MMUL3x3(a, b) ((mat3x3){(a).a0*(b).a0 + (a).a1*(b).b0 + (a).a2*(b).c0,	(a).a0*(b).a1 + (a).a1*(b).b1 + (a).a2*(b).c1,	(a).a0*(b).a2 + (a).a1*(b).b2 + (a).a2*(b).c2,	\
 							    (a).b0*(b).a0 + (a).b1*(b).b0 + (a).b2*(b).c0,	(a).b0*(b).a1 + (a).b1*(b).b1 + (a).b2*(b).c1,	(a).b0*(b).a2 + (a).b1*(b).b2 + (a).b2*(b).c2,	\
 							    (a).c0*(b).a0 + (a).c1*(b).b0 + (a).c2*(b).c0,	(a).c0*(b).a1 + (a).c1*(b).b1 + (a).c2*(b).c1,	(a).c0*(b).a2 + (a).c1*(b).b2 + (a).c2*(b).c2})
@@ -100,26 +106,36 @@ typedef struct {float a0, a1, a2, a3,
 							    (a).d0*(b).a0 + (a).d1*(b).b0 + (a).d2*(b).c0 + (a).d3*(b).d0,	(a).d0*(b).a1 + (a).d1*(b).b1 + (a).d2*(b).c1 + (a).d3*(b).d1,	(a).d0*(b).a2 + (a).d1*(b).b2 + (a).d2*(b).c2 + (a).d3*(b).d2,	(a).d0*(b).a3 + (a).d1*(b).b3 + (a).d2*(b).c3 + (a).d3*(b).d3})
 
 
-#define MMUL2V2(a, b) ((vec2f){(a).a0*(v).x + (a).a1*(v).y,	\
+#define MMUL2V2(a, v) ((vec2f){(a).a0*(v).x + (a).a1*(v).y,	\
 							   (a).b0*(v).x + (a).b1*(v).y})
 
-#define MMUL2V1(a, b) ({(a).a0*(v).x + (a).a1})
+#define MMUL2V1(a, v) ({(a).a0*(v).x + (a).a1})
 
 
-#define MMUL3V3(a, b) ((vec3f){(a).a0*(v).x + (a).a1*(v).y + (a).a2*(v).z,	\
+//mat3x3 * vec3f => vec3f
+#define MMUL3V3(a, v) ((vec3f){(a).a0*(v).x + (a).a1*(v).y + (a).a2*(v).z,	\
 							   (a).b0*(v).x + (a).b1*(v).y + (a).b2*(v).z,	\
 							   (a).c0*(v).x + (a).c1*(v).y + (a).c2*(v).z})
 
-#define MMUL3V2(a, b) ((vec3f){(a).a0*(v).x + (a).a1*(v).y + (a).a2*(v),	\
-							   (a).b0*(v).x + (a).b1*(v).y + (a).b2*(v)})
+//mat3x3 * vec2f => vec2f
+#define MMUL3V2(a, v) ((vec2f){(a).a0*(v).x + (a).a1*(v).y + (a).a2,	\
+							   (a).b0*(v).x + (a).b1*(v).y + (a).b2})
 
 
-#define MMUL4V4(a, b) ((vec4f){(a).a0*(v).x + (a).a1*(v).y + (a).a2*(v).z + (a).a3*(v).w,	\
+//mat4x4 * vec4f => vec4f
+#define MMUL4V4(a, v) ((vec4f){(a).a0*(v).x + (a).a1*(v).y + (a).a2*(v).z + (a).a3*(v).w,	\
 							   (a).b0*(v).x + (a).b1*(v).y + (a).b2*(v).z + (a).b3*(v).w,	\
 							   (a).c0*(v).x + (a).c1*(v).y + (a).c2*(v).z + (a).c3*(v).w,	\
 							   (a).d0*(v).x + (a).d1*(v).y + (a).d2*(v).z + (a).d3*(v).w})
 
-#define MMUL4V3(a, b) ((vec4f){(a).a0*(v).x + (a).a1*(v).y + (a).a2*(v).z + (a).a3,	\
+//mat4x4 * vec3f => vec4f
+#define MMUL4V3V4(a,v)((vec4f){(a).a0*(v).x + (a).a1*(v).y + (a).a2*(v).z + (a).a3,	\
+							   (a).b0*(v).x + (a).b1*(v).y + (a).b2*(v).z + (a).b3,	\
+							   (a).c0*(v).x + (a).c1*(v).y + (a).c2*(v).z + (a).c3,	\
+							   (a).d0*(v).x + (a).d1*(v).y + (a).d2*(v).z + (a).d3})
+
+//mat4x4 * vec3f => vec3f
+#define MMUL4V3(a, v) ((vec3f){(a).a0*(v).x + (a).a1*(v).y + (a).a2*(v).z + (a).a3,	\
 							   (a).b0*(v).x + (a).b1*(v).y + (a).b2*(v).z + (a).b3,	\
 							   (a).c0*(v).x + (a).c1*(v).y + (a).c2*(v).z + (a).c3})
 
@@ -134,12 +150,12 @@ typedef struct {float a0, a1, a2, a3,
 #define MDET4x4(a)
 
 
-#define MIVD2x2(a, d) ((mat2x2){(a).b1/d, -(a).a1/d, 	\
-							   -(a).b0/d,  (a).a0/d})
+#define MIVD2x2(a, d) ((mat2x2){(a).b1/d, -(a).a1/(d), 	\
+							   -(a).b0/d,  (a).a0/(d)})
 
-#define MIVD3x3(a, d) ((mat3x3){((a).c2*(a).b1 - (a).c1*(a).b2)/d,	-((a).c2*(a).a1 - (a).c1*(a).a2)/d,  ((a).b2*(a).b1 - (a).b1*(a).b2)/d,		\
-							   -((a).c2*(a).b0 - (a).c0*(a).b2)/d,	 ((a).c2*(a).a0 - (a).c0*(a).a2)/d, -((a).b2*(a).b0 - (a).b0*(a).b2)/d,		\
-							    ((a).c1*(a).b0 - (a).c0*(a).b1)/d,	-((a).c1*(a).a0 - (a).c0*(a).a1)/d,  ((a).b1*(a).b0 - (a).b0*(a).b1)/d})
+#define MIVD3x3(a, d) ((mat3x3){((a).c2*(a).b1 - (a).c1*(a).b2)/(d),	-((a).c2*(a).a1 - (a).c1*(a).a2)/d,		((a).b2*(a).a1 - (a).b1*(a).a2)/d,		\
+							   -((a).c2*(a).b0 - (a).c0*(a).b2)/(d),	 ((a).c2*(a).a0 - (a).c0*(a).a2)/d,	   -((a).b2*(a).a0 - (a).b0*(a).a2)/d,		\
+							    ((a).c1*(a).b0 - (a).c0*(a).b1)/(d),	-((a).c1*(a).a0 - (a).c0*(a).a1)/d, 	((a).b1*(a).a0 - (a).b0*(a).a1)/d})
 
 
 #define MIVD4x4(a, d) ((mat4x4){})
@@ -155,13 +171,63 @@ typedef struct {float a0, a1, a2, a3,
 #define ID3x3 ((mat3x3){1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f})
 #define ID4x4 ((mat4x4){1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f})
 
-#define AFFAPP(a, b) MMUL3x3(a, b)
-#define AFFFWD(a, v) MMUL3V2(a, v)
-#define AFFIDT() ID3x3
-#define AFFROT(u) ((mat3x3){cosf(u), -sinf(u), 0.0f, sinf(u), cos(u), 0.0f, 0.0f, 0.0f, 1.0f})
-#define AFFSCA(u) ((mat3x3){u.x, 0.0f, 0.0f, 0.0f, u.y, 0.0f, 0.0f, 0.0f, 1.0f})
-#define AFFSHR(u) ((mat3x3){1.0f, u.x, 0.0f, u.y, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f})
-#define AFFTNS(u) ((mat3x3){1.0f, 0.0f, u.x, 0.0f, 1.0f, u.y, 0.0f, 0.0f, 1.0f})
+
+#define MPRINT3x3(a) printf("| %+3.2f   %+3.2f   %+3.2f |\n| %+3.2f   %+3.2f   %+3.2f |\n| %+3.2f   %+3.2f   %+3.2f |\n",	\
+							(a).a0, (a).a1, (a).a2, (a).b0, (a).b1, (a).b2, (a).c0, (a).c1, (a).c2);
+
+#define MPRINT4x4(a) printf("| %+3.2f   %+3.2f   %+3.2f   %+3.2f |\n| %+3.2f   %+3.2f   %+3.2f   %+3.2f |\n| %+3.2f   %+3.2f   %+3.2f   %+3.2f |\n| %+3.2f   %+3.2f   %+3.2f   %+3.2f |\n",	\
+							(a).a0, (a).a1, (a).a2, (a).a3, (a).b0, (a).b1, (a).b2, (a).b3, (a).c0, (a).c1, (a).c2, (a).c3, (a).d0, (a).d1, (a).d2, (a).d3);
+
+
+#define AFFMAT mat3x3
+#define AFFINV MINV3x3
+#define AFFIDT ID3x3
+#define AFFAPP MMUL3x3
+#define AFFFWD MMUL3V2
+#define AFFROT(u)   ((mat3x3){cosf(u), sinf(u), 0.0f, -sinf(u), cosf(u), 0.0f, 0.0f, 0.0f, 1.0f})
+#define AFFSCA(x,y) ((mat3x3){x, 0.0f, 0.0f, 0.0f, y, 0.0f, 0.0f, 0.0f, 1.0f})
+#define AFFSHR(x,y) ((mat3x3){1.0f, x, 0.0f, y, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f})
+#define AFFTNS(x,y) ((mat3x3){1.0f, 0.0f, x, 0.0f, 1.0f, y, 0.0f, 0.0f, 1.0f})
+
+
+//https://www.scratchapixel.com/lessons/3d-basic-rendering/perspective-and-orthographic-projection-matrix/building-basic-perspective-projection-matrix
+#define PROJ_PERSPECTIVE(fov, a, zn, zf)({	\
+		float f = 1.0f / tanf(0.5f*(fov));  \
+  		float q = (zf) / ((zf) - (zn));		\
+  											\
+		(mat4x4){							\
+		f*(a), 0.0f,  0.0f,    0.0f, 		\
+		0.0f,  f,     0.0f,    0.0f, 		\
+		0.0f,  0.0f,  q, 	   1.0f, 		\
+		0.0f,  0.0f,  (zn)*q,  1.0f};		})
+
+
+
+//https://www.tutorialspoint.com/computer_graphics/3d_transformation.htm
+#define TRANS_TRANS(x, y, z)((mat4x4){		\
+		1.0f,   0.0f,   0.0f,   x,	  		\
+		0.0f,   1.0f,   0.0f,   y, 			\
+		0.0f,   0.0f,   1.0f,   z, 			\
+		0.0f,   0.0f,   0.0f,   1.0f		})
+
+#define TRANS_ROTX(u)((mat4x4){		\
+		1.0f,    0.0f,    0.0f,    0.0f,	\
+		0.0f,    cosf(u), sinf(u), 0.0f,	\
+		0.0f,   -sinf(u), cosf(u), 0.0f,	\
+		0.0f,    0.0f,    0.0f,    1.0f		})
+
+#define TRANS_ROTY(u)((mat4x4){		\
+		cosf(u), 0.0f,   -sinf(u), 0.0f,	\
+		0.0f,    1.0f,    0.0f,    0.0f,	\
+		sinf(u), 0.0f, 	  cosf(u), 0.0f,	\
+		0.0f,    0.0f,    0.0f,    1.0f		})
+
+#define TRANS_ROTZ(u)((mat4x4){		\
+		cosf(u), sinf(u), 0.0f,    0.0f,	\
+	   -sinf(u), cosf(u), 0.0f,    0.0f,	\
+		0.0f, 	 0.0f, 	  1.0f,	   0.0f,	\
+		0.0f,    0.0f,    0.0f,    1.0f		})
+
 
 
 #endif

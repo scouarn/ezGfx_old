@@ -1,14 +1,55 @@
 
--font ttf
--Textbox, "windows", buttons
--dithering
--Textured triangle / "advanced" 3D
--ms windows support
--wasm support
+{ extensions
+-Textbox, "windows", buttons -gui extension
 -fragment shaders
+-dithering
+}
+
+
+{ formats
 -load png
 -wave sound format
+-fonts PSF2 format
+-font ttf
+}
+
+{ platforms
+-ms windows support
+-window gl / gdi
+-no xorg support
+-no xorg gl
+-wasm support
+}
 
 
--textri ???
+{ 3D
+-textri ??? -> revise fill tri algo
+-textri --no perspective correction (PS1 look)
+-textri goes to draw3D
+-copy of fillTri in draw3D ?
+	-> use vectors
+-mesh files
+-shadowing
+-normals
+
+-different voxel engine
+}
+
+
+
+{	sound
+	windows sound
+	midi, wave...
+	instruments
+	editor
+}
+
+
+-organisation dans un seul dossier source
+-choix de l'implémentation pour la platforme
+-comments in implementation
+
+-errors fprintf to log file
+-more verbose matrix math macros
+
 
