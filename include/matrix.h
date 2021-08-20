@@ -33,26 +33,6 @@ typedef struct {float a0, a1, a2, a3,
 
 
 
-#define VADD2(u, v) ((__typeof__(u)){(u).x + (v).x, (u).y + (v).y})
-#define VADD3(u, v) ((__typeof__(u)){(u).x + (v).x, (u).y + (v).y, (u).z + (v).z})
-#define VADD4(u, v) ((__typeof__(u)){(u).x + (v).x, (u).y + (v).y, (u).z + (v).z, (u).v + (v).v})
-
-#define VSUB2(u, v)((__typeof__(u)){(u).x - (v).x, (u).y - (v).y})
-#define VSUB3(u, v) ((__typeof__(u)){(u).x - (v).x, (u).y - (v).y, (u).z - (v).z})
-#define VSUB4(u, v) ((__typeof__(u)){(u).x - (v).x, (u).y - (v).y, (u).z - (v).z, (u).v - (v).v})
-
-#define VMUL2(u, a) ((__typeof__(u)){(u).x * a, (u).y * a})
-#define VMUL3(u, a) ((__typeof__(u)){(u).x * a, (u).y * a, (u).z * a})
-#define VMUL4(u, a) ((__typeof__(u)){(u).x * a, (u).y * a, (u).z * a, (u).v * a})
-
-#define VDOT2(u, v) ((vec2f) {u.x * v.x,  u.y * v.y})
-#define VDOT3(u, v) ((vec3f) {u.x * v.x,  u.y * v.y,	 u.z * v.z})
-#define VDOT4(u, v) ((vec4f) {u.x * v.x,  u.y * v.y,	 u.z * v.z,  u.w * v.w})
-
-#define VSCA2(u, c) ((__typeof__(u)){(u).x * c, (u).y * c})
-#define VSCA3(u, c) ((__typeof__(u)){(u).x * c, (u).y * c, (u).z * c})
-#define VSCA4(u, c) ((__typeof__(u)){(u).x * c, (u).y * c, (u).z * c, (u).w * c})
-
 
 #define NUL2i ((vec2i){0, 0})
 #define NUL3i ((vec3i){0, 0, 0})
@@ -62,132 +42,276 @@ typedef struct {float a0, a1, a2, a3,
 #define NUL3f ((vec3f){0.0f, 0.0f, 0.0f})
 #define NUL4f ((vec4f){0.0f, 0.0f, 0.0f, 0.0f})
 
-
-
-
-
-#define MADD2x2(a, b) ((mat2x2){(a).a0 + (b).a0, (a).a1 + (b).a1,	\
-							    (a).b0 + (b).b0, (a).b1 + (b).b1})
-
-#define MADD3x3(a, b) ((mat3x3){(a).a0 + (b).a0, (a).a1 + (b).a1, (a).a2 + (b).a2,	\
-							    (a).b0 + (b).b0, (a).b1 + (b).b1, (a).b2 + (b).b2,	\
-							    (a).c0 + (b).c0, (a).c1 + (b).c1, (a).c2 + (b).c2})
-
-#define MADD4x4(a, b) ((mat4x4){(a).a0 + (b).a0, (a).a1 + (b).a1, (a).a2 + (b).a2, (a).a3 + (b).a3,	\
-							    (a).b0 + (b).b0, (a).b1 + (b).b1, (a).b2 + (b).b2, (a).b3 + (b).b3,	\
-							    (a).c0 + (b).c0, (a).c1 + (b).c1, (a).c2 + (b).c2, (a).c3 + (b).c3,	\
-							    (a).d0 + (b).d0, (a).d1 + (b).d1, (a).d2 + (b).d2, (a).d3 + (b).d3})
-
-
-#define MSCA2x2(a, s) ((mat2x2){(a).a0 * c, (a).a1 * c,	\
-							    (a).b0 * c, (a).b1 * c})
-
-#define MSCA3x3(a, s) ((mat3x3){(a).a0 * c, (a).a1 * c, (a).a2 * c,	\
-							    (a).b0 * c, (a).b1 * c, (a).b2 * c,	\
-							    (a).c0 * c, (a).c1 * c, (a).c2 * c})
-
-#define MSCA4x4(a, s) ((mat4x4){(a).a0 * c, (a).a1 * c, (a).a2 * c, (a).a3 * c,	\
-							    (a).b0 * c, (a).b1 * c, (a).b2 * c, (a).b3 * c,	\
-							    (a).c0 * c, (a).c1 * c, (a).c2 * c, (a).c3 * c,	\
-							    (a).d0 * c, (a).d1 * c, (a).d2 * c, (a).d3 * c})
-
-
-#define MMUL2x2(a, b) ((mat2x2){(a).a0*(b).a0 + (a).a1*(b).b0, 	(a).a0*(b).a1 + (a).a1*(b).b1,	\
-							    (a).b0*(b).a0 + (a).b1*(b).b0, 	(a).b0*(b).a1 + (a).b1*(b).b1})
-
-//mat3x3 * mat3x3 => mat3x3
-#define MMUL3x3(a, b) ((mat3x3){(a).a0*(b).a0 + (a).a1*(b).b0 + (a).a2*(b).c0,	(a).a0*(b).a1 + (a).a1*(b).b1 + (a).a2*(b).c1,	(a).a0*(b).a2 + (a).a1*(b).b2 + (a).a2*(b).c2,	\
-							    (a).b0*(b).a0 + (a).b1*(b).b0 + (a).b2*(b).c0,	(a).b0*(b).a1 + (a).b1*(b).b1 + (a).b2*(b).c1,	(a).b0*(b).a2 + (a).b1*(b).b2 + (a).b2*(b).c2,	\
-							    (a).c0*(b).a0 + (a).c1*(b).b0 + (a).c2*(b).c0,	(a).c0*(b).a1 + (a).c1*(b).b1 + (a).c2*(b).c1,	(a).c0*(b).a2 + (a).c1*(b).b2 + (a).c2*(b).c2})
-
-#define MMUL4x4(a, b) ((mat4x4){(a).a0*(b).a0 + (a).a1*(b).b0 + (a).a2*(b).c0 + (a).a3*(b).d0,	(a).a0*(b).a1 + (a).a1*(b).b1 + (a).a2*(b).c1 + (a).a3*(b).d1,	(a).a0*(b).a2 + (a).a1*(b).b2 + (a).a2*(b).c2 + (a).a3*(b).d2,	(a).a0*(b).a3 + (a).a1*(b).b3 + (a).a2*(b).c3 + (a).a3*(b).d3,	\
-							    (a).b0*(b).a0 + (a).b1*(b).b0 + (a).b2*(b).c0 + (a).b3*(b).d0,	(a).b0*(b).a1 + (a).b1*(b).b1 + (a).b2*(b).c1 + (a).b3*(b).d1,	(a).b0*(b).a2 + (a).b1*(b).b2 + (a).b2*(b).c2 + (a).b3*(b).d2,	(a).b0*(b).a3 + (a).b1*(b).b3 + (a).b2*(b).c3 + (a).b3*(b).d3,	\
-							    (a).c0*(b).a0 + (a).c1*(b).b0 + (a).c2*(b).c0 + (a).c3*(b).d0,	(a).c0*(b).a1 + (a).c1*(b).b1 + (a).c2*(b).c1 + (a).c3*(b).d1,	(a).c0*(b).a2 + (a).c1*(b).b2 + (a).c2*(b).c2 + (a).c3*(b).d2,	(a).c0*(b).a3 + (a).c1*(b).b3 + (a).c2*(b).c3 + (a).c3*(b).d3,	\
-							    (a).d0*(b).a0 + (a).d1*(b).b0 + (a).d2*(b).c0 + (a).d3*(b).d0,	(a).d0*(b).a1 + (a).d1*(b).b1 + (a).d2*(b).c1 + (a).d3*(b).d1,	(a).d0*(b).a2 + (a).d1*(b).b2 + (a).d2*(b).c2 + (a).d3*(b).d2,	(a).d0*(b).a3 + (a).d1*(b).b3 + (a).d2*(b).c3 + (a).d3*(b).d3})
-
-
-#define MMUL2V2(a, v) ((vec2f){(a).a0*(v).x + (a).a1*(v).y,	\
-							   (a).b0*(v).x + (a).b1*(v).y})
-
-#define MMUL2V1(a, v) ({(a).a0*(v).x + (a).a1})
-
-
-//mat3x3 * vec3f => vec3f
-#define MMUL3V3(a, v) ((vec3f){(a).a0*(v).x + (a).a1*(v).y + (a).a2*(v).z,	\
-							   (a).b0*(v).x + (a).b1*(v).y + (a).b2*(v).z,	\
-							   (a).c0*(v).x + (a).c1*(v).y + (a).c2*(v).z})
-
-//mat3x3 * vec2f => vec2f
-#define MMUL3V2(a, v) ((vec2f){(a).a0*(v).x + (a).a1*(v).y + (a).a2,	\
-							   (a).b0*(v).x + (a).b1*(v).y + (a).b2})
-
-
-//mat4x4 * vec4f => vec4f
-#define MMUL4V4(a, v) ((vec4f){(a).a0*(v).x + (a).a1*(v).y + (a).a2*(v).z + (a).a3*(v).w,	\
-							   (a).b0*(v).x + (a).b1*(v).y + (a).b2*(v).z + (a).b3*(v).w,	\
-							   (a).c0*(v).x + (a).c1*(v).y + (a).c2*(v).z + (a).c3*(v).w,	\
-							   (a).d0*(v).x + (a).d1*(v).y + (a).d2*(v).z + (a).d3*(v).w})
-
-//mat4x4 * vec3f => vec4f
-#define MMUL4V3V4(a,v)((vec4f){(a).a0*(v).x + (a).a1*(v).y + (a).a2*(v).z + (a).a3,	\
-							   (a).b0*(v).x + (a).b1*(v).y + (a).b2*(v).z + (a).b3,	\
-							   (a).c0*(v).x + (a).c1*(v).y + (a).c2*(v).z + (a).c3,	\
-							   (a).d0*(v).x + (a).d1*(v).y + (a).d2*(v).z + (a).d3})
-
-//mat4x4 * vec3f => vec3f
-#define MMUL4V3(a, v) ((vec3f){(a).a0*(v).x + (a).a1*(v).y + (a).a2*(v).z + (a).a3,	\
-							   (a).b0*(v).x + (a).b1*(v).y + (a).b2*(v).z + (a).b3,	\
-							   (a).c0*(v).x + (a).c1*(v).y + (a).c2*(v).z + (a).c3})
-
-
-#define MDET2x2(a) ((a).a0*(a).b1	\
-				   -(a).a1*(a).b0)
-
-#define MDET3x3(a) ((a).a0*((a).b1*(a).c2	-	(a).b2*(a).c1)	\
-				   -(a).a1*((a).b0*(a).c2	-	(a).b2*(a).c1)	\
-				   +(a).a2*((a).b0*(a).c1	-	(a).b1*(a).c1))
-
-#define MDET4x4(a)
-
-
-#define MIVD2x2(a, d) ((mat2x2){(a).b1/d, -(a).a1/(d), 	\
-							   -(a).b0/d,  (a).a0/(d)})
-
-#define MIVD3x3(a, d) ((mat3x3){((a).c2*(a).b1 - (a).c1*(a).b2)/(d),	-((a).c2*(a).a1 - (a).c1*(a).a2)/d,		((a).b2*(a).a1 - (a).b1*(a).a2)/d,		\
-							   -((a).c2*(a).b0 - (a).c0*(a).b2)/(d),	 ((a).c2*(a).a0 - (a).c0*(a).a2)/d,	   -((a).b2*(a).a0 - (a).b0*(a).a2)/d,		\
-							    ((a).c1*(a).b0 - (a).c0*(a).b1)/(d),	-((a).c1*(a).a0 - (a).c0*(a).a1)/d, 	((a).b1*(a).a0 - (a).b0*(a).a1)/d})
-
-
-#define MIVD4x4(a, d) ((mat4x4){})
-
-#define MINV2x2(a) MIVD2x2(a, MDET2x2(a))
-#define MINV3x3(a) MIVD3x3(a, MDET3x3(a))
-#define MINV4x4(a) MIVD4x4(a, MDET4x4(a))
-
-
-
-
 #define ID2x2 ((mat2x2){1.0f, 0.0f, 0.0f, 1.0f})
 #define ID3x3 ((mat3x3){1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f})
 #define ID4x4 ((mat4x4){1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f})
 
 
-#define MPRINT3x3(a) printf("| %+3.2f   %+3.2f   %+3.2f |\n| %+3.2f   %+3.2f   %+3.2f |\n| %+3.2f   %+3.2f   %+3.2f |\n",	\
-							(a).a0, (a).a1, (a).a2, (a).b0, (a).b1, (a).b2, (a).c0, (a).c1, (a).c2);
 
-#define MPRINT4x4(a) printf("| %+3.2f   %+3.2f   %+3.2f   %+3.2f |\n| %+3.2f   %+3.2f   %+3.2f   %+3.2f |\n| %+3.2f   %+3.2f   %+3.2f   %+3.2f |\n| %+3.2f   %+3.2f   %+3.2f   %+3.2f |\n",	\
-							(a).a0, (a).a1, (a).a2, (a).a3, (a).b0, (a).b1, (a).b2, (a).b3, (a).c0, (a).c1, (a).c2, (a).c3, (a).d0, (a).d1, (a).d2, (a).d3);
+#define VEC_ADD2(u, v) ((__typeof__(u)){(u).x + (v).x, (u).y + (v).y})
+#define VEC_ADD3(u, v) ((__typeof__(u)){(u).x + (v).x, (u).y + (v).y, (u).z + (v).z})
+#define VEC_ADD4(u, v) ((__typeof__(u)){(u).x + (v).x, (u).y + (v).y, (u).z + (v).z, (u).v + (v).v})
+
+#define VEC_SUB2(u, v) ((__typeof__(u)){(u).x - (v).x, (u).y - (v).y})
+#define VEC_SUB3(u, v) ((__typeof__(u)){(u).x - (v).x, (u).y - (v).y, (u).z - (v).z})
+#define VEC_SUB4(u, v) ((__typeof__(u)){(u).x - (v).x, (u).y - (v).y, (u).z - (v).z, (u).v - (v).v})
+
+#define VEC_SCA2(u, a) ((__typeof__(u)){(u).x * a, (u).y * a})
+#define VEC_SCA3(u, a) ((__typeof__(u)){(u).x * a, (u).y * a, (u).z * a})
+#define VEC_SCA4(u, a) ((__typeof__(u)){(u).x * a, (u).y * a, (u).z * a, (u).v * a})
+
+#define VEC_DOT2(u, v) ((float) ((u).x * (v).x  +  (u).y * (v).y))
+#define VEC_DOT3(u, v) ((float) ((u).x * (v).x  +  (u).y * (v).y + (u).z * (v).z))
+#define VEC_DOT4(u, v) ((float) ((u).x * (v).x  +  (u).y * (v).y + (u).z * (v).z + (u).w * (v).w))
+
+#define VEC_NORMSQ2(u) ((u).x * (u).x + (u).y * (u).y)
+#define VEC_NORMSQ3(u) ((u).x * (u).x + (u).y * (u).y  + (u).z * (u).z)
+#define VEC_NORMSQ4(u) ((u).x * (u).x + (u).y * (u).y  + (u).z * (u).z  + (u).w * (u).w)
+
+#define VEC_NORMALIZE2(u) (VEC_SCA2(u, 1.0f/ sqrtf(VEC_NORMSQ2((u)))))
+#define VEC_NORMALIZE3(u) (VEC_SCA3(u, 1.0f/ sqrtf(VEC_NORMSQ3((u)))))
+#define VEC_NORMALIZE4(u) (VEC_SCA4(u, 1.0f/ sqrtf(VEC_NORMSQ4((u)))))
+
+#define VEC_CROSS3(u, v) ((__typeof__(u)){			\
+				(u).y * (v).z  -  (u).z * (v).y, 	\
+				(u).z * (v).x  -  (u).x * (v).z,	\
+				(u).x * (v).y  -  (u).y * (v).x 	\
+			})
 
 
-#define AFFMAT mat3x3
-#define AFFINV MINV3x3
-#define AFFIDT ID3x3
-#define AFFAPP MMUL3x3
-#define AFFFWD MMUL3V2
-#define AFFROT(u)   ((mat3x3){cosf(u), sinf(u), 0.0f, -sinf(u), cosf(u), 0.0f, 0.0f, 0.0f, 1.0f})
-#define AFFSCA(x,y) ((mat3x3){x, 0.0f, 0.0f, 0.0f, y, 0.0f, 0.0f, 0.0f, 1.0f})
-#define AFFSHR(x,y) ((mat3x3){1.0f, x, 0.0f, y, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f})
-#define AFFTNS(x,y) ((mat3x3){1.0f, 0.0f, x, 0.0f, 1.0f, y, 0.0f, 0.0f, 1.0f})
+
+static inline vec3f _VEC_CROSS3(vec3f u, vec3f v) {
+
+	return (vec3f){
+		u.y * v.z  -  u.z * v.y,
+		u.z * v.x  -  u.x * v.z,
+		u.x * v.y  -  u.y * v.x
+	};
+}
+
+
+
+static inline mat2x2 mat2x2_ADD(mat2x2 A, mat2x2 B) {
+
+	return (mat2x2){
+		A.a0 + B.a0, A.a1 * B.a1,
+		A.b0 * B.b0, A.b1 * B.b1,
+	};
+}
+
+static inline mat3x3 mat3x3_ADD(mat3x3 A, mat3x3 B) {
+
+	return (mat3x3){
+		A.a0 + B.a0, A.a1 * B.a1, A.a2 + B.a2,
+		A.b0 * B.b0, A.b1 * B.b1, A.b2 + B.b2,
+		A.c0 + B.c0, A.c1 + B.c1, A.c2 + B.c2
+	};
+}
+
+static inline mat4x4 mat4x4_ADD(mat4x4 A, mat4x4 B) {
+
+	return (mat4x4){
+		A.a0 + B.a0, A.a1 * B.a1, A.a2 + B.a2, A.a3 + B.a3,
+		A.b0 * B.b0, A.b1 * B.b1, A.b2 + B.b2, A.b3 + B.b3,
+		A.c0 + B.c0, A.c1 + B.c1, A.c2 + B.c2, A.c3 + B.c3,
+		A.d0 + B.d0, A.d1 + B.d1, A.d2 + B.d2, A.d3 + B.d3
+	};
+}
+
+
+static inline mat2x2 mat2x2_SCA(mat2x2 A, float c) {
+
+	return (mat2x2){
+		A.a0 * c, A.a1 * c,
+		A.b0 * c, A.b1 * c,
+	};
+}
+
+
+static inline mat3x3 mat3x3_SCA(mat3x3 A, float c) {
+
+	return (mat3x3){
+		A.a0 * c, A.a1 * c, A.a2 * c,
+		A.b0 * c, A.b1 * c, A.b2 * c,
+		A.c0 * c, A.c1 * c, A.c2 * c,
+	};
+}
+
+
+static inline mat4x4 mat4x4_SCA(mat4x4 A, float c) {
+
+	return (mat4x4){
+		A.a0 * c, A.a1 * c, A.a2 * c, A.a3 * c,
+		A.b0 * c, A.b1 * c, A.b2 * c, A.b3 * c,
+		A.c0 * c, A.c1 * c, A.c2 * c, A.c3 * c,
+		A.d0 * c, A.d1 * c, A.d2 * c, A.d3 * c
+	};
+}
+
+
+static inline mat2x2 mat2x2_MUL(mat2x2 A, mat2x2 B) {
+
+	return (mat2x2){
+		A.a0*B.a0 + A.a1*B.b0, 	A.a0*B.a1 + A.a1*B.b1,
+		A.b0*B.a0 + A.b1*B.b0, 	A.b0*B.a1 + A.b1*B.b1
+	};
+}
+
+static inline vec2f mat2x2_V2D_MUL(mat2x2 A, vec2f v) {
+	
+	return (vec2f) {
+		A.a0*v.x + A.a1*v.y,
+		A.b0*v.x + A.b1*v.y
+	};
+}
+
+static inline float mat2x2_V1D_MUL(mat2x2 A, float x) {
+	return A.a0*x + A.a1;
+}
+
+static inline mat3x3 mat3x3_MUL(mat3x3 A, mat3x3 B) {
+	
+	return (mat3x3) {
+		A.a0*B.a0 + A.a1*B.b0 + A.a2*B.c0,	A.a0*B.a1 + A.a1*B.b1 + A.a2*B.c1,	A.a0*B.a2 + A.a1*B.b2 + A.a2*B.c2,
+		A.b0*B.a0 + A.b1*B.b0 + A.b2*B.c0,	A.b0*B.a1 + A.b1*B.b1 + A.b2*B.c1,	A.b0*B.a2 + A.b1*B.b2 + A.b2*B.c2,
+		A.c0*B.a0 + A.c1*B.b0 + A.c2*B.c0,	A.c0*B.a1 + A.c1*B.b1 + A.c2*B.c1,	A.c0*B.a2 + A.c1*B.b2 + A.c2*B.c2
+	};
+}
+
+static inline vec3f mat3x3_V3D_MUL(mat3x3 A, vec3f v) {
+	
+	return (vec3f) {
+		A.a0*v.x + A.a1*v.y + A.a2*v.z,
+		A.b0*v.x + A.b1*v.y + A.b2*v.z,
+		A.c0*v.x + A.c1*v.y + A.c2*v.z,
+	};
+}
+
+static inline vec2f mat3x3_V2D_MUL(mat3x3 A, vec2f v) {
+	
+	return (vec2f) {
+		A.a0*v.x + A.a1*v.y + A.a2,
+		A.b0*v.x + A.b1*v.y + A.b2
+	};
+}
+
+
+static inline mat4x4 mat4x4_MUL(mat4x4 A, mat4x4 B) {
+
+	return (mat4x4)	{
+		A.a0*B.a0 + A.a1*B.b0 + A.a2*B.c0 + A.a3*B.d0,	A.a0*B.a1 + A.a1*B.b1 + A.a2*B.c1 + A.a3*B.d1,	A.a0*B.a2 + A.a1*B.b2 + A.a2*B.c2 + A.a3*B.d2,	A.a0*B.a3 + A.a1*B.b3 + A.a2*B.c3 + A.a3*B.d3,
+		A.b0*B.a0 + A.b1*B.b0 + A.b2*B.c0 + A.b3*B.d0,	A.b0*B.a1 + A.b1*B.b1 + A.b2*B.c1 + A.b3*B.d1,	A.b0*B.a2 + A.b1*B.b2 + A.b2*B.c2 + A.b3*B.d2,	A.b0*B.a3 + A.b1*B.b3 + A.b2*B.c3 + A.b3*B.d3,
+		A.c0*B.a0 + A.c1*B.b0 + A.c2*B.c0 + A.c3*B.d0,	A.c0*B.a1 + A.c1*B.b1 + A.c2*B.c1 + A.c3*B.d1,	A.c0*B.a2 + A.c1*B.b2 + A.c2*B.c2 + A.c3*B.d2,	A.c0*B.a3 + A.c1*B.b3 + A.c2*B.c3 + A.c3*B.d3,
+		A.d0*B.a0 + A.d1*B.b0 + A.d2*B.c0 + A.d3*B.d0,	A.d0*B.a1 + A.d1*B.b1 + A.d2*B.c1 + A.d3*B.d1,	A.d0*B.a2 + A.d1*B.b2 + A.d2*B.c2 + A.d3*B.d2,	A.d0*B.a3 + A.d1*B.b3 + A.d2*B.c3 + A.d3*B.d3
+	};
+}
+
+static inline vec4f mat4x4_V4D_MUL(mat4x4 A, vec4f u) {
+
+	return (vec4f){
+		A.a0*u.x + A.a1*u.y + A.a2*u.z + A.a3*u.w,
+		A.b0*u.x + A.b1*u.y + A.b2*u.z + A.b3*u.w,
+		A.c0*u.x + A.c1*u.y + A.c2*u.z + A.c3*u.w,
+		A.d0*u.x + A.d1*u.y + A.d2*u.z + A.d3*u.w
+	};
+}
+
+static inline vec3f mat4x4_V3D_MUL(mat4x4 A, vec3f u) {
+
+    return (vec3f){
+		A.a0*u.x + A.a1*u.y + A.a2*u.z + A.a3,
+		A.b0*u.x + A.b1*u.y + A.b2*u.z + A.b3,
+		A.c0*u.x + A.c1*u.y + A.c2*u.z + A.c3
+	};
+}
+
+static inline vec3f mat4x4_V3D_WDIV_MUL(mat4x4 A, vec3f u) {
+
+	float w = A.d0*u.x + A.d1*u.y + A.d2*u.z + A.d3;
+
+	//DONT DIVIDE BY ZERO !!
+    if (!w) return NUL3f;
+    else return (vec3f){
+		(A.a0*u.x + A.a1*u.y + A.a2*u.z + A.a3) / w,
+		(A.b0*u.x + A.b1*u.y + A.b2*u.z + A.b3) / w,
+		(A.c0*u.x + A.c1*u.y + A.c2*u.z + A.c3) / w
+	};
+}
+
+
+
+
+static inline float mat2x2_DET(mat2x2 A) {
+	return A.a0*A.b1 - A.a1*A.b0;
+}
+
+static inline float mat3x3_DET(mat3x3 A) {
+	return 
+		A.a0*(A.b1*A.c2	- A.b2*A.c1) -
+	   	A.a1*(A.b0*A.c2	- A.b2*A.c1) +
+	   	A.a2*(A.b0*A.c1	- A.b1*A.c1);
+}
+
+// static inline float mat4x4_DET(mat4x4 A) {
+// 	return 1.0f;
+
+// }
+
+static inline mat2x2 mat2x2_INV(mat2x2 A) {
+
+	float d = mat2x2_DET(A);
+
+	return (mat2x2) {
+		A.b1/d, -A.a1/d,
+	   -A.b0/d,  A.a0/d
+
+	};
+}
+
+static inline mat3x3 mat3x3_INV(mat3x3 A) {
+
+	float d = mat3x3_DET(A);
+
+	return (mat3x3) {
+		(A.c2*A.b1 - A.c1*A.b2)/d, 	-(A.c2*A.a1 - A.c1*A.a2)/d,	  (A.b2*A.a1 - A.b1*A.a2)/d,
+	   -(A.c2*A.b0 - A.c0*A.b2)/d,	 (A.c2*A.a0 - A.c0*A.a2)/d,	 -(A.b2*A.a0 - A.b0*A.a2)/d,
+		(A.c1*A.b0 - A.c0*A.b1)/d,	-(A.c1*A.a0 - A.c0*A.a1)/d,   (A.b1*A.a0 - A.b0*A.a1)/d
+	};
+}
+
+
+// static inline mat4x4 mat4x4_INV(mat4x4 A) {
+// 	return ID4x4;
+// }
+
+
+
+
+//wikipedia affine transforms
+#define AFF_ROT(u)  ((mat3x3){				\
+					cosf(u), sinf(u), 0.0f, \
+				   -sinf(u), cosf(u), 0.0f, \
+					0.0f, 	 0.0f, 	  1.0f	\
+					})
+
+#define AFF_SCALE(x,y) ((mat3x3){		  \
+						x, 	  0.0f,	0.0f, \
+						0.0f, y, 	0.0f, \
+						0.0f, 0.0f, 1.0f  \
+					})
+
+#define AFF_SHEAR(x,y) ((mat3x3){		  \
+						1.0f, x,    0.0f, \
+						y,    1.0f, 0.0f, \
+						0.0f, 0.0f, 1.0f  \
+					})
+
+#define AFF_TRANS(x,y) ((mat3x3){		 \
+						1.0f, 0.0f, x,	 \
+						0.0f, 1.0f, y, 	 \
+						0.0f, 0.0f, 1.0f \
+					})
+
 
 
 //https://www.scratchapixel.com/lessons/3d-basic-rendering/perspective-and-orthographic-projection-matrix/building-basic-perspective-projection-matrix
@@ -196,10 +320,13 @@ typedef struct {float a0, a1, a2, a3,
   		float q = (zf) / ((zf) - (zn));		\
   											\
 		(mat4x4){							\
-		f*(a), 0.0f,  0.0f,    0.0f, 		\
-		0.0f,  f,     0.0f,    0.0f, 		\
-		0.0f,  0.0f,  q, 	   1.0f, 		\
-		0.0f,  0.0f,  (zn)*q,  1.0f};		})
+		f,     0.0f,  0.0f,    0.0f, 		\
+		0.0f,  f*(a), 0.0f,    0.0f, 		\
+		0.0f,  0.0f,  q, 	   (zn)*q, 		\
+		0.0f,  0.0f,  1.0,     1.0f};		})
+
+
+//orthographic projection
 
 
 
@@ -209,6 +336,14 @@ typedef struct {float a0, a1, a2, a3,
 		0.0f,   1.0f,   0.0f,   y, 			\
 		0.0f,   0.0f,   1.0f,   z, 			\
 		0.0f,   0.0f,   0.0f,   1.0f		})
+
+
+#define TRANS_SCALE(x, y, z)((mat4x4){		\
+		x,      0.0f,   0.0f,   0.0f,  		\
+		0.0f,   y,      0.0f,   0.0f,		\
+		0.0f,   0.0f,   z,      0.0f,		\
+		0.0f,   0.0f,   0.0f,   1.0f		})
+
 
 #define TRANS_ROTX(u)((mat4x4){		\
 		1.0f,    0.0f,    0.0f,    0.0f,	\
@@ -227,6 +362,42 @@ typedef struct {float a0, a1, a2, a3,
 	   -sinf(u), cosf(u), 0.0f,    0.0f,	\
 		0.0f, 	 0.0f, 	  1.0f,	   0.0f,	\
 		0.0f,    0.0f,    0.0f,    1.0f		})
+
+
+#define TRANS_ROTZ(u)((mat4x4){		\
+		cosf(u), sinf(u), 0.0f,    0.0f,	\
+	   -sinf(u), cosf(u), 0.0f,    0.0f,	\
+		0.0f, 	 0.0f, 	  1.0f,	   0.0f,	\
+		0.0f,    0.0f,    0.0f,    1.0f		})
+
+
+/*
+#define TRANS_POINTAT(f, r, u, t)((mat4x4){	\
+		(f).x, (r).x, (u).x, (t).x,			\
+		(f).y, (r).y, (u).y, (t).y,			\
+		(f).z, (r).z, (u).z, (t).z,			\
+		0.0f,  0.0f,  0.0f,  1.0f	})
+
+//inverse of POINTAT
+static inline mat4x4 TRANS_LOOKAT(f, r, u, t) {
+	return (mat4x4){							
+		(f).x, (f).y, (f).z, -VEC_DOT3(f, t),
+		(r).x, (r).y, (r).z, -VEC_DOT3(r, t),
+		(u).x, (u).y, (u).z, -VEC_DOT3(u, t),
+		0.0f,  0.0f,  0.0f,  1.0f		
+	};
+}
+*/
+	
+
+
+
+#define MPRINT3x3(a) printf("| %+3.2f   %+3.2f   %+3.2f |\n| %+3.2f   %+3.2f   %+3.2f |\n| %+3.2f   %+3.2f   %+3.2f |\n",	\
+							(a).a0, (a).a1, (a).a2, (a).b0, (a).b1, (a).b2, (a).c0, (a).c1, (a).c2);
+
+#define MPRINT4x4(a) printf("| %+3.2f   %+3.2f   %+3.2f   %+3.2f |\n| %+3.2f   %+3.2f   %+3.2f   %+3.2f |\n| %+3.2f   %+3.2f   %+3.2f   %+3.2f |\n| %+3.2f   %+3.2f   %+3.2f   %+3.2f |\n",	\
+							(a).a0, (a).a1, (a).a2, (a).a3, (a).b0, (a).b1, (a).b2, (a).b3, (a).c0, (a).c1, (a).c2, (a).c3, (a).d0, (a).d1, (a).d2, (a).d3);
+
 
 
 

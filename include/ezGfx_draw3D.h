@@ -30,11 +30,11 @@ typedef struct {
   vec3f norm;
   EZ_Px col;
 
-} EZ_Poly;
+} EZ_Tri;
 
 
 typedef struct {
-  EZ_Poly* triangles;
+  EZ_Tri* triangles;
   u32 nPoly;
 
   EZ_Image* texture;
@@ -46,8 +46,8 @@ typedef struct {
 } EZ_Mesh;
 
 
-void EZ_draw3D_wireframe(EZ_Image target, const EZ_Mesh, const mat4x4* projection, const mat4x4* transform);
-void EZ_draw3D_tri(EZ_Image target, const EZ_Poly, const mat4x4* projection, const mat4x4* transform);
+void EZ_draw3D_drawMesh(EZ_Image target, const EZ_Mesh, const mat4x4* projection, const mat4x4* transform);
+void EZ_draw3D_tri(EZ_Image target, const EZ_Tri*, const mat4x4* projection, const mat4x4* transform);
 
 
 

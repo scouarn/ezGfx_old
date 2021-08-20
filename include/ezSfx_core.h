@@ -16,23 +16,26 @@
 #ifndef EZSFX_CORE
 #define EZSFX_CORE
 
-#include <stdlib.h>
 #include <utils.h>
 
-#define CD41KHZ 44100
+#define CD44KHZ 44100
 #define SAMPLE_MAX 32767
-typedef i16 EZ_Sample; //signed 16bits iteger samples
+
+
+typedef int16_t EZ_Sample; //signed 16bits iteger samples
 
 typedef struct {
 	EZ_Sample* data;	//array of samples
-	u32   size;			//array length
 	EZ_Sample* curr;	//pointer to element of array (->sample to be played)
-} EZ_pcmArray;
+	u32   size;			//array length
+	u32	  channels;		//number of channels
+	u32   sampleRate;   //samples per seconds * channels
+
+} EZ_PCMArray;
 
 
-EZ_Sample   EZ_sfx_pcmNextSample(EZ_pcmArray array); //return and increment current
-EZ_pcmArray EZ_sfx_pcmLoad(const char* filename);	 //load array
-void EZ_sfx_pcmFree(EZ_pcmArray array);				 //free array
+EZ_Sample EZ_sfx_pcmNextSample(EZ_PCMArray* array); //return and increment current
+void EZ_sfx_pcmFree(EZ_PCMArray array);				 //free array
 
 
 //init audio
@@ -78,12 +81,9 @@ double EZ_sfx_sine(double time, double freq);
 
 
 //callback returning sample to play given the time and the channel
-//if the client does not define it, define it anyway
-#ifdef SFX_CLIENT_CALLBACK
-	extern EZ_Sample EZ_sfx_callback(double time, int channel);
-#else
-	EZ_Sample EZ_sfx_callback(double time, int channel) {return (EZ_Sample)0;}
-#endif
+//define SFX_CLIENT_CALLBACK in ezGfx.h to enable it
+extern EZ_Sample EZ_sfx_callback(double time, int channel);
+
 
 	
 #endif

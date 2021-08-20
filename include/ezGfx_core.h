@@ -18,9 +18,6 @@
 
 #include "utils.h"
 
-#include <stdlib.h>
-#include <stdio.h>
-
 
 /* MAIN FUNCTIONS */
 void EZ_start();	//start the app thread
@@ -97,6 +94,20 @@ EZ_Image EZ_copyImage(EZ_Image);	   //allocates memory and copies data to new im
 void  	 EZ_freeImage(EZ_Image);	   //free allocated memory
 
 
+
+typedef struct {
+	int h_px; //size in pixels of a character
+	int w_px;
+	int w_bytes; //number of bytes in each row
+	u8** data;   //array of pointers : one per char pointing to corresponding pixel information
+
+} EZ_Font;
+
+EZ_Font EZ_createFont(int w, int h); //allocates memory for 256 chars with given size in pixels
+void    EZ_freeFont(EZ_Font font);
+
+
+
 enum EZ_BlendMode {ALPHA_BLEND,  //standart alpha blending
 				   ALPHA_IGNORE, //no blending at all
 				   ALPHA_FAST	 //ignore alpha if bigger than 0
@@ -116,6 +127,12 @@ EZ_Px EZ_randCol();	//random white noise RGBA color
 #define EZ_MAGENTA ((EZ_Px)0xFF00FFFFU)
 #define EZ_YELLOW  ((EZ_Px)0xFFFF00FFU)
 
+#define EZ_ORANGE  	((EZ_Px)0xFF7F00FFU)
+#define EZ_LIME  	((EZ_Px)0x7FFF00FFU)
+#define EZ_PURPLE  	((EZ_Px)0x7F00FFFFU)
+#define EZ_GRAY		((EZ_Px)0x7F7F7FFFU)
+
+
 #define EZ_RGB(r,g,b) 	 ((EZ_Px){.col = {255, b, g, r}})
 #define EZ_RGBA(r,g,b,a) ((EZ_Px){.col = {  a, b, g, r}})
 #define EZ_BW(c) 		 ((EZ_Px){.col = {255, c, c, c}}) //grayscale color
@@ -134,6 +151,9 @@ void EZ_setFullscreen(bool); //window fullscreen
 void EZ_setStretching(bool); //enables or diasbles black bars (canvas size =/= window size)
 
 double EZ_getTime(); //returns time in seconds since start of the thread
+
+
+
 
 
 

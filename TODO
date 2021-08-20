@@ -1,55 +1,55 @@
 
 { extensions
--Textbox, "windows", buttons -gui extension
--fragment shaders
--dithering
+	-Textbox, "windows", buttons -gui extension
+	-glsl fragment shaders
+	-dithering
+	-gl matrices
+	-lua
+	-python
+	-on the fly compiled scripting language
+	-splines calculation / bezier curves 2D/3D
 }
 
-
-{ formats
--load png
--wave sound format
--fonts PSF2 format
--font ttf
-}
 
 { platforms
--ms windows support
--window gl / gdi
--no xorg support
--no xorg gl
--wasm support
+	-ms windows support
+	-window gl / gdi
+	-no xorg support
+	-xorg no gl
+	-wasm support
 }
 
 
 { 3D
--textri ??? -> revise fill tri algo
--textri --no perspective correction (PS1 look)
--textri goes to draw3D
--copy of fillTri in draw3D ?
-	-> use vectors
--mesh files
--shadowing
--normals
-
--different voxel engine
+	-textri --no perspective correction (PS1 look)
+	-mesh files
+	-different voxel engine
 }
 
 
 
 {	sound
 	windows sound
-	midi, wave...
+	midi
 	instruments
-	editor
+	score / midi editor
+	no alsa
 }
 
 
--organisation dans un seul dossier source
--choix de l'implémentation pour la platforme
--comments in implementation
-
--errors fprintf to log file
--more verbose matrix math macros
 
 
+{ formats
+	-mesh files & materials
+	-midi
+	-mp3
+	-vst
+	-png
+	-jpeg
+	-font ttf
+}
+
+
+-court métrage maths: complexes, algèbre, logique...
+
+-oscillo

@@ -1,49 +1,60 @@
 
-#folders
-DIR_SRC = sources
-DIR_BIN = bin
-DIR_TGT = targets
-DIR_INC = include
-DIR_REL = release
-DIR_BAK = bak
+#used implementation
+CORE_VIDEO := ezGfx_core_linux_xorg
+CORE_AUDIO := ezSfx_core_linux_alsa
 
-RELEASE = TODO Makefile README.md assets $(DIR_SRC) $(DIR_BIN) $(DIR_TGT) $(DIR_INC) 
-BACKUP  = $(RELEASE) $(DIR_REL) .git .gitignore 
+
+#directories
+DIR_SRC := sources
+DIR_TGT := sources/entrypoints
+DIR_COR := sources/core
+DIR_EXT := sources/extensions
+DIR_BIN := bin
+DIR_INC := include
+DIR_REL := release
+DIR_BAK := bak
+
+#some list for some operations
+RELEASE := TODO Makefile README.md assets $(DIR_SRC) $(DIR_BIN) $(DIR_TGT) $(DIR_INC) 
+BACKUP  := $(RELEASE) $(DIR_REL) .git .gitignore 
+
 
 
 #the compiler and some flags
-CC = gcc -I$(DIR_INC) -Wall -O3
-LIBS  = -lX11 -lGL -lpthread -lasound -lm #linux
+CC 	   := gcc 
+CFLAGS :=  -O3 -Wall
+DEBUG_CFLAG := -Wall
+LIBS   := -lm -lpthread -lasound -lX11 #-lGL    #linux
 
 
 #files handled at some point
-MAINSRC := $(wildcard $(DIR_TGT)/*.c)
-SOURCES := $(wildcard $(DIR_SRC)/*.c) 
 HEADERS := $(wildcard $(DIR_INC)/*.h)
 
-OBJECTS := $(patsubst $(DIR_SRC)/%.c, $(DIR_BIN)/%.o, $(SOURCES))
+SOURCES := $(wildcard $(DIR_EXT)/*.c)
+OBJECTS := $(patsubst $(DIR_EXT)/%.c, $(DIR_BIN)/%.o, $(SOURCES)) $(MAINOBJ) $(OBJECTS) $(DIR_BIN)/$(CORE_VIDEO).o $(DIR_BIN)/$(CORE_AUDIO).o
+
+MAINSRC := $(wildcard $(DIR_TGT)/*.c)
 MAINOBJ := $(patsubst $(DIR_TGT)/%.c, $(DIR_BIN)/%.o, $(MAINSRC))
 TARGETS := $(patsubst $(DIR_TGT)/%.c, $(DIR_BIN)/%,   $(MAINSRC))
 
-COMPILE_ALL = $(OBJECTS) $(MAINOBJ) $(TARGETS)
+COMPILE_ALL := $(OBJECTS) $(MAINOBJ) $(TARGETS)
+
 
 all : $(COMPILE_ALL)
 
+.PHONY: debug
+debug : CFLAGS := $(DEBUG_CFLAG)
+
+
 #compile objects to executable
-$(DIR_BIN)/% : $(DIR_TGT)/%.c
-	$(CC) -o $@ $< $(OBJECTS) $(LIBS)
+$(DIR_BIN)/% : $(DIR_TGT)/%.c $(OBJECTS) $(MAINOBJ)
+	$(CC) -I$(DIR_INC) $(CFLAGS) -o $@ $@.o $(OBJECTS) $(LIBS)
 
-# Compile sources to objects
-$(DIR_BIN)/%.o : $(DIR_SRC)/%.c
-	$(CC) -c $< -o $@
+#compile sources to objects
+$(DIR_BIN)/%.o : $(DIR_SRC)/*/%.c $(HEADERS)
+	$(CC) -I$(DIR_INC) $(CFLAGS) -o $@ -c $<
 
 
-$(DIR_BIN)/%.o : $(DIR_TGT)/%.c
-	$(CC) -c $< -o $@ 
-
-#recompile if header has changed
-# $(SOURCES) : $(HEADERS)
-# $(MAINSRC) : $(HEADERS)
 
 
 #copy useful stuff in release dir
@@ -78,4 +89,10 @@ hardclean:
 .PHONY: clean
 clean:
 	rm -f $(DIR_BIN)/*
+
+
+#run test, compile if not up to date
+.PHONY : test
+test: $(DIR_BIN)/test
+	bin/test
 
