@@ -16,7 +16,8 @@
 #ifndef EZGFX_CORE
 #define EZGFX_CORE
 
-#include "utils.h"
+
+#include "ezGfx/ezGfx_utils.h"
 
 
 /* MAIN FUNCTIONS */
@@ -76,12 +77,12 @@ extern void EZ_callback_mouseMoved(EZ_Mouse mouse); //when the mouse is moved
 
 /* COLOR FUNCITONS */
 typedef union {
-	u32 ref;  //the 32bits "hex" value
-	struct {u8 a, b, g, r;} col;
+	uint32_t ref;  //the 32bits "hex" value
+	struct {uint8_t a, b, g, r;} col;
 } EZ_Px;
 
 typedef struct {
-	u32 w, h;	//size in pixels
+	uint32_t w, h;	//size in pixels
 	EZ_Px* px;	//pixel array
 	
 	void* reserved; //left to implementation
@@ -99,7 +100,7 @@ typedef struct {
 	int h_px; //size in pixels of a character
 	int w_px;
 	int w_bytes; //number of bytes in each row
-	u8** data;   //array of pointers : one per char pointing to corresponding pixel information
+	uint8_t** data;   //array of pointers : one per char pointing to corresponding pixel information
 
 } EZ_Font;
 
@@ -140,15 +141,14 @@ EZ_Px EZ_randCol();	//random white noise RGBA color
 
 
 /* UTILITY */
-void EZ_window(EZ_Image canvas, int winW, int winH); //init the graphics, to be called from the app thread
-void EZ_rename(const char*);  						 //change the name of the window
-void EZ_resize(int winW, int winH);					 //change the size of the window
+void EZ_bind(EZ_Image canvas); 		//set what should be drawn
+void EZ_rename(const char*);  		//change the name of the window
+void EZ_resize(int winW, int winH);	//change the size of the window
 
 void EZ_redraw(); //force screen redraw (will call the draw callback)
 
 void EZ_setMaximized(bool);  //maximize window
 void EZ_setFullscreen(bool); //window fullscreen
-void EZ_setStretching(bool); //enables or diasbles black bars (canvas size =/= window size)
 
 double EZ_getTime(); //returns time in seconds since start of the thread
 

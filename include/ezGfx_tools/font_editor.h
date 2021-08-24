@@ -1,4 +1,4 @@
-#include "ezGfx.h"
+#include "ezGfx/ezGfx.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
@@ -14,11 +14,11 @@ static EZ_Font  editor_font;
 static char fname[256];
 
 //cursor
-static unsigned int edit_char = 'A';
-static unsigned int cursor_x, cursor_y, char_cursor_x, char_cursor_y;
+static uint32_t edit_char = 'A';
+static uint32_t cursor_x, cursor_y, char_cursor_x, char_cursor_y;
 
 //copy paste buffer
-static unsigned char buffer[64];
+static uint32_t buffer[64];
 
 //size in pixels of the "large pixels" in the editor
 static const int RES = 16;

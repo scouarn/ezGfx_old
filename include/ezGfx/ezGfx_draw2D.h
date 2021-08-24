@@ -15,8 +15,8 @@
 #ifndef EZ_DRAW2D
 #define EZ_DRAW2D
 
-#include "ezGfx_core.h"
-#include "matrix.h"
+#include "ezGfx/ezGfx_core.h"
+#include "ezGfx/ezGfx_matrix.h"
 
 
 void EZ_draw2D_setBlendMode(enum EZ_BlendMode mode); //set the blendmode used in all the extension
@@ -29,7 +29,7 @@ void EZ_draw2D_getTranslate(int* x, int* y);
 
 
 //print single char with given background and foreground color
-void EZ_draw2D_printChar(EZ_Image target, u32 c, const EZ_Font font, EZ_Px fg, EZ_Px bg, int x, int y);
+void EZ_draw2D_printChar(EZ_Image target, uint32_t c, const EZ_Font font, EZ_Px fg, EZ_Px bg, int x, int y);
 
 //print a string, handle control characters,
 //wraps in a given with and height (in chars)

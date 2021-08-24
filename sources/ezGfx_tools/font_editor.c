@@ -1,4 +1,4 @@
-#include "font_editor.h"
+#include "ezGfx_tools/font_editor.h"
 
 
 void EZ_callback_init() {
@@ -14,7 +14,7 @@ void EZ_callback_init() {
 
 	//create window
 	canvas = EZ_createImage(512,512);
-	EZ_window(canvas, 512, 512);
+	EZ_bind(canvas);
 
 	//number of glyphs that can fit the screen
 	x_cols = canvas.w / font.w_px;
@@ -60,7 +60,6 @@ void EZ_callback_kill() {
   EZ_freeFont(editor_font);
 }
 
-EZ_Sample EZ_sfx_callback(double time, int channel) {return (EZ_Sample)0;}
 
 
 int main (int argc, char **argv) {

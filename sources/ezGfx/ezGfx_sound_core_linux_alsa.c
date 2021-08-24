@@ -1,4 +1,4 @@
-#include "ezSfx_core.h"
+#include "ezGfx/ezGfx_sound_core.h"
 
 #include <pthread.h>
 #include <string.h>

@@ -1,12 +1,17 @@
 
 { extensions
 	-Textbox, "windows", buttons -gui extension
+	
 	-glsl fragment shaders
-	-dithering
 	-gl matrices
-	-lua
-	-python
-	-on the fly compiled scripting language
+
+	-dithering
+
+	-lua / python / lisp / perl / js / bash /  / ??
+		=>on the fly compiled scripting language
+	//https://github.com/lua/lua
+	-brainfuck ?
+
 	-splines calculation / bezier curves 2D/3D
 }
 
@@ -30,10 +35,14 @@
 
 {	sound
 	windows sound
-	midi
+	no alsa
+	on the fly file reading (no pcm array but "stream"... block by block)
+
+	midi / sequencer
 	instruments
 	score / midi editor
-	no alsa
+	FFT
+	audio-in
 }
 
 
@@ -42,14 +51,15 @@
 { formats
 	-mesh files & materials
 	-midi
-	-mp3
 	-vst
 	-png
 	-jpeg
 	-font ttf
+	-config files
+	-json files
 }
 
 
--court métrage maths: complexes, algèbre, logique...
+-court métrage maths: complexes, algèbre, logique, bourbaki,...
 
 -oscillo

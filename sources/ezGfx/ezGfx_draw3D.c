@@ -1,5 +1,5 @@
-#include "ezGfx_draw3D.h"
-#include "ezGfx_draw2D.h"
+#include "ezGfx/ezGfx_draw3D.h"
+#include "ezGfx/ezGfx_draw2D.h"
 #include <stdlib.h>
 
 

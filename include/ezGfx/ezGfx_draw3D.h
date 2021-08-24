@@ -15,8 +15,9 @@
 #ifndef EZ_DRAW3D
 #define EZ_DRAW3D
 
-#include "ezGfx_core.h"
-#include "matrix.h"
+#include "ezGfx/ezGfx_core.h"
+#include "ezGfx/ezGfx_matrix.h"
+#include "ezGfx/ezGfx_utils.h"
 
 typedef struct {
   vec3f pos;
@@ -35,7 +36,7 @@ typedef struct {
 
 typedef struct {
   EZ_Tri* triangles;
-  u32 nPoly;
+  uint32_t nPoly;
 
   EZ_Image* texture;
 

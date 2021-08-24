@@ -1,4 +1,4 @@
-#include "ezGfx.h"
+#include "ezGfx/ezGfx.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -15,18 +15,13 @@ static mat4x4 transform;
 
 void EZ_callback_init() {
 
-	//load test image
-	img = EZ_load_BMP("screenshot.bmp");
-	ASSERTM(img.px, "File error, exit");
-	printf("%dx%d\n", img.w, img.h);
-
 	//load mesh	
 	mesh = EZ_load_OBJ("assets/meshes/cube.obj");
 
 
-	//init graphics
+	//setup graphics
 	canvas = EZ_createImage(800, 600);
-	EZ_window(canvas, 800, 600);
+	EZ_bind(canvas);
 
 	//init projection matrix
 	proj = PROJ_PERSPECTIVE(HALF_PI, (float)canvas.w / canvas.h, 0.1f, 1000.0f);
@@ -39,15 +34,14 @@ void EZ_callback_draw(double dt) {
 	
 	float angle = 0.5f * EZ_getTime();
 
-	//printf("%fmillis  z=%f\n",dt*1000, 5.0f-angle);
+	printf("%fmillis\n",dt*1000);
 
 	//init world transform
 	transform = ID4x4;
-	transform = mat4x4_MUL(TRANS_TRANS(-0.5f, -0.5f, -0.5f),  transform);
 	transform = mat4x4_MUL(TRANS_ROTX(angle), 								transform);
 	transform = mat4x4_MUL(TRANS_ROTY(1.33*angle), 						transform);
-	transform = mat4x4_MUL(TRANS_TRANS(cosf(angle),  sinf(angle),   5.0f), transform);
-	//transform = mat4x4_MUL(TRANS_TRANS(0.0f,  0.0f,   3.0f), transform);
+	//transform = mat4x4_MUL(TRANS_TRANS(cosf(angle),  sinf(angle),   5.0f), transform);
+	transform = mat4x4_MUL(TRANS_TRANS(0.0f,  0.0f,   5.0f), transform);
 	//transform = mat4x4_MUL(TRANS_ROTY(1.33*angle), 						transform);
 
 
@@ -93,8 +87,6 @@ void EZ_callback_kill() {
   // EZ_draw2D_freeFont(font);
   EZ_draw3D_freeMesh(mesh);
 }
-
-EZ_Sample EZ_sfx_callback(double time, int channel) {return (EZ_Sample)0;}
 
 int main (int argc, char **argv) {
 

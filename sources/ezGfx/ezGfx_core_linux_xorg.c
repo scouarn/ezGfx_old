@@ -1,15 +1,29 @@
-#include "ezGfx_core.h"
+#include "ezGfx/ezGfx_core.h"
 
 #include <time.h>
 #include <pthread.h>
 #include <string.h>
 #include <stdlib.h>
+#include <signal.h>
 
 #include <X11/X.h>
 #include <X11/Xlib.h>
-#include <GL/gl.h>
-#include <GL/glx.h>
+#include <X11/Xutil.h>
 
+
+static Display *disp;
+static int screen;
+static Window win;
+static Atom wm_delete;
+static GC gc; //X11 graphic context
+static char* buffer;
+
+static EZ_Image canvas;
+static int winWidth;
+static int winHeight;
+static float canvasXwinRatio = 1.0f;
+static float canvasYwinRatio = 1.0f;
+static void _updateBars();
 
 static struct timespec startTime;
 static struct timespec lastTime;
@@ -17,87 +31,38 @@ static volatile bool running;
 static pthread_t thread;
 static void* mainThread(void* arg);
 
-static GLXContext glContext;
-static GLuint texture;
-static EZ_Image canvas;
-static bool stretched;
-static int winWidth;
-static int winHeight;
-static float canvasX = 1.0f;
-static float canvasY = 1.0f;
-static void updateBars();
-
-static XVisualInfo* visualInfo;
-static Display *disp;
-static int screen;
-static Window win;
-static Atom wm_delete;
-
 static enum EZ_KeyCode keyMap(int keyCode);
 static EZ_Key keyStates[_numberOfKeys];
 static EZ_Mouse mouseState;
 
+static void __int_handler__(int sig) {EZ_stop();}
 
-void EZ_window(EZ_Image cnvs, int w, int h) {
 
-	winWidth = w; winHeight = h;
+void EZ_bind(EZ_Image cnvs) {
 	canvas = cnvs;
-
-	//init X window
-	disp   = XOpenDisplay(NULL);
-	ASSERTM(disp, "Couldn't initialize X display");
-
-	screen = DefaultScreen(disp);
-	win    = XCreateSimpleWindow(disp, RootWindow(disp, screen), 10, 10, w, h, 1, BlackPixel(disp, screen), BlackPixel(disp, screen));
-
-	XStoreName(disp, win, "EZGFX");
-	XSelectInput(disp, win, StructureNotifyMask | KeyPressMask | KeyReleaseMask | ButtonPressMask | ButtonReleaseMask | PointerMotionMask | ExposureMask | FocusChangeMask);
-	XMapWindow(disp, win);
-
-	wm_delete = XInternAtom(disp, "WM_DELETE_WINDOW", True);
-	ASSERTM(XSetWMProtocols(disp, win, &wm_delete, 1), 
-			"Couldn't set XWM protocol for handling window destruction");
-
-
-	//init opengl
-	GLint GLAttribs[] = { GLX_RGBA, GLX_DEPTH_SIZE, 24, GLX_DOUBLEBUFFER, None };
-	
-	visualInfo = glXChooseVisual(disp, 0, GLAttribs);
-	ASSERTM(visualInfo, "Couldn't find visual to initialize openGL");
-
-	glContext  = glXCreateContext(disp, visualInfo, NULL, GL_TRUE);
-	ASSERTM(glContext, "Couldn't create openGL context");
-
-	glXMakeCurrent(disp, win, glContext);
-	glViewport(0, 0, w, h);
-
-	glGenTextures(1, &texture);
-	ASSERTM(texture != GL_INVALID_VALUE, "Couldn't generate openGL texture");
-	glBindTexture(GL_TEXTURE_2D, texture);
-
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-
-	glBindTexture(GL_TEXTURE_2D, texture);
-	glEnable(GL_TEXTURE_2D);
-
-
 }
+
 
 void EZ_start() {
 	running = true;
+
+	//start engine thread
 	pthread_create(&thread, NULL, &mainThread, NULL);
 }
 
 void EZ_stop() {
+	//stop thread
 	running = false;
 }
 
 void EZ_join() {
+	//join thread
 	pthread_join(thread, NULL);
 }
 
 double EZ_getTime() {
+
+	//accurate time in seconds
 	struct timespec now;
 	clock_gettime(CLOCK_MONOTONIC, &now);
 
@@ -121,8 +86,8 @@ void EZ_rename(const char* name) {
 
 void EZ_resize(int w, int h) {
 	XResizeWindow(disp, win, w, h);
-	glViewport(0, 0, w, h);
-
+	winWidth = w;
+	winHeight = h;
 }
 
 void EZ_setFullscreen(bool val) {
@@ -156,10 +121,6 @@ void EZ_setMaximized(bool val) {
 		SubstructureNotifyMask, &xev);
 }
 
-void EZ_setStretching(bool val) {
-	stretched = val;
-}
-
 
 EZ_Image EZ_createImage(int w, int h) {
 	EZ_Image img = {0};
@@ -172,12 +133,11 @@ EZ_Image EZ_createImage(int w, int h) {
 
 
 EZ_Image EZ_copyImage(EZ_Image source) {
-
 	EZ_Image img = {0};
 	img.w = source.w;
 	img.h = source.h;
-
 	img.px = malloc(img.w*img.h*sizeof(EZ_Px));
+
 	memcpy(img.px, source.px, img.w*img.h*sizeof(EZ_Px));
 
 	return img;
@@ -214,18 +174,19 @@ EZ_Font EZ_createFont(int w, int h) {
 
 
 
-
 void EZ_freeFont(EZ_Font font) {
 	if (font.data[0]) free(font.data[0]);
 	if (font.data)    free(font.data);
 }
 
 
+
 EZ_Px EZ_randCol() {
 	EZ_Px col;
-	col.ref = (u64)rand() << 8;
+	col.ref = (uint32_t)rand();
 	return col;
 }
+
 
 EZ_Px EZ_blend(EZ_Px fg, EZ_Px bg, enum EZ_BlendMode mode) {
 
@@ -239,7 +200,7 @@ EZ_Px EZ_blend(EZ_Px fg, EZ_Px bg, enum EZ_BlendMode mode) {
 		default :
 		case ALPHA_BLEND  : 
 		
-		
+		//fast integer linear interpolation
 		result.col.a = fg.col.a + (255 - fg.col.a) * bg.col.a;
 		result.col.r = (fg.col.a * fg.col.r + (255 - fg.col.a) * bg.col.r) >> 8;
 		result.col.g = (fg.col.a * fg.col.g + (255 - fg.col.a) * bg.col.g) >> 8;
@@ -258,21 +219,38 @@ EZ_Px EZ_blend(EZ_Px fg, EZ_Px bg, enum EZ_BlendMode mode) {
 void EZ_redraw() {
 
 
-	//display
-	glClear( GL_COLOR_BUFFER_BIT);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, canvas.w, canvas.h, 0, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, canvas.px);
+	//copy canvas to buffer
+	int x1 = winWidth * (1.0f-canvasXwinRatio) * 0.5f;
+	int x2 = x1 + winWidth * canvasXwinRatio;
+
+	int y1 = winHeight * (1.0f - canvasYwinRatio) * 0.5f;
+	int y2 = y1 + winHeight * canvasYwinRatio;
+
+	float xRatio = (float)canvas.w / (x2-x1);
+	float yRatio = (float)canvas.h / (y2-y1);
 
 
-	//draw texture
-	glBegin(GL_QUADS);
-			glTexCoord2f(0.0f, 1.0f); glVertex2f(-canvasX, -canvasY);
-			glTexCoord2f(0.0f, 0.0f); glVertex2f(-canvasX,  canvasY);
-			glTexCoord2f(1.0f, 0.0f); glVertex2f( canvasX,  canvasY);
-			glTexCoord2f(1.0f, 1.0f); glVertex2f( canvasX, -canvasY);
-	glEnd();
+	//scan accros the screen
+	for (int x = x1; x < x2; x++) 
+	for (int y = y1; y < y2; y++) {
+
+		int sx = (x-x1)*xRatio;
+		int sy = (y-y1)*yRatio;
+
+		EZ_Px px = canvas.px[sx + sy*canvas.w];
+
+		buffer[(x + y*winWidth)*4   ] = px.col.b;
+		buffer[(x + y*winWidth)*4 +1] = px.col.g;
+		buffer[(x + y*winWidth)*4 +2] = px.col.r;
+
+	}
 
 
-	glXSwapBuffers(disp, win);
+	//draw the buffer on the screen
+	XImage* ximage = XCreateImage(disp, DefaultVisual(disp, screen), 
+				24, ZPixmap, 0, buffer, winWidth, winHeight, 32, 0);
+
+	XPutImage(disp, win, gc, ximage, 0, 0, 0, 0, winWidth, winHeight);
 
 }
 
@@ -309,7 +287,7 @@ static enum EZ_KeyCode keyMap(int keyCode) {
 		case 0x22 : return K_OPEN;    case 0x23 : return K_CLOSE;
 		case 0x15 : return K_PLUS;    case 0x14 : return K_MINUS;
 
-		case 0x5b : return KP_DEC;  case 0x68 : return K_RETURN;
+		case 0x5b : return KP_DEC;	case 0x68 : return K_RETURN;
 		case 0x3f : return KP_MUL;  case 0x6a : return KP_DIV;
 		case 0x56 : return K_PLUS;  case 0x52 : return K_MINUS;
 
@@ -344,29 +322,19 @@ static enum EZ_KeyCode keyMap(int keyCode) {
 
 
 
-static void updateBars() {
+static void _updateBars() {
 
 	//black bars
+	float canvasRatio = (float)canvas.w / canvas.h;
+	float windowRatio = (float)winWidth / winHeight;
+	canvasXwinRatio = canvasRatio / windowRatio;
+	canvasYwinRatio = windowRatio / canvasRatio;
 
-	if (stretched) {
-		canvasX = 1.0f;
-		canvasY = 1.0f;
-	}
-	else {
+	if (canvasXwinRatio > 1.0f)
+		canvasXwinRatio = 1.0f;
 
-		float canvasRatio = (float)canvas.w / canvas.h;
-		float windowRatio = (float)winWidth / winHeight;
-		canvasX = canvasRatio / windowRatio;
-		canvasY = windowRatio / canvasRatio;
-
-		if (canvasX > 1.0f)
-			canvasX = 1.0f;
-
-		else
-			canvasY = 1.0f;
-
-
-	}
+	else
+		canvasYwinRatio = 1.0f;
 
 }
 
@@ -374,6 +342,39 @@ static void updateBars() {
 static void* mainThread(void* arg) {
 
 	pthread_detach(pthread_self());
+
+
+	//create display
+	disp   = XOpenDisplay(NULL);
+	ASSERTM(disp, "Couldn't initialize X display");
+
+	//get screen
+	screen = DefaultScreen(disp);
+
+	//create window
+	win = XCreateSimpleWindow(disp, RootWindow(disp, screen), 0, 0, 100, 100, 1, BlackPixel(disp, screen), BlackPixel(disp, screen));
+	
+
+	//configure window
+	XStoreName(disp, win, "EZGFX");	
+	XSelectInput(disp, win, StructureNotifyMask | KeyPressMask | KeyReleaseMask | ButtonPressMask | ButtonReleaseMask | PointerMotionMask | ExposureMask | FocusChangeMask);
+	XMapWindow(disp, win);
+
+	//window destruction handling
+	wm_delete = XInternAtom(disp, "WM_DELETE_WINDOW", True);
+	ASSERTM(XSetWMProtocols(disp, win, &wm_delete, 1), 
+			"Couldn't set X11 protocol for handling window destruction");
+
+	//graphics context
+	gc = XCreateGC(disp, win, 0,0);
+
+	//init frame buffer
+	buffer = calloc(winWidth * winHeight, 4);
+
+
+	//override keyboard interrupt to set graphics mode back
+	signal(SIGINT, __int_handler__); 
+
 
 	//init time
 	clock_gettime(CLOCK_MONOTONIC, &startTime);
@@ -385,10 +386,13 @@ static void* mainThread(void* arg) {
 
 	//client init callback
 	EZ_callback_init();
+	EZ_resize(canvas.w, canvas.h);
+	_updateBars();
 
 
 	//main loop
 	while (running && disp) {
+
 
 		//time
 		struct timespec now;
@@ -446,11 +450,11 @@ static void* mainThread(void* arg) {
 
 			case FocusIn :
 				XAutoRepeatOff(disp); //turn off autistic keyboard inputs
-				break;
+			break;
 
 			case FocusOut:
 				XAutoRepeatOn(disp); //put it back on so other apps are not affected
-				break;
+			break;
 
 			case ButtonPress:
 			{
@@ -487,27 +491,28 @@ static void* mainThread(void* arg) {
 			case MotionNotify:
 			{
 
-				int newx = (e.xmotion.x + 0.5f*(canvasX - 1.0f) * winWidth ) * canvas.w / ((float)winWidth  * canvasX);
-				int newy = (e.xmotion.y + 0.5f*(canvasY - 1.0f) * winHeight) * canvas.h / ((float)winHeight * canvasY);
+			int newx = (e.xmotion.x + 0.5f*(canvasXwinRatio - 1.0f) * winWidth ) * canvas.w / ((float)winWidth  * canvasXwinRatio);
+			int newy = (e.xmotion.y + 0.5f*(canvasYwinRatio - 1.0f) * winHeight) * canvas.h / ((float)winHeight * canvasYwinRatio);
 
-				mouseState.dx = newx - mouseState.x;
-				mouseState.dy = newy - mouseState.y;
-				mouseState.x  = newx;
-				mouseState.y  = newy;
+			mouseState.dx = newx - mouseState.x;
+			mouseState.dy = newy - mouseState.y;
+			mouseState.x  = newx;
+			mouseState.y  = newy;
 
-				EZ_callback_mouseMoved(mouseState);
+			EZ_callback_mouseMoved(mouseState);
 
-				break;
+			break;
 			}
 
 			case ConfigureNotify: //resize
 			{
-				XConfigureEvent req = e.xconfigure;
-				winWidth = req.width; winHeight = req.height;
-				glViewport(0, 0, req.width, req.height);
-				updateBars();
+			XConfigureEvent req = e.xconfigure;
+			winWidth = req.width; winHeight = req.height;
+			free(buffer);
+			buffer = calloc(winWidth*winHeight, 4);
+			_updateBars();
 
-				break;
+			break;
 			}
 
 			case ClientMessage: //on destroy
@@ -517,6 +522,7 @@ static void* mainThread(void* arg) {
 			}
 
 
+
 			}
 		}
 
@@ -524,22 +530,17 @@ static void* mainThread(void* arg) {
 		EZ_redraw();
 
 
-	 }
+	}
 
 
 	EZ_callback_kill();
 	
-	if (disp) {
-		//free everything
-		glXMakeCurrent(disp, None, NULL);
-		glXDestroyContext(disp, glContext);
-		XAutoRepeatOn(disp); //put it back on so other apps are not affected
-		XCloseDisplay(disp);
-	}
+	free(buffer);
+	XFreeGC(disp, gc);
+	XDestroyWindow(disp, win);
+	XAutoRepeatOn(disp); //put it back on so other apps are not affected
+	XCloseDisplay(disp);
 
-	XFree(visualInfo);
-
-	
 	pthread_exit(NULL);
 
 	return NULL;

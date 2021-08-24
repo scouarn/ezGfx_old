@@ -1,17 +1,19 @@
-#include "ezGfx_core.h"
+#include "ezGfx/ezGfx_core.h"
+
 
 #include <time.h>
 #include <pthread.h>
 #include <string.h>
 #include <stdlib.h>
 
-#include <linux/fb.h>	//linux frame buffer
-#include <linux/kd.h>   //terminal type/mode
-#include <sys/ioctl.h>	//system calls
-#include <sys/mman.h>	//MAP_ flags
-#include <signal.h> 	//interrupt handling
-#include <fcntl.h>		//open device
-#include <unistd.h>		//close device
+#include <linux/fb.h>		//linux frame buffer
+#include <linux/kd.h>   	//terminal type/mode
+#include <sys/ioctl.h>		//system calls
+#include <sys/mman.h>		//MAP_ flags
+#include <signal.h> 		//interrupt handling
+#include <fcntl.h>			//open device
+#include <unistd.h>			//close device
+
 
 
 static struct timespec startTime;
@@ -20,20 +22,21 @@ static volatile bool running;
 static pthread_t thread;
 static void* mainThread(void* arg);
 
+static EZ_Image canvas;		
 static int winWidth;
 static int winHeight;
 static float canvasX = 1.0f;
 static float canvasY = 1.0f;
-static bool stretched;
 
-static EZ_Image canvas;
-static char* buffer;
-static int fb;
-static int vt;
+
+static char* frame_buffer; 	//memory "inside" the screen
+static char* buffer;	   	//memory "ouside" the screen
+static int fb;				//frame buffer handle
+static int vt;				//terminal handle
 static struct fb_var_screeninfo screenInfo;
 
 
-static int keyMap(int keyCode);
+// static int keyMap(int keyCode);
 static EZ_Key keyStates[_numberOfKeys];
 static EZ_Mouse mouseState;
 static void updateBars();
@@ -42,56 +45,8 @@ static void updateBars();
 static void __int_handler__(int sig) {EZ_stop();}
 
 
-void EZ_window(EZ_Image cnvs, int w, int h) {
-
+void EZ_bind(EZ_Image cnvs) {
 	canvas = cnvs;
-
-	//INIT GFX
-	//https://docs.huihoo.com/doxygen/linux/kernel/3.7/structfb__var__screeninfo.html
-	//https://cmcenroe.me/2018/01/30/fbclock.html
-
-	//open the linux frame buffer device directly 
-	ASSERTM(-1 != (fb = open("/dev/fb0", O_RDWR)), 
-		"Couldn't open /dev/fb0 frame buffer,\n" 
-		"maybe add yourself in video group");
-
-	//get screen info
-	ASSERTM(-1 != ioctl(fb, FBIOGET_VSCREENINFO, &screenInfo),
-		"Couldn't get screen info");
-	
-	winWidth  = screenInfo.xres; 
-	winHeight = screenInfo.yres;
-
-	//get handle to screen buffer
-	size_t len = 4 * screenInfo.xres * screenInfo.yres;
-	buffer = mmap(NULL, len, PROT_READ | PROT_WRITE, MAP_SHARED, fb, 0);
-
-	ASSERTM(buffer != MAP_FAILED, 
-		"Couldn't map the frame buffer");
-
-	ASSERTM(screenInfo.bits_per_pixel == 32, 
-		"Unsupported %dbits pixel format", screenInfo.bits_per_pixel);
-
-
-	//override keyboard interrupt to set graphics mode back
-	signal(SIGINT, __int_handler__); 
-
-
-	//open the console device
-	ASSERTM(-1 != (vt = open("/dev/console", O_NOCTTY)),
-		"Failed to open console device /dev/console,\n"
-		"maybe try running as root.");
-
-	//switch to graphics mode
-	ASSERTM(-1 != ioctl(vt, KDSETMODE, KD_GRAPHICS),
-		"Failed to get back to text mode");
-
-	//clear buffer
-	for (size_t i = 0; i < len; i++) buffer[i] = 0x0;
-
-	//canvas display stretching variables
-	updateBars();
-
 }
 
 void EZ_start() {
@@ -139,11 +94,6 @@ void EZ_setFullscreen(bool val) {
 
 void EZ_setMaximized(bool val) {
 	WARNING("Unsupported by this implementation");
-}
-
-void EZ_setStretching(bool val) {
-	stretched = val;
-	updateBars();
 }
 
 
@@ -266,7 +216,10 @@ void EZ_redraw() {
 
 	}
 
-
+	//copy to screen 
+	//really faster than directly writing to frame buffer
+	//but I don't absolutely know why, physical location of the buffer ?
+	memcpy(frame_buffer, buffer, 4*winWidth*winHeight);
 
 }
 
@@ -277,44 +230,21 @@ void EZ_redraw() {
 
 /* PRIVATE */
 
-
-static int keyMap(int keyCode) {
-	//https://cgit.freedesktop.org/xorg/proto/x11proto/tree/keysymdef.h
-
-	switch (keyCode) {
-
-		default : return K_ERROR;
-	}
-}
-
-
 static void updateBars() {
 
 	//black bars
 
-	if (stretched) {
-		canvasX = 1.0f; //width relative to screen with
+	float canvasRatio = (float)canvas.w / canvas.h;
+	float windowRatio = (float)winWidth / winHeight;
+	canvasX = canvasRatio / windowRatio;
+	canvasY = windowRatio / canvasRatio;
+
+	if (canvasX > 1.0f)
+		canvasX = 1.0f;
+
+	else
 		canvasY = 1.0f;
-	}
-	else {
 
-		float canvasRatio = (float)canvas.w / canvas.h;
-		float windowRatio = (float)winWidth / winHeight;
-		canvasX = canvasRatio / windowRatio;
-		canvasY = windowRatio / canvasRatio;
-
-		if (canvasX > 1.0f)
-			canvasX = 1.0f;
-
-		else
-			canvasY = 1.0f;
-
-
-	}
-
-
-	//clear screen
-	for (size_t i = 0; i < 4*winWidth*winHeight; i++) buffer[i] = 0x0;
 
 }
 
@@ -323,6 +253,55 @@ static void updateBars() {
 static void* mainThread(void* arg) {
 
 	pthread_detach(pthread_self());
+
+	//INIT GFX
+	//https://docs.huihoo.com/doxygen/linux/kernel/3.7/structfb__var__screeninfo.html
+	//https://cmcenroe.me/2018/01/30/fbclock.html
+
+
+	//open the linux frame buffer device directly 
+	ASSERTM(-1 != (fb = open("/dev/fb0", O_RDWR)), 
+		"Couldn't open /dev/fb0 frame buffer,\n" 
+		"maybe add yourself in video group");
+
+	//get screen info
+	ASSERTM(-1 != ioctl(fb, FBIOGET_VSCREENINFO, &screenInfo),
+		"Couldn't get screen info");
+	
+	winWidth  = screenInfo.xres; 
+	winHeight = screenInfo.yres;
+
+	//get handle to screen buffer
+	size_t len = 4 * screenInfo.xres * screenInfo.yres;
+	frame_buffer = mmap(NULL, len, PROT_READ | PROT_WRITE, MAP_SHARED, fb, 0);
+
+	ASSERTM(buffer != MAP_FAILED, 
+		"Couldn't map the frame buffer");
+
+	ASSERTM(screenInfo.bits_per_pixel == 32, 
+		"Unsupported %dbits pixel format", screenInfo.bits_per_pixel);
+
+
+	//override keyboard interrupt to set graphics mode back
+	signal(SIGINT, __int_handler__); 
+
+
+	//open the console device
+	ASSERTM(-1 != (vt = open("/dev/console", O_NOCTTY)),
+		"Failed to open console device /dev/console,\n"
+		"maybe try running as root.");
+
+	//switch to graphics mode
+	ASSERTM(-1 != ioctl(vt, KDSETMODE, KD_GRAPHICS),
+		"Failed to get back to text mode");
+
+
+	//clear buffer
+	for (size_t i = 0; i < len; i++) frame_buffer[i] = 0x00;
+
+	//setup offscreen buffer
+	buffer = calloc(winWidth * winHeight, 4);
+
 
 	//init time
 	clock_gettime(CLOCK_MONOTONIC, &startTime);
@@ -334,6 +313,11 @@ static void* mainThread(void* arg) {
 
 	//client init callback
 	EZ_callback_init();
+
+	//canvas display stretching variables
+	updateBars();
+
+
 
 
 	//main loop
@@ -377,7 +361,8 @@ static void* mainThread(void* arg) {
 
 
 	//garbage collection
-	munmap(buffer, 4 * winHeight * winWidth);
+	munmap(frame_buffer, 4 * winHeight * winWidth);
+	free(buffer);
 	close(fb);
 	close(vt);
 	pthread_exit(NULL);

@@ -16,7 +16,7 @@
 #ifndef EZSFX_CORE
 #define EZSFX_CORE
 
-#include <utils.h>
+#include <ezGfx/ezGfx_utils.h>
 
 #define CD44KHZ 44100
 #define SAMPLE_MAX 32767
@@ -27,9 +27,9 @@ typedef int16_t EZ_Sample; //signed 16bits iteger samples
 typedef struct {
 	EZ_Sample* data;	//array of samples
 	EZ_Sample* curr;	//pointer to element of array (->sample to be played)
-	u32   size;			//array length
-	u32	  channels;		//number of channels
-	u32   sampleRate;   //samples per seconds * channels
+	uint32_t   size;		//array length
+	uint32_t   channels;	//number of channels
+	uint32_t   sampleRate;  //samples per seconds * channels
 
 } EZ_PCMArray;
 
