@@ -4,7 +4,6 @@
 #include <pthread.h>
 #include <string.h>
 #include <stdlib.h>
-#include <signal.h>
 
 #include <X11/X.h>
 #include <X11/Xlib.h>
@@ -35,7 +34,6 @@ static enum EZ_KeyCode keyMap(int keyCode);
 static EZ_Key keyStates[_numberOfKeys];
 static EZ_Mouse mouseState;
 
-static void __int_handler__(int sig) {EZ_stop();}
 
 
 void EZ_bind(EZ_Image cnvs) {
@@ -372,9 +370,6 @@ static void* mainThread(void* arg) {
 	buffer = calloc(winWidth * winHeight, 4);
 
 
-	//override keyboard interrupt to set graphics mode back
-	signal(SIGINT, __int_handler__); 
-
 
 	//init time
 	clock_gettime(CLOCK_MONOTONIC, &startTime);
@@ -386,7 +381,7 @@ static void* mainThread(void* arg) {
 
 	//client init callback
 	EZ_callback_init();
-	EZ_resize(canvas.w, canvas.h);
+	if (canvas.px != NULL) EZ_resize(canvas.w, canvas.h);
 	_updateBars();
 
 

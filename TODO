@@ -4,13 +4,14 @@
 	
 	-glsl fragment shaders
 	-gl matrices
+	-EZ MAT
 
 	-dithering
 
-	-lua / python / lisp / perl / js / bash /  / ??
+	-lua / python / lisp / perl / js / bash / brainfuck / BNF defined / ocaml/ ??
 		=>on the fly compiled scripting language
 	//https://github.com/lua/lua
-	-brainfuck ?
+	
 
 	-splines calculation / bezier curves 2D/3D
 }
@@ -37,7 +38,7 @@
 	windows sound
 	no alsa
 	on the fly file reading (no pcm array but "stream"... block by block)
-
+	oscillo sound viewer
 	midi / sequencer
 	instruments
 	score / midi editor
@@ -63,9 +64,4 @@
 -court métrage maths: complexes, algèbre, logique, bourbaki,...
 
 
--better cleanup / sig handling
-	-> DEFINE HANDLER FUNCTION INSIDE THREAD LOOP !!
-https://www.youtube.com/watch?v=PVIzokTJdVM
-https://www.youtube.com/watch?v=83M5-NPDeWs
 
--oscillo

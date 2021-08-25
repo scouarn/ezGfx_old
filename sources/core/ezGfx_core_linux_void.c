@@ -10,10 +10,9 @@
 #include <linux/kd.h>   	//terminal type/mode
 #include <sys/ioctl.h>		//system calls
 #include <sys/mman.h>		//MAP_ flags
-#include <signal.h> 		//interrupt handling
 #include <fcntl.h>			//open device
 #include <unistd.h>			//close device
-
+#include <signal.h>			//failsafe
 
 
 static struct timespec startTime;
@@ -42,7 +41,6 @@ static EZ_Mouse mouseState;
 static void updateBars();
 
 
-static void __int_handler__(int sig) {EZ_stop();}
 
 
 void EZ_bind(EZ_Image cnvs) {
@@ -282,10 +280,6 @@ static void* mainThread(void* arg) {
 		"Unsupported %dbits pixel format", screenInfo.bits_per_pixel);
 
 
-	//override keyboard interrupt to set graphics mode back
-	signal(SIGINT, __int_handler__); 
-
-
 	//open the console device
 	ASSERTM(-1 != (vt = open("/dev/console", O_NOCTTY)),
 		"Failed to open console device /dev/console,\n"
@@ -294,6 +288,18 @@ static void* mainThread(void* arg) {
 	//switch to graphics mode
 	ASSERTM(-1 != ioctl(vt, KDSETMODE, KD_GRAPHICS),
 		"Failed to get back to text mode");
+
+
+	//stop threads
+	void __failsafe__(int sig) {EZ_stop();}
+
+	//override interrupts so it goes back to text mode
+	//CRITICAL!
+	signal(SIGABRT, __failsafe__); 
+	signal(SIGFPE,  __failsafe__);
+	signal(SIGILL,  __failsafe__);
+	signal(SIGINT,  __failsafe__);
+	signal(SIGTERM, __failsafe__);
 
 
 	//clear buffer
@@ -310,6 +316,7 @@ static void* mainThread(void* arg) {
 	//init keys
 	for (int i = 0; i < _numberOfKeys; i++)
 		keyStates[i].keyCode = i;
+
 
 	//client init callback
 	EZ_callback_init();
@@ -344,11 +351,8 @@ static void* mainThread(void* arg) {
 
 		}
 
-
-
 		//display
 		EZ_redraw();
-
 
 	}
 
@@ -362,7 +366,7 @@ static void* mainThread(void* arg) {
 
 	//garbage collection
 	munmap(frame_buffer, 4 * winHeight * winWidth);
-	free(buffer);
+	if (buffer) free(buffer);
 	close(fb);
 	close(vt);
 	pthread_exit(NULL);

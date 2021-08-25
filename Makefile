@@ -32,8 +32,9 @@ tools : $(TOOLS)
 	@echo TOOLS: SUCCESS
 
 #recursive call inside the tool subdirs
+#all / clean targets are used
 $(TOOLS) : $(EXT_OBJECTS) $(CORE_OBJECTS)
-	$(MAKE) -C $@ $(MAKECMDGOALS) #all / clean is used to call
+	$(MAKE) -C $@ $(MAKECMDGOALS) 
 
 
 #remove obj files and executables

@@ -372,7 +372,7 @@ static void* mainThread(void* arg) {
 
 	//client init callback
 	EZ_callback_init();
-	EZ_resize(canvas.w, canvas.h);
+	if (canvas.px != NULL) EZ_resize(canvas.w, canvas.h);
 	_updateBars();
 
 
