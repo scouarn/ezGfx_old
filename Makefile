@@ -1,48 +1,45 @@
-include conf.mk
-
-#functions
-objof = $(DIR_BIN)/$(1).o
-exeof = $(DIR_BIN)/$(1)
-map   = $(foreach a,$(2),$(call $(1),$(a)))
+include config.mk
 
 
+EXT_SOURCES := $(wildcard sources/ext/*.c)
+EXT_OBJECTS := $(patsubst sources/ext/%.c,bin/%.o,$(EXT_SOURCES))
+
+CORE_SOURCES := sources/core/$(CORE_VIDEO).c sources/core/$(CORE_AUDIO).c
+CORE_OBJECTS := bin/$(CORE_VIDEO).o bin/$(CORE_AUDIO).o
+
+TOOLS := $(wildcard tools/*)
 
 
-#main target
-COMPILE_ALL := $(call map,objof,$(DEP_ALL)) $(call map,exeof,$(DEP_ALL))
+#make the lib and the tools
+.PHONY: all
+all : $(EXT_OBJECTS) $(CORE_OBJECTS) $(TOOLS)
+	@echo ALL: SUCCESS
+
+#make only the lib
+.PHONY: lib
+lib : $(EXT_OBJECTS) $(CORE_OBJECTS)
+	@echo LIB: SUCCESS
 
 
-all : $(COMPILE_ALL)
+#make objects
+bin/%.o : sources/*/%.c
+	$(CC) $(CFLAGS) -Iinclude -o $@ -c $<
 
 
-.PHONY: debug
-debug : CFLAGS := $(DEBUG_FLAGS)
-debug : $(COMPILE_ALL)
+#make the tools
+.PHONY: tools $(TOOLS)
+tools : $(TOOLS)
+	@echo TOOLS: SUCCESS
+
+#recursive call inside the tool subdirs
+$(TOOLS) : $(EXT_OBJECTS) $(CORE_OBJECTS)
+	$(MAKE) -C $@ $(MAKECMDGOALS) #all / clean is used to call
 
 
-
-#compile executables
-$(call exeof,$(FONT_EDITOR))   : $(call map,objof,$(DEP_FONT_EDITOR))
-	$(CC) -I$(DIR_INC) $(CFLAGS) $(LIBS) -o $@ $^
-
-$(call exeof,$(MUSIC_EDITOR)) : $(call map,objof,$(DEP_MUSIC_EDITOR))
-	$(CC) -I$(DIR_INC) $(CFLAGS) $(LIBS) -o $@ $^
-
-$(call exeof,$(MESH_EDITOR))  : $(call map,objof,$(DEP_MESH_EDITOR))
-	$(CC) -I$(DIR_INC) $(CFLAGS) $(LIBS) -o $@ $^
-
-
-$(call exeof,$(PROJECT))  : $(call map,objof,$(DEP_PROJECT))
-	$(CC) -I$(DIR_INC) $(CFLAGS) $(LIBS) -o $@ $^
-
-
-
-#compile any source to object
-$(DIR_BIN)/%.o : $(DIR_SRC)/*/%.c
-	$(CC) -I$(DIR_INC) $(CFLAGS) -o $@ -c $<
-
-
-
+#remove obj files and executables
+#call make clean recursively
+clean: $(TOOLS)
+	rm -f bin/*
 
 
 #make backup
@@ -52,12 +49,4 @@ back:
 	tar -czf $(DIR_BAK)/backup_$(shell date +'%Y_%d%m_%H%M').tar.gz $(BACKUP)
 
 
-#remove obj files and executables
-.PHONY: clean
-clean:
-	rm -f $(DIR_BIN)/*
 
-#remove obj files
-.PHONY: softclean
-softclean:
-	rm -f $(DIR_BIN)/*.o

@@ -1,5 +1,4 @@
 *tar.gz
 *.o
 *.wav
-bak/*
-release/*
+.bak/*
