@@ -40,6 +40,7 @@ EZ_Font EZ_load_PSF2(const char* fname) {
 
 	if (file == NULL) {
 		WARNING("Couldn't load file %s\n", fname);
+		font.data = NULL;
 		return font;
 	}
 
@@ -51,6 +52,7 @@ EZ_Font EZ_load_PSF2(const char* fname) {
 	if (header.magic != PSF_FONT_MAGIC) {
 		WARNING("Wrong magic number in %s", fname);
 		fclose(file);
+		font.data = NULL;
 		return font;
 	}
 
@@ -62,6 +64,7 @@ EZ_Font EZ_load_PSF2(const char* fname) {
 	if (font.data[0] == NULL) {
 		WARNING("Couldn't allocate memory for font %s", fname);
 		fclose(file);
+		font.data = NULL;
 		return font;
 	}
 
@@ -163,6 +166,7 @@ EZ_PCMArray EZ_load_WAV(const char* fname) {
 
 	if (file == NULL) {
 		WARNING("Couldn't open file %s\n", fname);
+		arr.data = NULL;
 		return arr;
 	}
 
@@ -174,12 +178,14 @@ EZ_PCMArray EZ_load_WAV(const char* fname) {
 	if (*(uint32_t*)riff.ChunkID != 0x46464952) {
 		WARNING("Wrong magic number ('RIFF') in %s",fname);
 		fclose(file);
+		arr.data = NULL;
 		return arr;
 	}
 
 	if (*(uint32_t*)riff.Format != 0x45564157) {
 		WARNING("Wrong magic number ('WAVE') in %s",fname);
 		fclose(file);
+		arr.data = NULL;
 		return arr;
 	}
 
@@ -191,18 +197,21 @@ EZ_PCMArray EZ_load_WAV(const char* fname) {
 	if (*(uint32_t*)fmt.SubchunkID != 0x20746d66) {
 		WARNING("Wrong magic number ('fmt ') in %s",fname);
 		fclose(file);
+		arr.data = NULL;
 		return arr;
 	}
 
 	if (fmt.SubchunkSize != 16 || fmt.AudioFormat != 1) {
 		WARNING("Only PCM wave file are supported, %s", fname);
 		fclose(file);
+		arr.data = NULL;
 		return arr;
 	}
 
 	if (fmt.NumChannels == 0) {
 		WARNING("This audio file has 0 channels %s", fname);
 		fclose(file);
+		arr.data = NULL;
 		return arr;
 	}
 	else arr.channels = fmt.NumChannels;
@@ -210,6 +219,7 @@ EZ_PCMArray EZ_load_WAV(const char* fname) {
 	if (fmt.SampleRate == 0 || fmt.ByteRate == 0) {
 		WARNING("This audio file has a sample rate of 0... %s", fname);
 		fclose(file);
+		arr.data = NULL;
 		return arr;
 	}
 	else arr.sampleRate = fmt.SampleRate;
@@ -217,6 +227,7 @@ EZ_PCMArray EZ_load_WAV(const char* fname) {
 	if (fmt.BitsPerSample != 16) {
 		WARNING("Only 16bits signed integer audio is supported, %s", fname);
 		fclose(file);
+		arr.data = NULL;
 		return arr;
 	}
 
@@ -228,12 +239,14 @@ EZ_PCMArray EZ_load_WAV(const char* fname) {
 	if (*(uint32_t*)data.SubchunkID != 0x61746164) {
 		WARNING("Wrong magic number ('data') in %s",fname);
 		fclose(file);
+		arr.data = NULL;
 		return arr;
 	}
 
 	if (data.SubchunkSize == 0) {
 		WARNING("This audio file has no samples, %s", fname);
 		fclose(file);
+		arr.data = NULL;
 		return arr;
 	}
 	else arr.size = data.SubchunkSize / fmt.NumChannels;
@@ -245,6 +258,7 @@ EZ_PCMArray EZ_load_WAV(const char* fname) {
 	if (arr.data == NULL) {
 		WARNING("Couldn't allocate memory for file, %s", fname);
 		fclose(file);
+		arr.data = NULL;
 		return arr;
 	}
 	else arr.curr = arr.data;
@@ -576,6 +590,8 @@ EZ_Mesh EZ_load_OBJ(const char* fname) {
 
 	if (file == NULL) {
 		WARNING("Couldn't load file %s\n", fname);
+		mesh.triangles = NULL;
+		mesh.texture = NULL;
 		return mesh;
 	}
 
@@ -643,6 +659,8 @@ EZ_Mesh EZ_load_OBJ(const char* fname) {
 			if (read == 0) {
 				WARNING("Error during vertex parsing in mesh %s\n", fname);
 				fclose(file);
+				mesh.triangles = NULL;
+				mesh.texture = NULL;
 				return mesh;
 			}
 			v++;
@@ -653,6 +671,8 @@ EZ_Mesh EZ_load_OBJ(const char* fname) {
 			if (read == 0) {
 				WARNING("Error during face parsing in mesh %s\n", fname);
 				fclose(file);
+				mesh.triangles = NULL;
+				mesh.texture = NULL;
 				return mesh;
 			}
 			t++;
@@ -674,6 +694,8 @@ EZ_Mesh EZ_load_OBJ(const char* fname) {
 
 	if (mesh.triangles == NULL) {
 		WARNING("Couldn't allocate memory for mesh %s\n", fname);
+		mesh.triangles = NULL;
+		mesh.texture = NULL;
 		return mesh;
 	}
 
