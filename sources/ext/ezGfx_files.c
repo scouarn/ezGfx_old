@@ -444,10 +444,10 @@ EZ_Image EZ_load_BMP(const char* fname) {
 
 	int bytes_per_line = image_size / bitmap.h;
 
-	uint8_t line[bytes_per_line]; //line buffer
+	uint8_t* line_buffer = malloc(bytes_per_line);
 
 	for (int y = bitmap.h-1; y >= 0; y--) { //y axis is reversed in bitmap format (bottom to top)
-		fread(line, 1, bytes_per_line, file);
+		fread(line_buffer, 1, bytes_per_line, file);
 
 		for (int x = 0; x < bitmap.w; x++) {
 
@@ -455,10 +455,10 @@ EZ_Image EZ_load_BMP(const char* fname) {
 
 			//test each color byte against each byte of each bitmask
 			for (int c = 0; c < bytes_ppx; c++) {
-				px->col.r |= line[x*bytes_ppx + c] & (r_mask >> 8*c);
-				px->col.g |= line[x*bytes_ppx + c] & (g_mask >> 8*c);
-				px->col.b |= line[x*bytes_ppx + c] & (b_mask >> 8*c);
-				px->col.a |= line[x*bytes_ppx + c] & (a_mask >> 8*c);
+				px->col.r |= line_buffer[x*bytes_ppx + c] & (r_mask >> 8*c);
+				px->col.g |= line_buffer[x*bytes_ppx + c] & (g_mask >> 8*c);
+				px->col.b |= line_buffer[x*bytes_ppx + c] & (b_mask >> 8*c);
+				px->col.a |= line_buffer[x*bytes_ppx + c] & (a_mask >> 8*c);
 			}
 
 			//set max transparency if it's not defined in the image
@@ -470,6 +470,7 @@ EZ_Image EZ_load_BMP(const char* fname) {
 
 	//close
 	fclose(file);
+	free(line_buffer);
 
 	#undef POP
 	return bitmap;
@@ -624,12 +625,12 @@ EZ_Mesh EZ_load_OBJ(const char* fname) {
 
 
 	//allocate room for parsing vertices and triangles
-	vec3f vertex_buffer[n_vertices]; //3 float coords
-	vec3i face_buffer[n_faces];  //3 integer indices (1 indexed!!)
+	vec3f* vertex_buffer = calloc(n_vertices, sizeof(vec3f)); //3 float coords
+	vec3i* face_buffer   = calloc(n_faces, sizeof(vec3i));    //3 integer indices (starts at 1!!)
 
 	//vertex and triangle beeing parsed
-	vec3f *v = vertex_buffer;
-	vec3i *t = face_buffer;
+	vec3f* v = vertex_buffer;
+	vec3i* t = face_buffer;
 
 	//char read, to detect error
 	int read;
@@ -706,6 +707,8 @@ EZ_Mesh EZ_load_OBJ(const char* fname) {
 
 	// printf("%d vertices, %d triangles\n", n_vertices, n_faces);
 
+	free(vertex_buffer);
+	free(face_buffer);
 
 
 	return mesh;

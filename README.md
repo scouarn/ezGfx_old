@@ -1,41 +1,60 @@
 # ezGfx
-Semi-private repo on a simple cross-platform graphics library project. It also include some related tools like a font editor (Windows is not yet supported). Detailed documentation is not yet available, read comments inside header files. 
+
+Semi-private repo on a simple cross-platform graphics library project. It also include some related tools like a font editor (the other tools don't do anything yet). Detailed documentation is not yet available. 
+
+For now, only linux is supported.
 
 
-## Configuration and building
+## Configuration
 
 Inside _config.mk_ choose the used implementation and its dependencies based on the target platform. Only the "core" source files are plateform dependent. You can change the compiler and flags as you desire.
 
-| Platform | Implementation 				| Dependencies  |		 Comment 				|
-|--------|----------------------------------|---------------|-------------------------------|
-| Linux	 | `ezGfx_core_linux_xorg`	    	|			 	| Uses a Xorg server		    |
-| Linux	 | `ezGfx_core_linux_xorgGL`	    | `-lX11`		| Uses openGL					|
-| Linux	 | `ezGfx_core_linux_void`	    	| `-lX11 -lGL`	| Uses the Linux framebuffer	|
-| Linux	 | `ezGfx_sound_core_linux_alsa`	| `-lasound`	| Uses Alsa for sound	        |
+| Platform 	| Implementation 				| Dependencies  |		 Comment 				|
+|-----------|-------------------------------|---------------|-------------------------------|
+| Linux	   	| `ezGfx_core_linux_xorg`	    |			 	| Uses a Xorg server		    |
+| Linux 	| `ezGfx_core_linux_xorgGL`	    | `-lX11`		| Uses openGL					|
+| Linux		| `ezGfx_core_linux_void`	    | `-lX11 -lGL`	| Uses the Linux framebuffer	|
+| Linux	 	| `ezGfx_sound_core_linux_alsa`	| `-lasound`	| Uses Alsa for sound	        |
 
+
+## Building
 
 From this directory (./) :
 
-* To build the library and the tools call `make all`.
-* To only rebuild the object file call `make lib`.
-* To only rebuild the tools call `make tools`.
-* To clean everything call `make clean`.
+* To build the library and the tools : `make all`.
+* To clean everything : `make clean`.
+* To only rebuild the object files : `make slib`.
+* To only rebuild the shared object : `make dlib`.
+* To only rebuild the tools : `make tools`.
 
 
 
-## Usage as a library
+## Usage as a static library
 
-When compiling, link the compliled objects located in the _bin_ directory and include the _include_ directory.
+When compiling your project, add the compliled _bin/\*.obj_ object files and include the _include_ directory.
+
+`EZGFX = wildcard(ezgfx/bin/*.o)
+$(CC) $(CFLAGS) -Iezgfx/include -o myproject.out mysource.c $(EZGFX)`
+
+Now, before running the program, you will have to update your path variables or copy the library in an appropriate directory to be loaded. For instance on Linux and Mac, in _/usr/lib_.
+
+
+## Usage as a dynamic library
+
+When compiling, link the _bin/libezgfx.so_ shared object and include the _include_ directory.
+
+`EZGFX = -Lezgfx/bin -lezgfx
+$(CC) $(CFLAGS) -Iezgfx/include -o myproject.out mysource.c $(EZGFX)`
 
 
 ## Usage as a framework
 
-Make a project subdirectory inside the _tools_ directory, following the _template_ example. By calling `make all` and/or `make clean` from the main directory (where this readme file is located ./), it is called in each subdirectory of the _tool_ directory (with the same targets). In this way you can tweak the library and everything is recompiled as needed (the tools and your project as well). You can copy the generic Makefile from the template.
+Make a project subdirectory inside the _tools_ directory, following the _template_ example. By calling `make all` and/or `make clean` from the main directory (where this readme file is located), the same targets are called in each subdirectory of _tool_. In this way you can tweak the library and everything is recompiled as needed (the tools and your project as well). You can copy the generic Makefile from the template. You can change the makefile to link the shared object.
 
 
-## General usage
+## API general usage
 
-Include the library's headers with `#include <ezGfx.h>`. The library expects you to define **all** of the following functions inside your project (or you will have a troubles when linking...) :
+Include the library's headers with `#include <ezGfx.h>`. The library expects you to define all of the following functions inside your project (or you will have a troubles when linking unless you specifically don't link sound...) :
 ```C
 void EZ_callback_init() {}
 void EZ_callback_draw(double dt) {}

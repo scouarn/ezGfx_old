@@ -9,27 +9,37 @@ CORE_OBJECTS := bin/$(CORE_VIDEO).o bin/$(CORE_AUDIO).o
 
 TOOLS := $(wildcard tools/*)
 
+DYNLIB = bin/libezgfx.so
 
-#make the lib and the tools
+
+#make everything
 .PHONY: all
-all : $(EXT_OBJECTS) $(CORE_OBJECTS) $(TOOLS)
+all : $(TOOLS) $(DYNLIB)
 	@echo ALL: SUCCESS
 
-#make only the lib
-.PHONY: lib
-lib : $(EXT_OBJECTS) $(CORE_OBJECTS)
-	@echo LIB: SUCCESS
+#make only the objects
+.PHONY: slib
+slib : $(EXT_OBJECTS) $(CORE_OBJECTS)
+	@echo SLIB: SUCCESS
 
-
-#make objects
-bin/%.o : sources/*/%.c
-	$(CC) $(CFLAGS) -Iinclude -o $@ -c $<
-
+#make only the so
+.PHONY: dlib
+dlib : $(DYNLIB)
+	@echo DYNLIB: SUCCESS
 
 #make the tools
 .PHONY: tools $(TOOLS)
 tools : $(TOOLS)
 	@echo TOOLS: SUCCESS
+
+
+#make shared object	
+$(DYNLIB) : $(EXT_SOURCES) $(CORE_SOURCES)
+	$(CC) $(CFLAGS) -Iinclude -fPIC -shared -o $@ $^
+
+#make objects
+bin/%.o : sources/*/%.c
+	$(CC) $(CFLAGS) -Iinclude -o $@ -c $<
 
 #recursive call inside the tool subdirs
 #all / clean targets are used
@@ -46,8 +56,8 @@ clean: $(TOOLS)
 #make backup
 .PHONY: back
 back:
-	mkdir -p $(DIR_BAK)
-	tar -czf $(DIR_BAK)/backup_$(shell date +'%Y_%d%m_%H%M').tar.gz $(BACKUP)
+	mkdir -p .bak
+	tar -czf .bak/backup_$(shell date +'%Y_%d%m_%H%M').tar.gz $(BACKUP)
 
 
 

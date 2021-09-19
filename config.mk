@@ -17,12 +17,8 @@ LIBS += -lX11 				#using xorg
 
 #the compiler and some flags
 CC = gcc 
-CFLAGS = -O3 -Wall
+CFLAGS = -O3 -Wall -Werror=vla
 
 
 #files to get backed up
-BACKUP = TODO Makefile conf.mk README.md .git .gitignore sources bin include tools
-
-
-
-
+BACKUP = Makefile config.mk TODO.md README.md .git .gitignore sources bin include tools

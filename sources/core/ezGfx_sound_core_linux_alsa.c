@@ -95,7 +95,7 @@ void* sfxThread(void* arg) {
 	double dt = 1.0 / info.sampleRate;
 
 	//init block
-	EZ_Sample block[info.blockSize];
+	EZ_Sample* block = malloc(info.blockSize*sizeof(EZ_Sample));
 	snd_pcm_start(device);
 
 	//main loop
@@ -135,6 +135,7 @@ void* sfxThread(void* arg) {
 
 	snd_pcm_drain(device);
 	snd_pcm_close(device);
+	free(block);
 
 	pthread_exit(NULL);
 	return NULL;
