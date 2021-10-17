@@ -35,6 +35,7 @@ From this directory (./) :
 When compiling your project, add the compliled _bin/\*.obj_ object files and include the _include_ directory.
 
 `EZGFX = wildcard(ezgfx/bin/*.o)`
+
 `gcc -Iezgfx/include -o myproject.out mysource.c $(EZGFX)`
 
 Now, before running the program, you will have to update your path variables or copy the library in an appropriate directory to be loaded. For instance on Linux and Mac, in _/usr/lib_.
@@ -42,10 +43,9 @@ Now, before running the program, you will have to update your path variables or 
 
 ## Usage as a dynamic library
 
-When compiling, link the _bin/libezgfx.so_ shared object and include the _include_ directory.
+When compiling, link _libezgfx.so_ and include the _include_ directory.
 
-`EZGFX = -Lezgfx/bin -lezgfx`
-`gcc -Iezgfx/include -o myproject.out mysource.c $(EZGFX)`
+`gcc -Iezgfx/include -o myproject.out mysource.c -lezgfx`
 
 
 ## Usage as a framework
