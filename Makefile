@@ -9,42 +9,47 @@ CORE_OBJECTS := bin/$(CORE_VIDEO).o bin/$(CORE_AUDIO).o
 
 TOOLS := $(wildcard tools/*)
 
-DYNLIB = bin/libezgfx.so
+
+.PHONY: all dlib slib tools clean install back $(TOOLS)
 
 
 #make everything
-.PHONY: all
-all : $(TOOLS) $(DYNLIB)
+all : dlib
+all : slib
+all : tools
 	@echo ALL: SUCCESS
 
 #make only the objects
-.PHONY: slib
 slib : $(EXT_OBJECTS) $(CORE_OBJECTS)
 	@echo SLIB: SUCCESS
 
 #make only the so
-.PHONY: dlib
 dlib : $(DYNLIB)
 	@echo DYNLIB: SUCCESS
 
 #make the tools
-.PHONY: tools $(TOOLS)
 tools : $(TOOLS)
+	@echo making $(TOOLS)
 	@echo TOOLS: SUCCESS
+
+#copy to global lib directory
+install : $(DYNLIB)
+	cp $(DYNLIB) $(INSTALL)
 
 
 #make shared object	
-$(DYNLIB) : $(EXT_SOURCES) $(CORE_SOURCES)
-	$(CC) $(CFLAGS) -Iinclude -fPIC -shared -o $@ $^
+$(DYNLIB) : $(CORE_OBJECTS) $(EXT_OBJECTS)
+	$(CC) $(CFLAGS) $(LIBS) -shared -lc -Iinclude -o $@ $^
 
 #make objects
 bin/%.o : sources/*/%.c
-	$(CC) $(CFLAGS) -Iinclude -o $@ -c $<
+	$(CC) $(CFLAGS) -fPIC -Iinclude -o $@ -c $<
 
 #recursive call inside the tool subdirs
 #all / clean targets are used
-$(TOOLS) : $(EXT_OBJECTS) $(CORE_OBJECTS)
-	$(MAKE) -C $@ $(MAKECMDGOALS) 
+$(TOOLS) :
+	@echo $@
+	$(MAKE) -C $@
 
 
 #remove obj files and executables
@@ -54,7 +59,6 @@ clean: $(TOOLS)
 
 
 #make backup
-.PHONY: back
 back:
 	mkdir -p .bak
 	tar -czf .bak/backup_$(shell date +'%Y_%d%m_%H%M').tar.gz $(BACKUP)

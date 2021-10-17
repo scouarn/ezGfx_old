@@ -134,9 +134,9 @@ EZ_Px EZ_randCol();	//random white noise RGBA color
 #define EZ_GRAY		((EZ_Px)0x7F7F7FFFU)
 
 
-#define EZ_RGB(r,g,b) 	 ((EZ_Px){255, b, g, r})
-#define EZ_RGBA(r,g,b,a) ((EZ_Px){  a, b, g, r})
-#define EZ_BW(c) 		 ((EZ_Px){255, c, c, c}) //grayscale color
+#define EZ_RGB(r,g,b) 	 ((EZ_Px){.a = 255, .b = b, .g = g, .r = r})
+#define EZ_RGBA(r,g,b,a) ((EZ_Px){.a =   a, .b = b, .g = g, .r = r})
+#define EZ_BW(c) 		 ((EZ_Px){.a = 255, .b = c, .g = c, .r = c}) //grayscale color
 
 
 

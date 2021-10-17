@@ -1,10 +1,10 @@
 #choosing plateform
-CORE_VIDEO = ezGfx_core_linux_xorg
-CORE_AUDIO = ezGfx_sound_core_linux_alsa
+CORE_VIDEO := ezGfx_core_linux_xorg
+CORE_AUDIO := ezGfx_sound_core_linux_alsa
 
 
 #ezgfx dependencies
-LIBS =  -lm -lpthread		#cross plateform base
+LIBS :=  -lm -lpthread		#cross plateform base
 LIBS += -lasound 			#using alsa
 LIBS += -lX11 				#using xorg
 # LIBS += -lGL    			#using openGL
@@ -16,9 +16,13 @@ LIBS += -lX11 				#using xorg
 
 
 #the compiler and some flags
-CC = gcc 
-CFLAGS = -O3 -Wall -Werror=vla
+CC := gcc 
+CFLAGS := -O3 -Wall -Werror=vla
 
+MAKE := make
 
 #files to get backed up
-BACKUP = Makefile config.mk TODO.md README.md .git .gitignore sources bin include tools
+BACKUP := Makefile config.mk TODO.md README.md .git .gitignore sources bin include tools
+
+DYNLIB := bin/libezgfx.so
+INSTALL := /usr/lib/

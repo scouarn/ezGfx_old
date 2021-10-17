@@ -26,6 +26,7 @@ From this directory (./) :
 * To only rebuild the object files : `make slib`.
 * To only rebuild the shared object : `make dlib`.
 * To only rebuild the tools : `make tools`.
+* Install _libezgfx.so_ in _/usr/lib/_ : `make install`
 
 
 
@@ -33,8 +34,8 @@ From this directory (./) :
 
 When compiling your project, add the compliled _bin/\*.obj_ object files and include the _include_ directory.
 
-`EZGFX = wildcard(ezgfx/bin/*.o)
-$(CC) $(CFLAGS) -Iezgfx/include -o myproject.out mysource.c $(EZGFX)`
+`EZGFX = wildcard(ezgfx/bin/*.o)`
+`gcc -Iezgfx/include -o myproject.out mysource.c $(EZGFX)`
 
 Now, before running the program, you will have to update your path variables or copy the library in an appropriate directory to be loaded. For instance on Linux and Mac, in _/usr/lib_.
 
@@ -43,8 +44,8 @@ Now, before running the program, you will have to update your path variables or 
 
 When compiling, link the _bin/libezgfx.so_ shared object and include the _include_ directory.
 
-`EZGFX = -Lezgfx/bin -lezgfx
-$(CC) $(CFLAGS) -Iezgfx/include -o myproject.out mysource.c $(EZGFX)`
+`EZGFX = -Lezgfx/bin -lezgfx`
+`gcc -Iezgfx/include -o myproject.out mysource.c $(EZGFX)`
 
 
 ## Usage as a framework
