@@ -11,9 +11,9 @@ Inside _config.mk_ choose the used implementation and its dependencies based on 
 
 | Platform 	| Implementation 				| Dependencies  |		 Comment 				|
 |-----------|-------------------------------|---------------|-------------------------------|
-| Linux	   	| `ezGfx_core_linux_xorg`	    |			 	| Uses a Xorg server		    |
-| Linux 	| `ezGfx_core_linux_xorgGL`	    | `-lX11`		| Uses openGL					|
-| Linux		| `ezGfx_core_linux_void`	    | `-lX11 -lGL`	| Uses the Linux framebuffer	|
+| Linux	   	| `ezGfx_core_linux_xorg`	    | `-lX11`    	| Uses a Xorg server		    |
+| Linux 	| `ezGfx_core_linux_xorgGL`	    | `-lX11 -lGL`	| Uses openGL					|
+| Linux		| `ezGfx_core_linux_void`	    | 				| Uses the Linux framebuffer	|
 | Linux	 	| `ezGfx_sound_core_linux_alsa`	| `-lasound`	| Uses Alsa for sound	        |
 
 
