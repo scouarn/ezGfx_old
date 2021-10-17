@@ -78,7 +78,7 @@ extern void EZ_callback_mouseMoved(EZ_Mouse mouse); //when the mouse is moved
 /* COLOR FUNCITONS */
 typedef union {
 	uint32_t ref;  //the 32bits "hex" value
-	struct {uint8_t a, b, g, r;} col;
+	struct {uint8_t a, b, g, r;};
 } EZ_Px;
 
 typedef struct {
@@ -134,9 +134,9 @@ EZ_Px EZ_randCol();	//random white noise RGBA color
 #define EZ_GRAY		((EZ_Px)0x7F7F7FFFU)
 
 
-#define EZ_RGB(r,g,b) 	 ((EZ_Px){.col = {255, b, g, r}})
-#define EZ_RGBA(r,g,b,a) ((EZ_Px){.col = {  a, b, g, r}})
-#define EZ_BW(c) 		 ((EZ_Px){.col = {255, c, c, c}}) //grayscale color
+#define EZ_RGB(r,g,b) 	 ((EZ_Px){255, b, g, r})
+#define EZ_RGBA(r,g,b,a) ((EZ_Px){  a, b, g, r})
+#define EZ_BW(c) 		 ((EZ_Px){255, c, c, c}) //grayscale color
 
 
 

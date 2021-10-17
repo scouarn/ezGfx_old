@@ -469,14 +469,14 @@ EZ_Image EZ_load_BMP(const char* fname) {
 
 			//test each color byte against each byte of each bitmask
 			for (int c = 0; c < bytes_ppx; c++) {
-				px->col.r |= line_buffer[x*bytes_ppx + c] & (r_mask >> 8*c);
-				px->col.g |= line_buffer[x*bytes_ppx + c] & (g_mask >> 8*c);
-				px->col.b |= line_buffer[x*bytes_ppx + c] & (b_mask >> 8*c);
-				px->col.a |= line_buffer[x*bytes_ppx + c] & (a_mask >> 8*c);
+				px->r |= line_buffer[x*bytes_ppx + c] & (r_mask >> 8*c);
+				px->g |= line_buffer[x*bytes_ppx + c] & (g_mask >> 8*c);
+				px->b |= line_buffer[x*bytes_ppx + c] & (b_mask >> 8*c);
+				px->a |= line_buffer[x*bytes_ppx + c] & (a_mask >> 8*c);
 			}
 
 			//set max transparency if it's not defined in the image
-			if (a_mask == 0) px->col.a = 255;
+			if (a_mask == 0) px->a = 255;
 
 			}
 	}

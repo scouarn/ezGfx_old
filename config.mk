@@ -3,7 +3,7 @@ CORE_VIDEO = ezGfx_core_linux_xorg
 CORE_AUDIO = ezGfx_sound_core_linux_alsa
 
 
-#tool dependencies
+#ezgfx dependencies
 LIBS =  -lm -lpthread		#cross plateform base
 LIBS += -lasound 			#using alsa
 LIBS += -lX11 				#using xorg

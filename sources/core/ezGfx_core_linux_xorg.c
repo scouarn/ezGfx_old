@@ -193,16 +193,16 @@ EZ_Px EZ_blend(EZ_Px fg, EZ_Px bg, enum EZ_BlendMode mode) {
 
 	switch (mode) {
 		case ALPHA_IGNORE : result = fg; break;
-		case ALPHA_FAST   : result = (fg.col.a == 0) ? bg : fg; break;
+		case ALPHA_FAST   : result = (fg.a == 0) ? bg : fg; break;
 
 		default :
 		case ALPHA_BLEND  : 
 		
 		//fast integer linear interpolation
-		result.col.a = fg.col.a + (255 - fg.col.a) * bg.col.a;
-		result.col.r = (fg.col.a * fg.col.r + (255 - fg.col.a) * bg.col.r) >> 8;
-		result.col.g = (fg.col.a * fg.col.g + (255 - fg.col.a) * bg.col.g) >> 8;
-		result.col.b = (fg.col.a * fg.col.b + (255 - fg.col.a) * bg.col.b) >> 8;
+		result.a = fg.a + (255 - fg.a) * bg.a;
+		result.r = (fg.a * fg.r + (255 - fg.a) * bg.r) >> 8;
+		result.g = (fg.a * fg.g + (255 - fg.a) * bg.g) >> 8;
+		result.b = (fg.a * fg.b + (255 - fg.a) * bg.b) >> 8;
 
 
 		break;
@@ -237,9 +237,9 @@ void EZ_redraw() {
 
 		EZ_Px px = canvas.px[sx + sy*canvas.w];
 
-		buffer[(x + y*winWidth)*4   ] = px.col.b;
-		buffer[(x + y*winWidth)*4 +1] = px.col.g;
-		buffer[(x + y*winWidth)*4 +2] = px.col.r;
+		buffer[(x + y*winWidth)*4   ] = px.b;
+		buffer[(x + y*winWidth)*4 +1] = px.g;
+		buffer[(x + y*winWidth)*4 +2] = px.r;
 
 	}
 

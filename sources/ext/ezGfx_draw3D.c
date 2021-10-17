@@ -82,9 +82,9 @@ void EZ_draw3D_tri(EZ_Image target, const EZ_Tri* tri,  const mat4x4* projection
 	float b  = CLAMP(VEC_DOT3(normal, l_dir), 0.25f, 1.0f);
 
 	EZ_Px color = tri->col;
-	color.col.r *= b;
-	color.col.g *= b;
-	color.col.b *= b;
+	color.r *= b;
+	color.g *= b;
+	color.b *= b;
 
 
 
