@@ -1,42 +1,48 @@
 #include "ezGfx_core.h"
+#include "ezGfx_utils.h"
 
 #include <time.h>
 #include <pthread.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdbool.h>
+#include <stdint.h>
 
 #include <X11/X.h>
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 
-
+/* Graphic context */
 static Display *disp;
 static int screen;
 static Window win;
 static Atom wm_delete;
-static GC gc; //X11 graphic context
+static GC gc;
 static char* buffer;
 
-static EZ_Image canvas;
+/* Drawing */
+static EZ_Image_t* canvas;
 static int winWidth;
 static int winHeight;
 static float canvasXwinRatio = 1.0f;
 static float canvasYwinRatio = 1.0f;
 static void _updateBars();
 
+/* Time */
 static struct timespec startTime;
 static struct timespec lastTime;
 static volatile bool running;
 static pthread_t thread;
 static void* mainThread(void* arg);
 
-static enum EZ_KeyCode keyMap(int keyCode);
-static EZ_Key keyStates[_numberOfKeys];
-static EZ_Mouse mouseState;
+/* Inputs */
+static EZ_KeyCode_t keyMap(int keyCode);
+static EZ_Key_t keyStates[_numberOfKeys];
+static EZ_Mouse_t mouseState;
 
 
 
-void EZ_bind(EZ_Image cnvs) {
+void EZ_bind(EZ_Image_t* cnvs) {
 	canvas = cnvs;
 }
 
@@ -44,37 +50,38 @@ void EZ_bind(EZ_Image cnvs) {
 void EZ_start() {
 	running = true;
 
-	//start engine thread
+	/* start engine thread */
 	pthread_create(&thread, NULL, &mainThread, NULL);
 }
 
 void EZ_stop() {
-	//stop thread
+	/* stop thread */
 	running = false;
 }
 
 void EZ_join() {
-	//join thread
+	/* join thread */
 	pthread_join(thread, NULL);
 }
 
 double EZ_getTime() {
+	double time;
 
-	//accurate time in seconds
+	/* accurate time in seconds */
 	struct timespec now;
 	clock_gettime(CLOCK_MONOTONIC, &now);
 
-	double time = (now.tv_sec - startTime.tv_sec) + (now.tv_nsec - startTime.tv_nsec) / 1000000000.0;
+	time = (now.tv_sec - startTime.tv_sec) + (now.tv_nsec - startTime.tv_nsec) / 1000000000.0;
 
 	return time;
 }
 
-EZ_Key EZ_getKey(enum EZ_KeyCode code) {
-	return keyStates[code];
+EZ_Key_t* EZ_getKey(EZ_KeyCode_t code) {
+	return &keyStates[code];
 }
 
-EZ_Mouse EZ_getMouse() {
-	return mouseState;
+EZ_Mouse_t* EZ_getMouse() {
+	return &mouseState;
 }
 
 
@@ -96,7 +103,7 @@ void EZ_setFullscreen(bool val) {
 	xev.xclient.window = win;
 	xev.xclient.message_type = wm_state;
 	xev.xclient.format = 32;
-	xev.xclient.data.l[0] = val; // true or false
+	xev.xclient.data.l[0] = val; /* true or false */
 	xev.xclient.data.l[1] = fullscreen;
 	xev.xclient.data.l[2] = 0;
 	XSendEvent(disp, DefaultRootWindow(disp), False,
@@ -112,7 +119,7 @@ void EZ_setMaximized(bool val) {
 	xev.xclient.window = win;
 	xev.xclient.message_type = wm_state;
 	xev.xclient.format = 32;
-	xev.xclient.data.l[0] = val; // true or false
+	xev.xclient.data.l[0] = val; /* true or false */
 	xev.xclient.data.l[1] = max_horz;
 	xev.xclient.data.l[2] = max_vert;
 	XSendEvent(disp, DefaultRootWindow(disp), False,
@@ -120,76 +127,88 @@ void EZ_setMaximized(bool val) {
 }
 
 
-EZ_Image EZ_createImage(int w, int h) {
-	EZ_Image img = {0};
-	img.w = w;
-	img.h = h;
-	img.px = calloc(w*h, sizeof(EZ_Px));
+EZ_Image_t* EZ_createImage(int w, int h) {
+
+	EZ_Image_t* img = malloc( sizeof(EZ_Image_t) );
+	
+	img->w = w;
+	img->h = h;
+	img->px = calloc(w*h, sizeof(EZ_Px_t));
 
 	return img;
 }
 
 
-EZ_Image EZ_copyImage(EZ_Image source) {
-	EZ_Image img = {0};
-	img.w = source.w;
-	img.h = source.h;
-	img.px = malloc(img.w*img.h*sizeof(EZ_Px));
+EZ_Image_t* EZ_copyImage(EZ_Image_t* src) {
 
-	memcpy(img.px, source.px, img.w*img.h*sizeof(EZ_Px));
+	size_t nbpx;
+
+	EZ_Image_t* img = malloc( sizeof(EZ_Image_t) );
+	
+	img->w = src->w;
+	img->h = src->h;
+	nbpx = img->w * img->h;
+
+	img->px = malloc( nbpx * sizeof(EZ_Px_t) );
+	memcpy(img->px, src->px, nbpx * sizeof(EZ_Px_t));
 
 	return img;
 }
 
-void EZ_freeImage(EZ_Image img) {
-	if (img.px != NULL) free(img.px);
+void EZ_freeImage(EZ_Image_t* img) {
+	free(img->px);
+	free(img);
 }
 
 
-EZ_Font EZ_createFont(int w, int h) {
+EZ_Font_t* EZ_createFont(int w, int h) {
+	int i;
 
-	EZ_Font font = {0};
-	font.h_px = h; font.w_px = w;
-	font.w_bytes = w/9 + 1;
+	EZ_Font_t* font = malloc( sizeof(EZ_Font_t) );
+	font->h = h; 
+	font->w = w;
+	font->wb = w/9 + 1; /* 1 byte for 8 pixels, at least one byte */
 
-	//allocate for 256 pointer
-	font.data = malloc(256*sizeof(char*));
+	/* allocate for 256 pointer */
+	font->data = malloc( 256 * sizeof(uint8_t*) );
 
-	//allocate for 256 glyphs
-	font.data[0] = calloc(256*font.w_bytes*h, 1);
+	/* allocate for 256 glyphs */
+	font->data[0] = calloc( 256 * font->wb * h, 1);
 
-	if (font.data[0] == NULL) {
-		WARNING("Couldn't allocate memory for font\n");
-		font.data = NULL;
-		return font;
-	}
+	/* point each pointer to the desired location */
+	for (i = 1; i < 256; i++) 
+		font->data[i] = font->data[i-1] + font->wb*h;
 
-	//point each pointer to the desired location
-	for (int i = 1; i < 256; i++) font.data[i] = font.data[i-1] + font.w_bytes*h;
 
 	return font;
 }
 
 
 
-void EZ_freeFont(EZ_Font font) {
-	if (font.data[0]) free(font.data[0]);
-	if (font.data)    free(font.data);
+void EZ_freeFont(EZ_Font_t* font) {
+	free(font->data[0]);
+	free(font->data);
+	free(font);
 }
 
 
 
-EZ_Px EZ_randCol() {
-	EZ_Px col;
-	col.ref = (uint32_t)rand();
+EZ_Px_t EZ_randCol() {
+	EZ_Px_t col;
+
+	/* col.ref is larger than RAND_MAX ... */
+	col.r = (uint8_t)rand();
+	col.g = (uint8_t)rand();
+	col.b = (uint8_t)rand();
+	
 	return col;
 }
 
 
-EZ_Px EZ_blend(EZ_Px fg, EZ_Px bg, enum EZ_BlendMode mode) {
+EZ_Px_t EZ_blend(EZ_Px_t fg, EZ_Px_t bg, EZ_BlendMode_t mode) {
 
-	//https://love2d.org/wiki/BlendMode_Formulas
-	EZ_Px result;
+	/* https://love2d.org/wiki/BlendMode_Formulas */
+	EZ_Px_t result;
 
 	switch (mode) {
 		case ALPHA_IGNORE : result = fg; break;
@@ -198,44 +217,44 @@ EZ_Px EZ_blend(EZ_Px fg, EZ_Px bg, enum EZ_BlendMode mode) {
 		default :
 		case ALPHA_BLEND  : 
 		
-		//fast integer linear interpolation
+		/* fast integer linear interpolation */
 		result.a = fg.a + (255 - fg.a) * bg.a;
 		result.r = (fg.a * fg.r + (255 - fg.a) * bg.r) >> 8;
 		result.g = (fg.a * fg.g + (255 - fg.a) * bg.g) >> 8;
 		result.b = (fg.a * fg.b + (255 - fg.a) * bg.b) >> 8;
 
-
 		break;
-
 	}
-
 
 	return result;
 }
 
 
 void EZ_redraw() {
+	int x1, x2, y1, y2, x, y, sx, sy;
+	float xRatio, yRatio;
+	EZ_Px_t px;
+	XImage* ximage;
+
+	/* copy canvas to buffer */
+	x1 = winWidth * (1.0f - canvasXwinRatio) * 0.5f;
+	x2 = x1 + winWidth * canvasXwinRatio;
+
+	y1 = winHeight * (1.0f - canvasYwinRatio) * 0.5f;
+	y2 = y1 + winHeight * canvasYwinRatio;
+
+	xRatio = (float)canvas->w / (x2-x1);
+	yRatio = (float)canvas->h / (y2-y1);
 
 
-	//copy canvas to buffer
-	int x1 = winWidth * (1.0f-canvasXwinRatio) * 0.5f;
-	int x2 = x1 + winWidth * canvasXwinRatio;
+	/* for each pixel on the screen (that have to be drawn) */
+	for (x = x1; x < x2; x++) 
+	for (y = y1; y < y2; y++) {
 
-	int y1 = winHeight * (1.0f - canvasYwinRatio) * 0.5f;
-	int y2 = y1 + winHeight * canvasYwinRatio;
+		sx = (x-x1) * xRatio;
+		sy = (y-y1) * yRatio;
 
-	float xRatio = (float)canvas.w / (x2-x1);
-	float yRatio = (float)canvas.h / (y2-y1);
-
-
-	//scan accros the screen
-	for (int x = x1; x < x2; x++) 
-	for (int y = y1; y < y2; y++) {
-
-		int sx = (x-x1)*xRatio;
-		int sy = (y-y1)*yRatio;
-
-		EZ_Px px = canvas.px[sx + sy*canvas.w];
+		px = canvas->px[sx + sy*canvas->w];
 
 		buffer[(x + y*winWidth)*4   ] = px.b;
 		buffer[(x + y*winWidth)*4 +1] = px.g;
@@ -244,9 +263,9 @@ void EZ_redraw() {
 	}
 
 
-	//draw the buffer on the screen
-	XImage* ximage = XCreateImage(disp, DefaultVisual(disp, screen), 
-				24, ZPixmap, 0, buffer, winWidth, winHeight, 32, 0);
+	/* draw the buffer on the screen */
+	ximage = XCreateImage(disp, DefaultVisual(disp, screen), 
+		24, ZPixmap, 0, buffer, winWidth, winHeight, 32, 0);
 
 	XPutImage(disp, win, gc, ximage, 0, 0, 0, 0, winWidth, winHeight);
 
@@ -260,8 +279,8 @@ void EZ_redraw() {
 /* PRIVATE */
 
 
-static enum EZ_KeyCode keyMap(int keyCode) {
-	//https://cgit.freedesktop.org/xorg/proto/x11proto/tree/keysymdef.h
+static EZ_KeyCode_t keyMap(int keyCode) {
+	/* https://cgit.freedesktop.org/xorg/proto/x11proto/tree/keysymdef.h */
 
 	switch (keyCode) {
 		case 0x41 : return K_SPACE;   case 0x16 : return K_BACKSPACE;
@@ -321,10 +340,10 @@ static enum EZ_KeyCode keyMap(int keyCode) {
 
 
 static void _updateBars() {
+	float canvasRatio, windowRatio;
 
-	//black bars
-	float canvasRatio = (float)canvas.w / canvas.h;
-	float windowRatio = (float)winWidth / winHeight;
+	canvasRatio = (float)canvas->w / canvas->h;
+	windowRatio = (float)winWidth / winHeight;
 	canvasXwinRatio = canvasRatio / windowRatio;
 	canvasYwinRatio = windowRatio / canvasRatio;
 
@@ -338,74 +357,78 @@ static void _updateBars() {
 
 
 static void* mainThread(void* arg) {
+	int i;
+
 
 	pthread_detach(pthread_self());
 
 
-	//create display
+	/* create display */
 	disp   = XOpenDisplay(NULL);
-	ASSERTM(disp, "Couldn't initialize X display");
+	EZ_assert(disp, "Couldn't initialize X display");
 
-	//get screen
+	/* get screen */
 	screen = DefaultScreen(disp);
 
-	//create window
-	win = XCreateSimpleWindow(disp, RootWindow(disp, screen), 0, 0, 100, 100, 1, BlackPixel(disp, screen), BlackPixel(disp, screen));
+	/* create window */
+	win = XCreateSimpleWindow(disp, RootWindow(disp, screen), 
+		0, 0, 100, 100, 1, BlackPixel(disp, screen), 
+		BlackPixel(disp, screen));
 	
 
-	//configure window
+	/* configure window */
 	XStoreName(disp, win, "EZGFX");	
 	XSelectInput(disp, win, StructureNotifyMask | KeyPressMask | KeyReleaseMask | ButtonPressMask | ButtonReleaseMask | PointerMotionMask | ExposureMask | FocusChangeMask);
 	XMapWindow(disp, win);
 
-	//window destruction handling
+	/* window destruction handling */
 	wm_delete = XInternAtom(disp, "WM_DELETE_WINDOW", True);
-	ASSERTM(XSetWMProtocols(disp, win, &wm_delete, 1), 
+	EZ_assert(XSetWMProtocols(disp, win, &wm_delete, 1), 
 			"Couldn't set X11 protocol for handling window destruction");
 
-	//graphics context
+	/* graphics context */
 	gc = XCreateGC(disp, win, 0,0);
 
-	//init frame buffer
+	/* init frame buffer */
 	buffer = calloc(winWidth * winHeight, 4);
 
 
-
-	//init time
+	/* init time */
 	clock_gettime(CLOCK_MONOTONIC, &startTime);
 	clock_gettime(CLOCK_MONOTONIC, &lastTime);
 
-	//init keys
-	for (int i = 0; i < _numberOfKeys; i++)
+	/* init keys */
+	for (i = 0; i < _numberOfKeys; i++)
 		keyStates[i].keyCode = i;
 
-	//client init callback
+	/* client init callback */
 	EZ_callback_init();
-	if (canvas.px != NULL) EZ_resize(canvas.w, canvas.h);
+	if (canvas->px != NULL) EZ_resize(canvas->w, canvas->h);
 	_updateBars();
 
 
-	//main loop
+	/* main loop */
 	while (running && disp) {
 
 
-		//time
+		/* elapsed time */
 		struct timespec now;
+		double elapsedTime;
 		clock_gettime(CLOCK_MONOTONIC, &now);
-		double elapsedTime = (now.tv_sec - lastTime.tv_sec) + (now.tv_nsec - lastTime.tv_nsec) / 1000000000.0;
+		elapsedTime = (now.tv_sec - lastTime.tv_sec) + (now.tv_nsec - lastTime.tv_nsec) / 1000000000.0;
 		lastTime = now;
 
-		//user function
+		/* user function */
 		EZ_callback_draw(elapsedTime);
 
 
-		//reset keystate stuff
-		for (int i = 0; i < _numberOfKeys; i++) {
+		/* update keystates */
+		for (i = 0; i < _numberOfKeys; i++) {
 			keyStates[i].pressed  = false;
 			keyStates[i].released = false;
 		}
 
-		//events and inputs
+		/* events and inputs */
 		while (XPending(disp)) {
 			XEvent e;
 			XNextEvent(disp, &e);
@@ -413,115 +436,110 @@ static void* mainThread(void* arg) {
 			switch (e.type) {
 
 
+			case KeyPress: {
 
-			case KeyPress:
-			{
-			int index = keyMap(e.xkey.keycode);
-			EZ_Key* key = &keyStates[index];
+				EZ_KeyCode_t index = keyMap(e.xkey.keycode);
+				EZ_Key_t* key = &(keyStates[index]);
 
-			key->pressed = true;
-			key->held    = true;
+				key->pressed = true;
+				key->held    = true;
 
-			XLookupString(&e.xkey, &key->typed, 1, NULL, NULL);
+				XLookupString(&e.xkey, &(key->typed), 1, NULL, NULL);
 
-			EZ_callback_keyPressed(*key);
+				EZ_callback_keyPressed(key);
 
-			break;
-			}
-
-
-			case KeyRelease:
-			{
-			enum EZ_KeyCode index = keyMap(e.xkey.keycode);
-			EZ_Key* key = &keyStates[index];
-
-			key->released = true;
-			key->held = false;
-			XLookupString(&e.xkey, &key->typed, 1, NULL, NULL);
-
-			EZ_callback_keyReleased(*key);
-			break;
-			}
-
-			case FocusIn :
-				XAutoRepeatOff(disp); //turn off autistic keyboard inputs
-			break;
-
-			case FocusOut:
-				XAutoRepeatOn(disp); //put it back on so other apps are not affected
-			break;
-
-			case ButtonPress:
-			{
-			int sym = e.xbutton.button;
-			enum EZ_KeyCode index = 0;
-			switch (sym)
-				{
-				case 1:	keyStates[K_LMB].pressed = true; keyStates[K_LMB].held = true; index = K_LMB; break;
-				case 2:	keyStates[K_MMB].pressed = true; keyStates[K_MMB].held = true; index = K_MMB; break;
-				case 3:	keyStates[K_RMB].pressed = true; keyStates[K_RMB].held = true; index = K_RMB; break;
-				case 4:	mouseState.wheel = 1; break;
-				case 5:	mouseState.wheel =-1; break;
-				default: break;
-				}
-			EZ_callback_keyPressed(keyStates[index]);
-			break;
-			}
-
-			case ButtonRelease:
-			{
-			int sym = e.xbutton.button;
-			enum EZ_KeyCode index = 0;
-			switch (sym)
-				{
-				case 1:	keyStates[K_LMB].released = true; keyStates[K_LMB].held = false; index = K_LMB; break;
-				case 2:	keyStates[K_MMB].released = true; keyStates[K_MMB].held = false; index = K_MMB; break;
-				case 3:	keyStates[K_RMB].released = true; keyStates[K_RMB].held = false; index = K_RMB; break;
-				default: break;
-				}
-			EZ_callback_keyReleased(keyStates[index]);
-			break;
-			}
-
-			case MotionNotify:
-			{
-
-			int newx = (e.xmotion.x + 0.5f*(canvasXwinRatio - 1.0f) * winWidth ) * canvas.w / ((float)winWidth  * canvasXwinRatio);
-			int newy = (e.xmotion.y + 0.5f*(canvasYwinRatio - 1.0f) * winHeight) * canvas.h / ((float)winHeight * canvasYwinRatio);
-
-			mouseState.dx = newx - mouseState.x;
-			mouseState.dy = newy - mouseState.y;
-			mouseState.x  = newx;
-			mouseState.y  = newy;
-
-			EZ_callback_mouseMoved(mouseState);
-
-			break;
-			}
-
-			case ConfigureNotify: //resize
-			{
-			XConfigureEvent req = e.xconfigure;
-			winWidth = req.width; winHeight = req.height;
-			free(buffer);
-			buffer = calloc(winWidth*winHeight, 4);
-			_updateBars();
-
-			break;
-			}
-
-			case ClientMessage: //on destroy
-			{
-				if ((Atom)e.xclient.data.l[0] == wm_delete)	EZ_stop();
 				break;
 			}
 
 
+			case KeyRelease: {
+			
+				EZ_KeyCode_t index = keyMap(e.xkey.keycode);
+				EZ_Key_t* key = &(keyStates[index]);
+
+				key->released = true;
+				key->held = false;
+				XLookupString(&e.xkey, &(key->typed), 1, NULL, NULL);
+
+				EZ_callback_keyReleased(key);
+				break;
+			}
+
+			case FocusIn :
+				XAutoRepeatOff(disp); /* turn off autistic keyboard inputs */
+			break;
+
+			case FocusOut:
+				XAutoRepeatOn(disp); /* put it back on so other apps are not affected */
+			break;
+
+			case ButtonPress: {
+				int sym = e.xbutton.button;
+				EZ_KeyCode_t index = 0;
+				switch (sym) {
+					case 1:	keyStates[K_LMB].pressed = true; keyStates[K_LMB].held = true; index = K_LMB; break;
+					case 2:	keyStates[K_MMB].pressed = true; keyStates[K_MMB].held = true; index = K_MMB; break;
+					case 3:	keyStates[K_RMB].pressed = true; keyStates[K_RMB].held = true; index = K_RMB; break;
+					case 4:	mouseState.wheel = 1; break;
+					case 5:	mouseState.wheel =-1; break;
+					default: break;
+				}
+				
+				EZ_callback_keyPressed( &(keyStates[index]) );
+				break;
+			}
+
+			case ButtonRelease: {
+				int sym = e.xbutton.button;
+				EZ_KeyCode_t index = 0;
+				
+				switch (sym) {
+					case 1:	keyStates[K_LMB].released = true; keyStates[K_LMB].held = false; index = K_LMB; break;
+					case 2:	keyStates[K_MMB].released = true; keyStates[K_MMB].held = false; index = K_MMB; break;
+					case 3:	keyStates[K_RMB].released = true; keyStates[K_RMB].held = false; index = K_RMB; break;
+					default: break;	
+				}
+
+				EZ_callback_keyReleased( &(keyStates[index]) );
+				break;
+			}
+
+			case MotionNotify: {
+
+				int newx = (e.xmotion.x + 0.5f*(canvasXwinRatio - 1.0f) * winWidth ) * canvas->w / ((float)winWidth  * canvasXwinRatio);
+				int newy = (e.xmotion.y + 0.5f*(canvasYwinRatio - 1.0f) * winHeight) * canvas->h / ((float)winHeight * canvasYwinRatio);
+
+				mouseState.dx = newx - mouseState.x;
+				mouseState.dy = newy - mouseState.y;
+				mouseState.x  = newx;
+				mouseState.y  = newy;
+
+				EZ_callback_mouseMoved( &mouseState );
+
+				break;
+			}
+
+			case ConfigureNotify: { /* resize */
+
+				XConfigureEvent req = e.xconfigure;
+				winWidth = req.width; winHeight = req.height;
+				free(buffer);
+				buffer = calloc(winWidth*winHeight, 4);
+				_updateBars();
+
+				break;
+			}
+
+			case ClientMessage: { /* on destroy */
+
+				if ((Atom)e.xclient.data.l[0] == wm_delete)	EZ_stop();
+				break;
+			}
 
 			}
 		}
 
-		//display
+		/* display */
 		EZ_redraw();
 
 
@@ -533,7 +551,7 @@ static void* mainThread(void* arg) {
 	free(buffer);
 	XFreeGC(disp, gc);
 	XDestroyWindow(disp, win);
-	XAutoRepeatOn(disp); //put it back on so other apps are not affected
+	XAutoRepeatOn(disp); /* put it back on so other apps are not affected */
 	XCloseDisplay(disp);
 
 	pthread_exit(NULL);

@@ -1,36 +1,24 @@
 include config.mk
 
 
-EXT_SOURCES := $(wildcard sources/ext/*.c)
-EXT_OBJECTS := $(patsubst sources/ext/%.c,bin/%.o,$(EXT_SOURCES))
+EXT_SRC := $(wildcard sources/ext/*.c)
+EXT_OBJ := $(patsubst %.c,%.o,$(EXT_SRC))
 
-CORE_SOURCES := sources/core/$(CORE_VIDEO).c sources/core/$(CORE_AUDIO).c
-CORE_OBJECTS := bin/$(CORE_VIDEO).o bin/$(CORE_AUDIO).o
-
-TOOLS := $(wildcard tools/*)
+CORE_SRC := sources/core/$(CORE).c
+CORE_OBJ := sources/core/$(CORE).o
 
 
-.PHONY: all dlib slib tools clean install back $(TOOLS)
+.PHONY: all lib clean install back
 
+all: test
 
-#make everything
-all : dlib
-all : slib
-all : tools
-	@echo ALL: SUCCESS
+test: test.o $(DYNLIB)
+	$(CC) $(CFLAGS) -Wl,-rpath,./ -L./ -lezgfx -o $@ $^
 
-#make only the objects
-slib : $(EXT_OBJECTS) $(CORE_OBJECTS)
-	@echo SLIB: SUCCESS
 
 #make only the so
 dlib : $(DYNLIB)
 	@echo DYNLIB: SUCCESS
-
-#make the tools
-tools : $(TOOLS)
-	@echo making $(TOOLS)
-	@echo TOOLS: SUCCESS
 
 #copy to global lib directory
 install : $(DYNLIB)
@@ -38,24 +26,17 @@ install : $(DYNLIB)
 
 
 #make shared object	
-$(DYNLIB) : $(CORE_OBJECTS) $(EXT_OBJECTS)
-	$(CC) $(CFLAGS) $(LIBS) -shared -lc -Iinclude -o $@ $^
+$(DYNLIB) : $(CORE_OBJ) $(EXT_OBJ)
+	$(CC) $(CFLAGS) $(LIBS) -shared -lc -o $@ $^
 
 #make objects
-bin/%.o : sources/*/%.c
+%.o : %.c
 	$(CC) $(CFLAGS) -fPIC -Iinclude -o $@ -c $<
-
-#recursive call inside the tool subdirs
-#all / clean targets are used
-$(TOOLS) :
-	@echo $@
-	$(MAKE) -C $@
 
 
 #remove obj files and executables
-#call make clean recursively
 clean: $(TOOLS)
-	rm -f bin/*
+	rm -f *.o sources/core/*.o sources/ext/*.o test
 
 
 #make backup

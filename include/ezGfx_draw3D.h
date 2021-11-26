@@ -12,8 +12,9 @@
 */
 
 
-#ifndef EZ_DRAW3D
-#define EZ_DRAW3D
+#ifndef _EZGFX_DRAW3D_H_
+#define _EZGFX_DRAW3D_H_
+
 
 #include "ezGfx_core.h"
 #include "ezGfx_matrix.h"
@@ -22,40 +23,37 @@
 typedef struct {
   vec3f pos;
   vec3f uv;
-  EZ_Px col;
+  EZ_Px_t col;
 
-} EZ_Vertex;
+} EZ_Vertex_t;
 
 typedef struct {
-  EZ_Vertex points[3];
+  EZ_Vertex_t points[3];
   vec3f norm;
-  EZ_Px col;
+  EZ_Px_t col;
 
-} EZ_Tri;
+} EZ_Tri_t;
 
 
 typedef struct {
-  EZ_Tri* triangles;
-  uint32_t nPoly;
+  EZ_Tri_t* triangles;
+  unsigned long nPoly;
 
-  EZ_Image* texture;
+  EZ_Image_t* texture;
 
-//  EZ_Image* bumpmap;
-//  ...maps maps maps
-//  everything map
+/*  EZ_Image_t* bumpmap;
+ *  ...maps maps maps
+ *  everything map */
 
-} EZ_Mesh;
-
-
-void EZ_draw3D_drawMesh(EZ_Image target, const EZ_Mesh, const mat4x4* projection, const mat4x4* transform);
-void EZ_draw3D_tri(EZ_Image target, const EZ_Tri*, const mat4x4* projection, const mat4x4* transform);
+} EZ_Mesh_t;
 
 
+void EZ_draw3D_drawMesh(EZ_Image_t* target, EZ_Mesh_t* mesh, const mat4x4* proj, const mat4x4* transform);
+void EZ_draw3D_tri     (EZ_Image_t* target, EZ_Tri_t* tri,   const mat4x4* proj, const mat4x4* transform);
 
-EZ_Mesh EZ_draw3D_unitCube();
-
-void EZ_draw3D_freeMesh(EZ_Mesh);
+EZ_Mesh_t* EZ_draw3D_unitCube();
+void EZ_draw3D_freeMesh(EZ_Mesh_t* mesh);
 
 
 
-#endif
+#endif /* ezGfx_draw3D_h */

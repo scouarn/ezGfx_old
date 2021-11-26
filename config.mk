@@ -1,6 +1,5 @@
 #choosing plateform
-CORE_VIDEO := ezGfx_core_linux_xorg
-CORE_AUDIO := ezGfx_sound_core_linux_alsa
+CORE := ezGfx_core_linux_xorg
 
 
 #ezgfx dependencies
@@ -17,12 +16,12 @@ LIBS += -lX11 				#using xorg
 
 #the compiler and some flags
 CC := gcc 
-CFLAGS := -O3 -Wall -Werror=vla
+CFLAGS := -O3 -Wall -Werror=vla -Iinclude -pedantic
 
 MAKE := make
 
 #files to get backed up
 BACKUP := Makefile config.mk TODO.md README.md .git .gitignore sources bin include tools
 
-DYNLIB := bin/libezgfx.so
+DYNLIB := libezgfx.so
 INSTALL := /usr/lib/

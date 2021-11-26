@@ -12,25 +12,25 @@
 /
 */
 
+#ifndef _EZGFX_CORE_H_
+#define _EZGFX_CORE_H_
 
-#ifndef EZGFX_CORE
-#define EZGFX_CORE
-
+#include <stdbool.h>
+#include <stdint.h>
 
 #include "ezGfx_utils.h"
 
 
 /* MAIN FUNCTIONS */
-void EZ_start();	//start the app thread
-void EZ_stop();		//force it to stop
-void EZ_join(); 	//wait for it to stop
+
+void EZ_start();	/* start the app thread */
+void EZ_stop();		/* force it to stop     */
+void EZ_join(); 	/* wait for it to stop  */
 
 
 /* INPUT FUNCTIONS */
 
-
-
-enum EZ_KeyCode {
+typedef enum {
 	K_ERROR,
 	K_LMB, K_RMB, K_MMB,
 	K_A, K_B, K_C, K_D, K_E, K_F, K_G, K_H, K_I, K_J, K_K, K_L, K_M, K_N, K_O, K_P, K_Q, K_R, K_S, K_T, K_U, K_V, K_W, K_X, K_Y, K_Z,
@@ -43,118 +43,117 @@ enum EZ_KeyCode {
 	K_COLON, K_COMMA, K_PERIOD, K_QUOTE, K_SLASH, K_BACKSLASH, K_TILDE, K_OPEN, K_CLOSE, K_PLUS, K_MINUS,
 	KP_0, KP_1, KP_2, KP_3, KP_4, KP_5, KP_6, KP_7, KP_8, KP_9, KP_DIV, KP_MUL, KP_PLUS, KP_MINUS, KP_ENTER, KP_DEC,
 	_numberOfKeys
-};
+
+} EZ_KeyCode_t;
 
 typedef struct {
-	bool pressed;	//has it been pressed on this frame ?
-	bool released;	//has it been released on this frame ?
-	bool held;		//is it still held ?
-	char typed;		//the actual character typed ('\0' if not ascii)
-	enum EZ_KeyCode  keyCode;
-} EZ_Key;
+	bool pressed;	/* has it been pressed on this frame ? */
+	bool released;	/* has it been released on this frame ? */
+	bool held;		/* is it still held ? */
+	char typed;		/* the actual character typed ('\0' if not ascii) */
+	EZ_KeyCode_t keyCode;
+} EZ_Key_t;
 
 typedef struct {
-	int x;		//position in canvas space
+	int x;		/* position in canvas space */
 	int y;
-	int dx;		//change in position since last frame 
+	int dx;		/* change in position since last frame */
 	int dy;
-	int wheel;	// +1 or -1
-} EZ_Mouse;
+	int wheel;	/* +1 or -1 */
+} EZ_Mouse_t;
+
 
 /* The implementation keeps track of keyboard and mouse state	*/
-EZ_Key   EZ_getKey(enum EZ_KeyCode code);
-EZ_Mouse EZ_getMouse();
+EZ_Key_t*   EZ_getKey(EZ_KeyCode_t code);
+EZ_Mouse_t* EZ_getMouse();
 
 
-/* Callback functions left to the client to define */
-extern void EZ_callback_init();						//at the start of the thread, before first frame
-extern void EZ_callback_draw(double dt);			//called at each frame to update the canvas
-extern void EZ_callback_kill();						//after the last frame (free memory...)
-extern void EZ_callback_keyPressed(EZ_Key key);		//when a key is pressed
-extern void EZ_callback_keyReleased(EZ_Key key);	//when a key is released
-extern void EZ_callback_mouseMoved(EZ_Mouse mouse); //when the mouse is moved
+
+/* CALLBACK FUNCTIONS */
+
+extern void EZ_callback_init();          /* at the start of the thread, before first frame */
+extern void EZ_callback_draw(double dt); /* called at each frame to update the canvas */
+extern void EZ_callback_kill();          /* after the last frame (free memory...) */
+extern void EZ_callback_keyPressed(EZ_Key_t* key);     /* when a key is pressed */
+extern void EZ_callback_keyReleased(EZ_Key_t* key);	   /* when a key is released */
+extern void EZ_callback_mouseMoved(EZ_Mouse_t* mouse); /* when the mouse is moved */
 
 
-/* COLOR FUNCITONS */
+
+/* GRAPHICS FUNCITONS */
+
 typedef union {
-	uint32_t ref;  //the 32bits "hex" value
+	uint32_t ref;  /* the 32bits hex value */
 	struct {uint8_t a, b, g, r;};
-} EZ_Px;
+} EZ_Px_t;
+
+typedef enum { ALPHA_BLEND,  /* standart alpha blending */
+               ALPHA_IGNORE, /* no blending at all */
+               ALPHA_FAST	 /* ignore alpha if bigger than 0 */
+} EZ_BlendMode_t;
 
 typedef struct {
-	uint32_t w, h;	//size in pixels
-	EZ_Px* px;	//pixel array
+	unsigned int w, h; /* size in pixels */
+	EZ_Px_t* px;       /* pixel array */
 	
-	void* reserved; //left to implementation
+	void* reserved; /* left to implementation */
 
-} EZ_Image;
-
-
-EZ_Image EZ_createImage(int w, int h); //allocates memory for an image of given size
-EZ_Image EZ_copyImage(EZ_Image);	   //allocates memory and copies data to new image
-void  	 EZ_freeImage(EZ_Image);	   //free allocated memory
-
-
+} EZ_Image_t;
 
 typedef struct {
-	int h_px; //size in pixels of a character
-	int w_px;
-	int w_bytes; //number of bytes in each row
-	uint8_t** data;   //array of pointers : one per char pointing to corresponding pixel information
+	int w, h;
+	int wb; /* number of bytes in each row */
+	uint8_t** data;   /* matrix of pixel value : data->char->line */
 
-} EZ_Font;
-
-EZ_Font EZ_createFont(int w, int h); //allocates memory for 256 chars with given size in pixels
-void    EZ_freeFont(EZ_Font font);
+} EZ_Font_t;
 
 
+EZ_Image_t* EZ_createImage(int w, int h); /* allocates memory for an image of given size */
+EZ_Image_t* EZ_copyImage(EZ_Image_t*);    /* allocates memory and copies data to new image */
+void        EZ_freeImage(EZ_Image_t*);    /* free allocated memory */
 
-enum EZ_BlendMode {ALPHA_BLEND,  //standart alpha blending
-				   ALPHA_IGNORE, //no blending at all
-				   ALPHA_FAST	 //ignore alpha if bigger than 0
-				};
-
-EZ_Px EZ_blend(EZ_Px fg, EZ_Px bg, enum EZ_BlendMode mode);
-
-EZ_Px EZ_randCol();	//random white noise RGBA color
+EZ_Font_t* EZ_createFont(int w, int h); /* allocates memory for 256 chars with given size in pixels */
+void     EZ_freeFont(EZ_Font_t* font);
 
 
-#define EZ_BLACK   ((EZ_Px)0x000000FFU) //predefined colors
-#define EZ_WHITE   ((EZ_Px)0xFFFFFFFFU)
-#define EZ_BLUE    ((EZ_Px)0x0000FFFFU)
-#define EZ_GREEN   ((EZ_Px)0x00FF00FFU)
-#define EZ_CYAN    ((EZ_Px)0x00FFFFFFU)
-#define EZ_RED     ((EZ_Px)0xFF0000FFU)
-#define EZ_MAGENTA ((EZ_Px)0xFF00FFFFU)
-#define EZ_YELLOW  ((EZ_Px)0xFFFF00FFU)
 
-#define EZ_ORANGE  	((EZ_Px)0xFF7F00FFU)
-#define EZ_LIME  	((EZ_Px)0x7FFF00FFU)
-#define EZ_PURPLE  	((EZ_Px)0x7F00FFFFU)
-#define EZ_GRAY		((EZ_Px)0x7F7F7FFFU)
+/* COLOR FUNCTIONS */
+
+EZ_Px_t EZ_blend(EZ_Px_t fg, EZ_Px_t bg, EZ_BlendMode_t mode);
+EZ_Px_t EZ_randCol();	/* random white noise RGBA color */
+
+#define EZ_BLACK   {0x000000FFU} 
+#define EZ_WHITE   {0xFFFFFFFFU}
+#define EZ_BLUE    {0x0000FFFFU}
+#define EZ_GREEN   {0x00FF00FFU}
+#define EZ_CYAN    {0x00FFFFFFU}
+#define EZ_RED     {0xFF0000FFU}
+#define EZ_MAGENTA {0xFF00FFFFU}
+#define EZ_YELLOW  {0xFFFF00FFU}
+#define EZ_ORANGE  {0xFF7F00FFU}
+#define EZ_LIME    {0x7FFF00FFU}
+#define EZ_PURPLE  {0x7F00FFFFU}
+#define EZ_GRAY	   {0x7F7F7FFFU}
 
 
-#define EZ_RGB(r,g,b) 	 ((EZ_Px){.a = 255, .b = b, .g = g, .r = r})
-#define EZ_RGBA(r,g,b,a) ((EZ_Px){.a =   a, .b = b, .g = g, .r = r})
-#define EZ_BW(c) 		 ((EZ_Px){.a = 255, .b = c, .g = c, .r = c}) //grayscale color
+#define EZ_RGB(r,g,b) 	 ({.a = 255, .b = b, .g = g, .r = r})
+#define EZ_RGBA(r,g,b,a) ({.a =   a, .b = b, .g = g, .r = r})
+#define EZ_BW(c) 		 ({.a = 255, .b = c, .g = c, .r = c})
 
 
 
 /* UTILITY */
-void EZ_bind(EZ_Image canvas); 		//set what should be drawn
-void EZ_rename(const char*);  		//change the name of the window
-void EZ_resize(int winW, int winH);	//change the size of the window
 
-void EZ_redraw(); //force screen redraw (will call the draw callback)
+void EZ_bind(EZ_Image_t* canvas); /* set what should be drawn */
+void EZ_rename(const char*);      /* change the name of the window */
+void EZ_resize(int w, int h);     /* change the size of the window */
 
-void EZ_setMaximized(bool);  //maximize window
-void EZ_setFullscreen(bool); //window fullscreen
+void EZ_redraw(); /* force screen redraw (will call the draw callback) */
 
-double EZ_getTime(); //returns time in seconds since start of the thread
+void EZ_setMaximized(bool);  /* maximize window */
+void EZ_setFullscreen(bool); /* window fullscreen */
 
-
-
+double EZ_getTime(); /* returns time in seconds since start of the thread */
 
 
-
-#endif
+#endif /* ezGfx_core_h */
