@@ -1,11 +1,11 @@
 #choosing plateform
-CORE := ezGfx_core_linux_xorg
+# CORE := ezGfx_core_linux_xorg
+CORE := ezGfx_core_win
 
 
 #ezgfx dependencies
 LIBS :=  -lm -lpthread		#cross plateform base
-LIBS += -lasound 			#using alsa
-LIBS += -lX11 				#using xorg
+# LIBS += -lX11 				#using xorg
 # LIBS += -lGL    			#using openGL
 # LIBS += 					#windows GDI
 # LIBS += 					#windows draw2D

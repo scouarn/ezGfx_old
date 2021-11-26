@@ -12,8 +12,9 @@ CORE_OBJ := sources/core/$(CORE).o
 
 all: test
 
-test: test.o $(DYNLIB)
-	$(CC) $(CFLAGS) -Wl,-rpath,./ -L./ -lezgfx -o $@ $^
+test: test.o $(CORE_OBJ) $(EXT_OBJ)
+	$(CC) $(CFLAGS) -o $@ $^
+# 	$(CC) $(CFLAGS) -Wl,-rpath,./ -L./ -lezgfx -o $@ $^
 
 
 #make only the so

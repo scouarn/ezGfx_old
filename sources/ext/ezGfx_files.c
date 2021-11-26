@@ -1,5 +1,5 @@
 #include "ezGfx.h"
-#include "utils.h"
+#include "ezGfx_utils.h"
 
 #include <stdio.h>
 #include <stdlib.h>
