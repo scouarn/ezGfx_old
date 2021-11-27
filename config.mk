@@ -4,10 +4,11 @@ CORE := ezGfx_core_win
 
 
 #ezgfx dependencies
-LIBS :=  -lm -lpthread		#cross plateform base
-# LIBS += -lX11 				#using xorg
-# LIBS += -lGL    			#using openGL
-# LIBS += 					#windows GDI
+LIBS := -lm 		
+# LIBS += -lpthread
+# LIBS += -lX11  			#xorg
+# LIBS += -lGL  			#openGL
+LIBS += -lGdi32				#windows GDI
 # LIBS += 					#windows draw2D
 # LIBS += 					#windows core audio... 
 # LIBS += 					#win32/win64 ?
@@ -16,7 +17,7 @@ LIBS :=  -lm -lpthread		#cross plateform base
 
 #the compiler and some flags
 CC := gcc 
-CFLAGS := -O3 -Wall -Werror=vla -Iinclude -pedantic
+CFLAGS := -O3 -Wall -Werror=vla -Iinclude
 
 MAKE := make
 

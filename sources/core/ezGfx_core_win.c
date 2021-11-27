@@ -8,25 +8,32 @@
 #include <stdint.h>
 
 #include <windows.h>
-
+#include <Windowsx.h>
+	
 
 /* Application */
 static DWORD  thread_id;
 static HANDLE thread_handle;
 static DWORD WINAPI mainThread(LPVOID arg);
 static LRESULT CALLBACK windowProcedure( HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
-
-/* Graphic context */
-
+static HWND hwnd;
+static HINSTANCE hInstance;
 
 
 /* Drawing */
+static HDC screenDC;
+static HDC buffer;
+static HBITMAP bmp = NULL;
 static EZ_Image_t* canvas;
 static int winWidth;
 static int winHeight;
-static float canvasXwinRatio = 1.0f;
-static float canvasYwinRatio = 1.0f;
-static void _updateBars();
+static struct {
+	  BITMAPINFOHEADER bmiHeader;
+	  DWORD mask[4];
+} bmpinfo; /* https://devblogs.microsoft.com/oldnewthing/?p=28983 */
+
+static EZ_Px_t* pixels;
+
 
 /* Time */
 static struct timespec startTime;
@@ -42,6 +49,26 @@ static EZ_Mouse_t mouseState;
 
 void EZ_bind(EZ_Image_t* cnvs) {
 	canvas = cnvs;
+	EZ_resize(canvas->w, canvas->h);
+
+	bmpinfo.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+	bmpinfo.bmiHeader.biWidth  = canvas->w;
+	bmpinfo.bmiHeader.biHeight = -canvas->h;
+	bmpinfo.bmiHeader.biPlanes = 1;
+	bmpinfo.bmiHeader.biBitCount = 32;
+	bmpinfo.bmiHeader.biCompression = BI_BITFIELDS;
+	bmpinfo.bmiHeader.biClrImportant = 0;
+   	bmpinfo.bmiHeader.biClrUsed = 0;
+
+  	bmpinfo.mask[0] = 0xff000000;
+  	bmpinfo.mask[1] = 0x00ff0000;
+  	bmpinfo.mask[2] = 0x0000ff00;
+
+  	if (bmp) DeleteObject(bmp);
+
+	bmp = CreateDIBSection(buffer, (BITMAPINFO*)&bmpinfo, DIB_RGB_COLORS, (void*)&pixels, NULL, 0);
+	EZ_assert(bmp, "Couldn't init bitmap for buffer.");
+
 }
 
 
@@ -85,13 +112,19 @@ EZ_Mouse_t* EZ_getMouse() {
 
 
 void EZ_rename(const char* name) {
-	
+	SetWindowTextA(hwnd, (LPCSTR)name);
 }
 
 void EZ_resize(int w, int h) {
-	/* RESIZE WINDOW */
-	winWidth = w;
-	winHeight = h;
+
+	RECT rec = {0, 0, w, h};
+	AdjustWindowRect(&rec, WS_OVERLAPPEDWINDOW, false);
+
+	rec.right -= rec.left;
+	rec.bottom -= rec.top;
+
+	SetWindowPos(hwnd, NULL, 0, 0, rec.right, rec.bottom, SWP_NOMOVE);
+
 }
 
 void EZ_setFullscreen(bool val) {
@@ -100,7 +133,10 @@ void EZ_setFullscreen(bool val) {
 }
 
 void EZ_setMaximized(bool val) {
-	
+
+	ShowWindow(hwnd, val ? SW_MAXIMIZE : SW_NORMAL);
+	SetForegroundWindow(hwnd);
+	UpdateWindow(hwnd);
 
 }
 
@@ -210,7 +246,55 @@ EZ_Px_t EZ_blend(EZ_Px_t fg, EZ_Px_t bg, EZ_BlendMode_t mode) {
 
 void EZ_redraw() {
 
-	/* draw the buffer on the screen */
+	int x, y, cx, cy;
+
+	float cvsAspct = canvas->w / canvas->h;
+	float winAspct = winWidth / winHeight;
+
+	if (cvsAspct / winAspct > 1) { /* horizontal bars */
+		x = 0; cx = winWidth;
+		cy = cx / cvsAspct;
+		y = (winHeight - cy) / 2;
+	}
+	else { /* vertical bars */
+		y = 0; 
+		cy = winHeight;
+		cx = cy * cvsAspct;
+		x = (winWidth - cx) / 2;
+	}
+
+
+
+	/* draw bars */
+	HPEN pen = CreatePen(PS_NULL, 1, RGB(0, 0, 0));
+    SelectObject(screenDC, pen);
+
+	HBRUSH brush = (HBRUSH)(COLOR_WINDOW+1);
+	SelectObject(screenDC, brush);
+
+	Rectangle(screenDC, 0, 0, x, winHeight); /* left */
+	Rectangle(screenDC, 0, 0, winWidth, y);  /* top */
+	Rectangle(screenDC, winWidth-x, 0, winWidth, winHeight);  /* right */
+	Rectangle(screenDC, 0, winHeight-y, winWidth, winHeight);  /* bottom */
+
+	DeleteObject(pen);
+	DeleteObject(brush);
+
+	/* copy texture to buffer */
+	EZ_assert(
+		SetDIBits(buffer, bmp, 0, canvas->h, canvas->px, (BITMAPINFO*)(&bmpinfo), DIB_RGB_COLORS),
+		"Couldn't copy texture to buffer.");
+
+
+	/* draw texture */
+	SelectObject(buffer, bmp);
+	EZ_assert(
+		StretchBlt(screenDC, x, y, cx, cy,
+		buffer, 0, 0, canvas->w, canvas->h,
+		SRCCOPY),
+
+		"Couldn't blit texture."
+	);
 
 
 }
@@ -225,40 +309,15 @@ void EZ_redraw() {
 
 
 
-
-static void _updateBars() {
-	float canvasRatio, windowRatio;
-
-	canvasRatio = (float)canvas->w / canvas->h;
-	windowRatio = (float)winWidth / winHeight;
-	canvasXwinRatio = canvasRatio / windowRatio;
-	canvasYwinRatio = windowRatio / canvasRatio;
-
-	if (canvasXwinRatio > 1.0f)
-		canvasXwinRatio = 1.0f;
-
-	else
-		canvasYwinRatio = 1.0f;
-
-}
-
-
 static DWORD WINAPI mainThread(LPVOID arg) {
-	int i;
 
-	STARTUPINFO si;
-	int nCmdShow;
-	HINSTANCE hInstance;
-	const char CLASSNAME [] = "EZGFXCLASS";
-	WNDCLASSEX wc;
-	MSG Msg;
-	HWND hwnd;
 
 	/* init time */
 	clock_gettime(CLOCK_MONOTONIC, &startTime);
 	clock_gettime(CLOCK_MONOTONIC, &lastTime);
 
 	/* init keys */
+	int i;
 	for (i = 0; i < _numberOfKeys; i++)
 		keyStates[i].keyCode = i;
 
@@ -269,11 +328,11 @@ static DWORD WINAPI mainThread(LPVOID arg) {
 	/* https://gist.github.com/caiorss/e8967d4d3dad522c82aab18ccd8f8304 */
 	
 	/* Get WinMain Parameters */
-	hInstance = GetModuleHandle(NULL);
-    GetStartupInfo(&si);  
-    nCmdShow = si.wShowWindow;
+	const char CLASSNAME [] = "EZGFXCLASS";
+	WNDCLASSEX wc;
 
-		
+	hInstance = GetModuleHandle(NULL);
+
     /* register winclass */
 	wc.lpszClassName = CLASSNAME;
 	wc.lpfnWndProc = windowProcedure;	
@@ -295,31 +354,23 @@ static DWORD WINAPI mainThread(LPVOID arg) {
 		CLASSNAME,
 		"EZGFX",
 		WS_OVERLAPPEDWINDOW,
-		CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
+		CW_USEDEFAULT, CW_USEDEFAULT, 100, 150,
 		NULL, NULL, hInstance, NULL	
 	);
 
 	EZ_assert(hwnd, "Couldn't create Window");
 
+	/* init graphics context */
+	screenDC = GetDC(hwnd);
+	buffer = CreateCompatibleDC(screenDC);
+	EZ_assert(buffer && screenDC, "Couldn't init device contexts.");
+
 
 	/* client init callback */
 	EZ_callback_init();
-	if (canvas->px != NULL) EZ_resize(canvas->w, canvas->h);
-	_updateBars();
 
-
-	/* start of the loop */
-	ShowWindow(hwnd, nCmdShow);
+	ShowWindow(hwnd, SW_SHOW);
 	UpdateWindow(hwnd);
-
-	/* handle new messages */
-	while(GetMessage(&Msg, NULL, 0, 0) > 0 ){
-		TranslateMessage(&Msg);
-		DispatchMessage(&Msg);
-	}	
-	
-
-
 
 	/* main loop */
 	while (running) {
@@ -337,37 +388,100 @@ static DWORD WINAPI mainThread(LPVOID arg) {
 
 
 		/* update keystates */
+		int i;
 		for (i = 0; i < _numberOfKeys; i++) {
 			keyStates[i].pressed  = false;
 			keyStates[i].released = false;
 		}
+		mouseState.wheel = 0;
 
 		/* events and inputs */
-		
+		MSG Msg;
+		while(PeekMessage(&Msg, hwnd, 0, 0, PM_REMOVE)){
+			TranslateMessage(&Msg);
+			DispatchMessage(&Msg);
+		}	
 
 		/* display */
-		EZ_redraw();
+		if (canvas) EZ_redraw();
 
 
 	}
 
 	EZ_callback_kill();
+		
+	DeleteObject(bmp);
+	DeleteDC(buffer);
+	DeleteDC(screenDC);
 	CloseHandle(thread_handle);
+
 	return 0;
 }
 
 
+#define MAPTO(X, Y) case X : return Y;
 
+static EZ_KeyCode_t keyMap(int scancode) {
+	switch (scancode) {
+		MAPTO(VK_LBUTTON, K_LMB) MAPTO(VK_RBUTTON, K_RMB) MAPTO(VK_MBUTTON, K_MMB)
 
-static EZ_KeyCode_t keyMap(int keyCode) {
-	switch (keyCode) {
+		MAPTO(VK_TAB, K_TAB)        MAPTO(VK_ESCAPE, K_ESCAPE) MAPTO(VK_SPACE, K_SPACE)
+		MAPTO(VK_BACK, K_BACKSPACE)	MAPTO(VK_RETURN, K_RETURN)
+
+		MAPTO(VK_PRIOR, K_PGUP) MAPTO(VK_NEXT, K_PGDN)
+		MAPTO(VK_END, K_END)    MAPTO(VK_HOME, K_HOME)
+
+		MAPTO(VK_LEFT, K_LEFT)   MAPTO(VK_UP, K_UP)
+		MAPTO(VK_RIGHT, K_RIGHT) MAPTO(VK_DOWN, K_DOWN)
+
+		MAPTO(VK_INSERT, K_INS)      MAPTO(VK_DELETE, K_DEL)	MAPTO(VK_SCROLL, K_SCROLL)
+		MAPTO(VK_NUMLOCK, K_NUMLOCK) MAPTO(VK_PAUSE, K_PAUSE)
+
+		MAPTO(VK_MULTIPLY, KP_MUL)	MAPTO(VK_ADD, KP_PLUS)  MAPTO(VK_SUBTRACT, KP_MINUS)
+		MAPTO(VK_DECIMAL, KP_DEC)   MAPTO(VK_DIVIDE, KP_DIV)
+
+		MAPTO(VK_CAPITAL, K_CAPS)
+		MAPTO(VK_LSHIFT, K_LSHIFT)  MAPTO(VK_RSHIFT, K_RSHIFT)
+		MAPTO(VK_LCONTROL, K_LCTRL)	MAPTO(VK_RCONTROL, K_RCTRL)
+		MAPTO(VK_LMENU, K_LALT)     MAPTO(VK_RMENU, K_RALT)
+
+		MAPTO(VK_OEM_1, K_COLON)     MAPTO(VK_OEM_2, K_SLASH)
+		MAPTO(VK_OEM_3, K_TILDE)     MAPTO(VK_OEM_4, K_OPEN)
+		MAPTO(VK_OEM_5, K_BACKSLASH) MAPTO(VK_OEM_6, K_CLOSE)
+		MAPTO(VK_OEM_7, K_QUOTE)     MAPTO(VK_OEM_8, K_SLASH)
+		MAPTO(VK_OEM_PLUS, K_PLUS)   MAPTO(VK_OEM_COMMA, K_COMMA)
+		MAPTO(VK_OEM_MINUS, K_MINUS) MAPTO(VK_OEM_PERIOD, K_PERIOD)
+
+		case 0x30 ... 0x39 : return scancode - 0x30 + K_0;
+		case 0x41 ... 0x5A : return scancode - 0x41 + K_A;
+		case VK_NUMPAD0...VK_NUMPAD9 : return scancode - VK_NUMPAD0 + KP_0;
+		case VK_F1...VK_F12 : return scancode - VK_F1 + K_F1;
+
 		default : return K_ERROR;
 	}
 }
 
 
+static void kdown(EZ_Key_t* key) {
+
+	key->pressed = true;
+	key->held    = true;
+
+	EZ_callback_keyPressed(key);
+}
+
+static void kup(EZ_Key_t* key) {
+
+	key->released = true;
+	key->held = false;
+
+	EZ_callback_keyReleased(key);
+}
+
+
+
 /* event handler */
-static LRESULT CALLBACK windowProcedure (HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam){
+static LRESULT CALLBACK windowProcedure(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 
 	switch(msg)	{
 
@@ -386,16 +500,41 @@ static LRESULT CALLBACK windowProcedure (HWND hwnd, UINT msg, WPARAM wParam, LPA
 	break;
 
 	case WM_MOVE:
-	
+		
 	break; 
-	
-	case WM_PAINT:	{
-		PAINTSTRUCT ps;
-        HDC hdc = BeginPaint(hwnd, &ps);
+
+	case WM_SIZE:
+		winWidth  = LOWORD(lParam);
+		winHeight = HIWORD(lParam);
+	break;
 
 
-        EndPaint(hwnd, &ps);
-	}
+	case WM_KEYDOWN: kdown( &keyStates[keyMap(wParam)] ); break;
+
+	case WM_KEYUP: kup( &keyStates[keyMap(wParam)] ); break;
+
+	case WM_LBUTTONDOWN : kdown( &keyStates[K_LMB] ); break;
+	case WM_MBUTTONDOWN : kdown( &keyStates[K_MMB] ); break;
+	case WM_RBUTTONDOWN : kdown( &keyStates[K_RMB] ); break;
+
+	case WM_LBUTTONUP : kup( &keyStates[K_LMB] ); break;
+	case WM_MBUTTONUP : kup( &keyStates[K_MMB] ); break;
+	case WM_RBUTTONUP : kup( &keyStates[K_RMB] ); break;
+
+
+	case WM_MOUSEMOVE :
+		mouseState.dx = GET_X_LPARAM(lParam) - mouseState.x;
+		mouseState.dy = GET_Y_LPARAM(lParam) - mouseState.y;
+
+		mouseState.x += mouseState.dx;
+		mouseState.y += mouseState.dy;
+
+		EZ_callback_mouseMoved(&mouseState);
+	break;
+
+	case WM_MOUSEWHEEL :
+		mouseState.wheel = GET_WHEEL_DELTA_WPARAM(wParam) < 0 ? -1 : 1;
+		EZ_callback_mouseMoved(&mouseState);
 	break;
 
     default:

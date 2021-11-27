@@ -1,11 +1,8 @@
 # TODO
 
 * Windows version
-* -> resize / move / rename
-* -> keypresses
-* -> mouse
-* -> drawing
-* -> DLL
+* -> DLL / .a
+* -> fullscreen
 
 * Other linux versions
 * EZSFX

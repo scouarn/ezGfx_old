@@ -263,7 +263,7 @@ void EZ_redraw() {
 	}
 
 
-	/* draw the buffer on the screen */
+	/* draw the buffer on the screen (it has to be rescaled manually) */
 	ximage = XCreateImage(disp, DefaultVisual(disp, screen), 
 		24, ZPixmap, 0, buffer, winWidth, winHeight, 32, 0);
 
@@ -427,6 +427,7 @@ static void* mainThread(void* arg) {
 			keyStates[i].pressed  = false;
 			keyStates[i].released = false;
 		}
+		mouseState.wheel = 0;
 
 		/* events and inputs */
 		while (XPending(disp)) {

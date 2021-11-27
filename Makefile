@@ -7,13 +7,14 @@ EXT_OBJ := $(patsubst %.c,%.o,$(EXT_SRC))
 CORE_SRC := sources/core/$(CORE).c
 CORE_OBJ := sources/core/$(CORE).o
 
+CLEAN := $(DYNLIB) $(EXT_OBJ) $(CORE_OBJ) test
 
 .PHONY: all lib clean install back
 
 all: test
 
 test: test.o $(CORE_OBJ) $(EXT_OBJ)
-	$(CC) $(CFLAGS) -o $@ $^
+	$(CC) $(CFLAGS) -o $@ $^ $(LIBS)
 # 	$(CC) $(CFLAGS) -Wl,-rpath,./ -L./ -lezgfx -o $@ $^
 
 
@@ -28,16 +29,18 @@ install : $(DYNLIB)
 
 #make shared object	
 $(DYNLIB) : $(CORE_OBJ) $(EXT_OBJ)
-	$(CC) $(CFLAGS) $(LIBS) -shared -lc -o $@ $^
+	$(CC) $(CFLAGS) -shared -o $@ $^ $(LIBS) -lc
 
 #make objects
 %.o : %.c
-	$(CC) $(CFLAGS) -fPIC -Iinclude -o $@ -c $<
+	$(CC) $(CFLAGS) -fPIC -c -o $@ $<
 
 
 #remove obj files and executables
-clean: $(TOOLS)
-	rm -f *.o sources/core/*.o sources/ext/*.o test
+clean:
+	del /F $(subst /,\, $(CLEAN))
+# 	rm -f *.o sources/core/*.o sources/ext/*.o test
+
 
 
 #make backup
