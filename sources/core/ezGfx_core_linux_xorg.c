@@ -502,11 +502,11 @@ static void* mainThread(void* arg) {
 			}
 
 			case FocusIn :
-				XAutoRepeatOff(disp); /* turn off autistic keyboard inputs */
+				/* XAutoRepeatOff(disp); /* turn off autistic keyboard inputs */
 			break;
 
 			case FocusOut:
-				XAutoRepeatOn(disp); /* put it back on so other apps are not affected */
+				/* XAutoRepeatOn(disp); /* put it back on so other apps are not affected */
 			break;
 
 			case ButtonPress: {
@@ -589,7 +589,7 @@ static void* mainThread(void* arg) {
 	free(buffer);
 	XFreeGC(disp, gc);
 	XDestroyWindow(disp, win);
-	XAutoRepeatOn(disp); /* put it back on so other apps are not affected */
+	/* XAutoRepeatOn(disp); /* put it back on so other apps are not affected */
 	XCloseDisplay(disp);
 
 	pthread_exit(NULL);
