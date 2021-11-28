@@ -75,7 +75,7 @@ void EZ_setCallback_draw( void (*f)(double dt) ); /* called at each frame to upd
 void EZ_setCallback_kill( void (*f)(void) );   /* after the last frame (free memory...) */
 void EZ_setCallback_keyPressed(  void (*f)(EZ_Key_t*) );   /* when a key is pressed */
 void EZ_setCallback_keyReleased( void (*f)(EZ_Key_t*));	   /* when a key is released */
-void EZ_setCallback_mouseMoved(  void (*f)(EZ_Mouse_t*) ); /* when the mouse is moved */
+void EZ_setCallback_mouse(  void (*f)(EZ_Mouse_t*) ); /* when the mouse is moved */
 
 
 

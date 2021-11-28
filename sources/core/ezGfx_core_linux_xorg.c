@@ -25,9 +25,12 @@ static char* buffer;
 static EZ_Image_t* canvas;
 static int winWidth;
 static int winHeight;
-static float canvasXwinRatio = 1.0f;
-static float canvasYwinRatio = 1.0f;
-static void _updateBars();
+
+typedef struct { 
+	int x1, y1, x2, y2, cx, cy;
+} __rect__;
+
+static void getCanvasRect(__rect__*);
 
 /* Time */
 static struct timespec startTime;
@@ -47,7 +50,7 @@ static void (*callback_draw)(double);
 static void (*callback_kill)(void);
 static void (*callback_keyPressed)(EZ_Key_t*); 
 static void (*callback_keyReleased)(EZ_Key_t*);
-static void (*callback_mouseMoved)(EZ_Mouse_t*); 
+static void (*callback_mouse)(EZ_Mouse_t*); 
 
 void EZ_setCallback_init( void (*f)(void) ) {
 	callback_init = f;
@@ -69,8 +72,8 @@ void EZ_setCallback_keyReleased( void (*f)(EZ_Key_t*)) {
 	callback_keyReleased = f;
 }
 
-void EZ_setCallback_mouseMoved(  void (*f)(EZ_Mouse_t*) ) {
-	callback_mouseMoved = f;
+void EZ_setCallback_mouse(  void (*f)(EZ_Mouse_t*) ) {
+	callback_mouse = f;
 }
 
 
@@ -263,44 +266,38 @@ EZ_Px_t EZ_blend(EZ_Px_t fg, EZ_Px_t bg, EZ_BlendMode_t mode) {
 
 
 void EZ_redraw() {
-	int x1, x2, y1, y2, x, y, sx, sy;
+	int x, y;
 	float xRatio, yRatio;
-	EZ_Px_t px;
-	XImage* ximage;
+	__rect__ rec;
+	getCanvasRect(&rec);
+
+	
 
 	/* copy canvas to buffer */
-	x1 = winWidth * (1.0f - canvasXwinRatio) * 0.5f;
-	x2 = x1 + winWidth * canvasXwinRatio;
-
-	y1 = winHeight * (1.0f - canvasYwinRatio) * 0.5f;
-	y2 = y1 + winHeight * canvasYwinRatio;
-
-	xRatio = (float)canvas->w / (x2-x1);
-	yRatio = (float)canvas->h / (y2-y1);
+	xRatio = (float)canvas->w / rec.cx;
+	yRatio = (float)canvas->h / rec.cy;
 
 
 	/* for each pixel on the screen (that have to be drawn) */
-	for (x = x1; x < x2; x++) 
-	for (y = y1; y < y2; y++) {
+	for (x = rec.x1; x < rec.x2; x++) 
+	for (y = rec.y1; y < rec.y2; y++) {
 
-		sx = (x-x1) * xRatio;
-		sy = (y-y1) * yRatio;
+		int sx = (x - rec.x1) * xRatio;
+		int sy = (y - rec.y1) * yRatio;
 
-		px = canvas->px[sx + sy*canvas->w];
+		EZ_Px_t px = canvas->px[sx + sy*canvas->w];
 
 		buffer[(x + y*winWidth)*4   ] = px.b;
 		buffer[(x + y*winWidth)*4 +1] = px.g;
 		buffer[(x + y*winWidth)*4 +2] = px.r;
-
 	}
 
 
 	/* draw the buffer on the screen (it has to be rescaled manually) */
-	ximage = XCreateImage(disp, DefaultVisual(disp, screen), 
+	XImage* ximage = XCreateImage(disp, DefaultVisual(disp, screen), 
 		24, ZPixmap, 0, buffer, winWidth, winHeight, 32, 0);
 
 	XPutImage(disp, win, gc, ximage, 0, 0, 0, 0, winWidth, winHeight);
-
 }
 
 
@@ -371,19 +368,32 @@ static EZ_KeyCode_t keyMap(int keyCode) {
 
 
 
-static void _updateBars() {
-	float canvasRatio, windowRatio;
+static void getCanvasRect(__rect__* rec) {
 
-	canvasRatio = (float)canvas->w / canvas->h;
-	windowRatio = (float)winWidth / winHeight;
-	canvasXwinRatio = canvasRatio / windowRatio;
-	canvasYwinRatio = windowRatio / canvasRatio;
+	if (!canvas) return;
 
-	if (canvasXwinRatio > 1.0f)
-		canvasXwinRatio = 1.0f;
 
-	else
-		canvasYwinRatio = 1.0f;
+	float cvsAspct = canvas->w / canvas->h;
+	float winAspct = winWidth / winHeight;
+
+	if (cvsAspct / winAspct > 1) { /* horizontal bars */
+		rec->x1 = 0; 
+		rec->x2 = winWidth;
+		rec->cx = winWidth;
+
+		rec->cy = winWidth / cvsAspct;
+		rec->y1 = (winHeight - rec->cy) / 2;
+		rec->y2 = winHeight - rec->y1;
+	}
+	else { /* vertical bars */
+		rec->y1 = 0; 
+		rec->y2 = winHeight;
+		rec->cy = winHeight;
+
+		rec->cx = winHeight * cvsAspct;
+		rec->x1 = (winWidth - rec->cx) / 2;
+		rec->x2 = winWidth - rec->x1;
+	}
 
 }
 
@@ -420,10 +430,6 @@ static void* mainThread(void* arg) {
 	/* graphics context */
 	gc = XCreateGC(disp, win, 0,0);
 
-	/* init frame buffer */
-	buffer = calloc(winWidth * winHeight, 4);
-
-
 	/* init time */
 	clock_gettime(CLOCK_MONOTONIC, &startTime);
 	clock_gettime(CLOCK_MONOTONIC, &lastTime);
@@ -434,12 +440,11 @@ static void* mainThread(void* arg) {
 
 	/* client init callback */
 	if (callback_init) callback_init();
-	if (canvas) {
-		EZ_resize(canvas->w, canvas->h);
-		_updateBars();
-	}
+	if (canvas)	EZ_resize(canvas->w, canvas->h);
 	else EZ_resize(100, 100);
 	
+	/* init frame buffer */
+	buffer = malloc(winWidth * winHeight * sizeof(EZ_Px_t));
 
 
 
@@ -456,7 +461,6 @@ static void* mainThread(void* arg) {
 
 		/* user function */
 		if (callback_draw) callback_draw(elapsedTime);
-
 
 		/* update keystates */
 		for (i = 0; i < _numberOfKeys; i++) {
@@ -502,11 +506,11 @@ static void* mainThread(void* arg) {
 			}
 
 			case FocusIn :
-				/* XAutoRepeatOff(disp); /* turn off autistic keyboard inputs */
+				/* XAutoRepeatOff(disp); */
 			break;
 
 			case FocusOut:
-				/* XAutoRepeatOn(disp); /* put it back on so other apps are not affected */
+				/* XAutoRepeatOn(disp); */
 			break;
 
 			case ButtonPress: {
@@ -542,37 +546,51 @@ static void* mainThread(void* arg) {
 
 			case MotionNotify: {
 
-				if (canvas) {
-					int newx = (e.xmotion.x + 0.5f*(canvasXwinRatio - 1.0f) * winWidth ) * canvas->w / ((float)winWidth  * canvasXwinRatio);
-					int newy = (e.xmotion.y + 0.5f*(canvasYwinRatio - 1.0f) * winHeight) * canvas->h / ((float)winHeight * canvasYwinRatio);
+				if (!canvas) break;
 
-					mouseState.dx = newx - mouseState.x;
-					mouseState.dy = newy - mouseState.y;
-					mouseState.x  = newx;
-					mouseState.y  = newy;
+				__rect__ rec;
+				getCanvasRect(&rec);
+
+				int winX = e.xmotion.x;
+				int winY = e.xmotion.y;
+
+				int newX = (winX - rec.x1) * canvas->w / rec.cx;
+				int newY = (winY - rec.y1) * canvas->h / rec.cy;
+
+				if (newX >= 0 && newX < canvas->w
+				 && newY >= 0 && newY < canvas->h) {
+ 					mouseState.x  = newX;
+					mouseState.y  = newY;
+					mouseState.dx = newX - mouseState.x;
+					mouseState.dy = newY - mouseState.y;
+					
+					if (callback_mouse) callback_mouse( &mouseState );
 				}
-
-				if (callback_mouseMoved) callback_mouseMoved( &mouseState );
-				break;
 			}
+			break;
 
 			case ConfigureNotify: { /* resize */
-
 				XConfigureEvent req = e.xconfigure;
-				winWidth = req.width; winHeight = req.height;
-				free(buffer);
-				buffer = calloc(winWidth*winHeight, 4);
-				
-				if (canvas) _updateBars();
+			
+				winWidth = req.width; 
+				winHeight = req.height;
 
-				break;
+				size_t size = winWidth * winHeight * sizeof(EZ_Px_t);
+
+				buffer = realloc(buffer, size);
+				memset(buffer, 0, size); /* clear for black bars */
+
 			}
+			break;	
 
-			case ClientMessage: { /* on destroy */
-
+			case ClientMessage: /* on destroy */
 				if ((Atom)e.xclient.data.l[0] == wm_delete)	EZ_stop();
-				break;
-			}
+			break;
+
+
+			case Expose :
+
+			break;
 
 			}
 		}
@@ -589,7 +607,7 @@ static void* mainThread(void* arg) {
 	free(buffer);
 	XFreeGC(disp, gc);
 	XDestroyWindow(disp, win);
-	/* XAutoRepeatOn(disp); /* put it back on so other apps are not affected */
+	/* XAutoRepeatOn(disp); */
 	XCloseDisplay(disp);
 
 	pthread_exit(NULL);

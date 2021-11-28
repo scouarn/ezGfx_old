@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <ctype.h>
 
 #include <windows.h>
 #include <Windowsx.h>
@@ -34,6 +35,13 @@ static struct {
 
 static EZ_Px_t* pixels;
 
+typedef struct { 
+	int x1, y1, x2, y2, cx, cy;
+} __rect__;
+
+static void getCanvasRect(__rect__*);
+
+
 
 /* Time */
 static struct timespec startTime;
@@ -52,7 +60,7 @@ static void (*callback_draw)(double);
 static void (*callback_kill)(void);
 static void (*callback_keyPressed)(EZ_Key_t*); 
 static void (*callback_keyReleased)(EZ_Key_t*);
-static void (*callback_mouseMoved)(EZ_Mouse_t*); 
+static void (*callback_mouse)(EZ_Mouse_t*); 
 
 void EZ_setCallback_init( void (*f)(void) ) {
 	callback_init = f;
@@ -74,8 +82,8 @@ void EZ_setCallback_keyReleased( void (*f)(EZ_Key_t*)) {
 	callback_keyReleased = f;
 }
 
-void EZ_setCallback_mouseMoved(  void (*f)(EZ_Mouse_t*) ) {
-	callback_mouseMoved = f;
+void EZ_setCallback_mouse(  void (*f)(EZ_Mouse_t*) ) {
+	callback_mouse = f;
 }
 
 
@@ -278,23 +286,8 @@ EZ_Px_t EZ_blend(EZ_Px_t fg, EZ_Px_t bg, EZ_BlendMode_t mode) {
 
 void EZ_redraw() {
 
-	int x, y, cx, cy;
-
-	float cvsAspct = canvas->w / canvas->h;
-	float winAspct = winWidth / winHeight;
-
-	if (cvsAspct / winAspct > 1) { /* horizontal bars */
-		x = 0; cx = winWidth;
-		cy = cx / cvsAspct;
-		y = (winHeight - cy) / 2;
-	}
-	else { /* vertical bars */
-		y = 0; 
-		cy = winHeight;
-		cx = cy * cvsAspct;
-		x = (winWidth - cx) / 2;
-	}
-
+	__rect__ rec;
+	getCanvasRect(&rec);
 
 
 	/* draw bars */
@@ -304,10 +297,10 @@ void EZ_redraw() {
 	HBRUSH brush = (HBRUSH)(COLOR_WINDOW+1);
 	SelectObject(screenDC, brush);
 
-	Rectangle(screenDC, 0, 0, x, winHeight); /* left */
-	Rectangle(screenDC, 0, 0, winWidth, y);  /* top */
-	Rectangle(screenDC, winWidth-x, 0, winWidth, winHeight);  /* right */
-	Rectangle(screenDC, 0, winHeight-y, winWidth, winHeight);  /* bottom */
+	Rectangle(screenDC, 0, 0, rec.x1, winHeight); /* left */
+	Rectangle(screenDC, 0, 0, winWidth, rec.y1);  /* top */
+	Rectangle(screenDC, rec.x2, 0, winWidth, winHeight);  /* right */
+	Rectangle(screenDC, 0, rec.y2, winWidth, winHeight);  /* bottom */
 
 	DeleteObject(pen);
 	DeleteObject(brush);
@@ -321,7 +314,7 @@ void EZ_redraw() {
 	/* draw texture */
 	SelectObject(buffer, bmp);
 	EZ_assert(
-		StretchBlt(screenDC, x, y, cx, cy,
+		StretchBlt(screenDC, rec.x1, rec.y1, rec.cx, rec.cy,
 		buffer, 0, 0, canvas->w, canvas->h,
 		SRCCOPY),
 
@@ -435,8 +428,8 @@ static DWORD WINAPI mainThread(LPVOID arg) {
 		}	
 
 		/* display */
-		if (canvas) EZ_redraw();
-
+		if (canvas && hwnd == GetActiveWindow()) /* if not active redraw will crash the program */
+			EZ_redraw();
 
 	}
 
@@ -451,9 +444,40 @@ static DWORD WINAPI mainThread(LPVOID arg) {
 }
 
 
-#define MAPTO(X, Y) case X : return Y;
+static void getCanvasRect(__rect__* rec) {
+
+	if (!canvas) return;
+
+
+	float cvsAspct = canvas->w / canvas->h;
+	float winAspct = winWidth / winHeight;
+
+	if (cvsAspct / winAspct > 1) { /* horizontal bars */
+		rec->x1 = 0; 
+		rec->x2 = winWidth;
+		rec->cx = winWidth;
+
+		rec->cy = winWidth / cvsAspct;
+		rec->y1 = (winHeight - rec->cy) / 2;
+		rec->y2 = winHeight - rec->y1;
+	}
+	else { /* vertical bars */
+		rec->y1 = 0; 
+		rec->y2 = winHeight;
+		rec->cy = winHeight;
+
+		rec->cx = winHeight * cvsAspct;
+		rec->x1 = (winWidth - rec->cx) / 2;
+		rec->x2 = winWidth - rec->x1;
+	}
+
+}
+
+
 
 static EZ_KeyCode_t keyMap(int scancode) {
+	#define MAPTO(X, Y) case X : return Y;
+	
 	switch (scancode) {
 		MAPTO(VK_LBUTTON, K_LMB) MAPTO(VK_RBUTTON, K_RMB) MAPTO(VK_MBUTTON, K_MMB)
 
@@ -473,9 +497,9 @@ static EZ_KeyCode_t keyMap(int scancode) {
 		MAPTO(VK_DECIMAL, KP_DEC)   MAPTO(VK_DIVIDE, KP_DIV)
 
 		MAPTO(VK_CAPITAL, K_CAPS)
-		MAPTO(VK_LSHIFT, K_LSHIFT)  MAPTO(VK_RSHIFT, K_RSHIFT)
-		MAPTO(VK_LCONTROL, K_LCTRL)	MAPTO(VK_RCONTROL, K_RCTRL)
-		MAPTO(VK_LMENU, K_LALT)     MAPTO(VK_RMENU, K_RALT)
+		MAPTO(VK_SHIFT, K_LSHIFT)
+		MAPTO(VK_CONTROL, K_LCTRL)
+		MAPTO(VK_MENU, K_LALT)
 
 		MAPTO(VK_OEM_1, K_COLON)     MAPTO(VK_OEM_2, K_SLASH)
 		MAPTO(VK_OEM_3, K_TILDE)     MAPTO(VK_OEM_4, K_OPEN)
@@ -491,25 +515,44 @@ static EZ_KeyCode_t keyMap(int scancode) {
 
 		default : return K_ERROR;
 	}
+
+	#undef MAPTO
 }
 
 
-static void kdown(EZ_Key_t* key) {
+static void updateKey(int scancode, int param, bool down) {
 
-	key->pressed = true;
-	key->held    = true;
+	EZ_KeyCode_t code = keyMap(scancode);
+	if (!code) return;
 
-	if (callback_keyPressed) callback_keyPressed(key);
+	EZ_Key_t* key = keyStates + code;
+
+	/* get the typed character */
+	if (keyStates[K_LSHIFT].held || keyStates[K_RSHIFT].held || (GetKeyState(VK_CAPITAL) & 0x0001)) {
+		
+		key->typed = MapVirtualKeyA(scancode, MAPVK_VK_TO_CHAR);
+	}
+	else {
+		key->typed = tolower( MapVirtualKeyA(scancode, MAPVK_VK_TO_CHAR) );
+	}
+
+
+	if (down) {
+
+		key->pressed = true;
+		key->held    = true;
+
+		if (callback_keyPressed && key->keyCode) callback_keyPressed(key);
+	}
+	else {
+		key->released = true;
+		key->held = false;
+
+		if (callback_keyReleased && key->keyCode) callback_keyReleased(key);
+	}	
+
+
 }
-
-static void kup(EZ_Key_t* key) {
-
-	key->released = true;
-	key->held = false;
-
-	if (callback_keyReleased) callback_keyReleased(key);
-}
-
 
 
 /* event handler */
@@ -540,33 +583,51 @@ static LRESULT CALLBACK windowProcedure(HWND hwnd, UINT msg, WPARAM wParam, LPAR
 		winHeight = HIWORD(lParam);
 	break;
 
+	case WM_SYSKEYDOWN: updateKey(wParam, lParam, 1); break;
+	case WM_SYSKEYUP:   updateKey(wParam, lParam, 0); break;
+	
+	case WM_KEYDOWN: updateKey(wParam, lParam, 1); break;
+	case WM_KEYUP:   updateKey(wParam, lParam, 0); break;
 
-	case WM_KEYDOWN: kdown( &keyStates[keyMap(wParam)] ); break;
+	case WM_LBUTTONDOWN : updateKey(VK_LBUTTON, lParam, 1); break;
+	case WM_MBUTTONDOWN : updateKey(VK_MBUTTON, lParam, 1); break;
+	case WM_RBUTTONDOWN : updateKey(VK_RBUTTON, lParam, 1); break;
 
-	case WM_KEYUP: kup( &keyStates[keyMap(wParam)] ); break;
-
-	case WM_LBUTTONDOWN : kdown( &keyStates[K_LMB] ); break;
-	case WM_MBUTTONDOWN : kdown( &keyStates[K_MMB] ); break;
-	case WM_RBUTTONDOWN : kdown( &keyStates[K_RMB] ); break;
-
-	case WM_LBUTTONUP : kup( &keyStates[K_LMB] ); break;
-	case WM_MBUTTONUP : kup( &keyStates[K_MMB] ); break;
-	case WM_RBUTTONUP : kup( &keyStates[K_RMB] ); break;
+	case WM_LBUTTONUP : updateKey(VK_LBUTTON, lParam, 0); break;
+	case WM_MBUTTONUP : updateKey(VK_MBUTTON, lParam, 0); break;
+	case WM_RBUTTONUP : updateKey(VK_RBUTTON, lParam, 0); break;
 
 
-	case WM_MOUSEMOVE :
-		mouseState.dx = GET_X_LPARAM(lParam) - mouseState.x;
-		mouseState.dy = GET_Y_LPARAM(lParam) - mouseState.y;
+	case WM_MOUSEMOVE : {
 
-		mouseState.x += mouseState.dx;
-		mouseState.y += mouseState.dy;
 
-		if (callback_mouseMoved) callback_mouseMoved(&mouseState);
+		if (!canvas) break;
+
+		__rect__ rec;
+		getCanvasRect(&rec);
+
+		int winX = GET_X_LPARAM(lParam);
+		int winY = GET_Y_LPARAM(lParam);
+
+		int newX = (winX - rec.x1) * canvas->w / rec.cx;
+		int newY = (winY - rec.y1) * canvas->h / rec.cy;
+
+		if (newX >= 0 && newX < canvas->w
+		 && newY >= 0 && newY < canvas->h) {
+			mouseState.x  = newX;
+			mouseState.y  = newY;
+			mouseState.dx = newX - mouseState.x;
+			mouseState.dy = newY - mouseState.y;
+
+
+			if (callback_mouse) callback_mouse(&mouseState);
+		}
+	}
 	break;
 
 	case WM_MOUSEWHEEL :
 		mouseState.wheel = GET_WHEEL_DELTA_WPARAM(wParam) < 0 ? -1 : 1;
-		if (callback_mouseMoved) callback_mouseMoved(&mouseState);
+		if (callback_mouse) callback_mouse(&mouseState);
 	break;
 
     default:
