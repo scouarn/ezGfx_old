@@ -1,6 +1,9 @@
 *tar.gz
+*.zip
 *.o
 *.so
 *.wav
 .bak/*
 *.exe
+*.dll
+System Volume Information

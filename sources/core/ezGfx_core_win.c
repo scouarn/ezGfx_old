@@ -9,7 +9,7 @@
 
 #include <windows.h>
 #include <Windowsx.h>
-	
+
 
 /* Application */
 static DWORD  thread_id;
@@ -45,6 +45,38 @@ static EZ_KeyCode_t keyMap(int keyCode);
 static EZ_Key_t keyStates[_numberOfKeys];
 static EZ_Mouse_t mouseState;
 
+
+/* Callbacks */
+static void (*callback_init)(void);
+static void (*callback_draw)(double);
+static void (*callback_kill)(void);
+static void (*callback_keyPressed)(EZ_Key_t*); 
+static void (*callback_keyReleased)(EZ_Key_t*);
+static void (*callback_mouseMoved)(EZ_Mouse_t*); 
+
+void EZ_setCallback_init( void (*f)(void) ) {
+	callback_init = f;
+}
+
+void EZ_setCallback_draw( void (*f)(double dt) ) {
+	callback_draw = f;
+}
+
+void EZ_setCallback_kill( void (*f)(void) ) {
+	callback_kill = f;
+}
+
+void EZ_setCallback_keyPressed(  void (*f)(EZ_Key_t*) ) {
+	callback_keyPressed = f;
+}
+
+void EZ_setCallback_keyReleased( void (*f)(EZ_Key_t*)) {
+	callback_keyReleased = f;
+}
+
+void EZ_setCallback_mouseMoved(  void (*f)(EZ_Mouse_t*) ) {
+	callback_mouseMoved = f;
+}
 
 
 void EZ_bind(EZ_Image_t* cnvs) {
@@ -367,7 +399,7 @@ static DWORD WINAPI mainThread(LPVOID arg) {
 
 
 	/* client init callback */
-	EZ_callback_init();
+	if (callback_init) callback_init();
 
 	ShowWindow(hwnd, SW_SHOW);
 	UpdateWindow(hwnd);
@@ -384,7 +416,7 @@ static DWORD WINAPI mainThread(LPVOID arg) {
 		lastTime = now;
 
 		/* user function */
-		EZ_callback_draw(elapsedTime);
+		if (callback_draw) callback_draw(elapsedTime);
 
 
 		/* update keystates */
@@ -408,7 +440,7 @@ static DWORD WINAPI mainThread(LPVOID arg) {
 
 	}
 
-	EZ_callback_kill();
+	if (callback_kill) callback_kill();
 		
 	DeleteObject(bmp);
 	DeleteDC(buffer);
@@ -467,7 +499,7 @@ static void kdown(EZ_Key_t* key) {
 	key->pressed = true;
 	key->held    = true;
 
-	EZ_callback_keyPressed(key);
+	if (callback_keyPressed) callback_keyPressed(key);
 }
 
 static void kup(EZ_Key_t* key) {
@@ -475,7 +507,7 @@ static void kup(EZ_Key_t* key) {
 	key->released = true;
 	key->held = false;
 
-	EZ_callback_keyReleased(key);
+	if (callback_keyReleased) callback_keyReleased(key);
 }
 
 
@@ -529,12 +561,12 @@ static LRESULT CALLBACK windowProcedure(HWND hwnd, UINT msg, WPARAM wParam, LPAR
 		mouseState.x += mouseState.dx;
 		mouseState.y += mouseState.dy;
 
-		EZ_callback_mouseMoved(&mouseState);
+		if (callback_mouseMoved) callback_mouseMoved(&mouseState);
 	break;
 
 	case WM_MOUSEWHEEL :
 		mouseState.wheel = GET_WHEEL_DELTA_WPARAM(wParam) < 0 ? -1 : 1;
-		EZ_callback_mouseMoved(&mouseState);
+		if (callback_mouseMoved) callback_mouseMoved(&mouseState);
 	break;
 
     default:

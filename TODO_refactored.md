@@ -1,8 +1,11 @@
 # TODO
 
+* get window rect instead of update black bars
+* mouse position on the correct pixel of the canvas
+
 * Windows version
-* -> DLL / .a
 * -> fullscreen
+* -> remove target / test.c (and from makefile)
 
 * Other linux versions
 * EZSFX

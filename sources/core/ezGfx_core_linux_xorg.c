@@ -12,6 +12,7 @@
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 
+
 /* Graphic context */
 static Display *disp;
 static int screen;
@@ -40,6 +41,37 @@ static EZ_KeyCode_t keyMap(int keyCode);
 static EZ_Key_t keyStates[_numberOfKeys];
 static EZ_Mouse_t mouseState;
 
+/* Callbacks */
+static void (*callback_init)(void);
+static void (*callback_draw)(double);
+static void (*callback_kill)(void);
+static void (*callback_keyPressed)(EZ_Key_t*); 
+static void (*callback_keyReleased)(EZ_Key_t*);
+static void (*callback_mouseMoved)(EZ_Mouse_t*); 
+
+void EZ_setCallback_init( void (*f)(void) ) {
+	callback_init = f;
+}
+
+void EZ_setCallback_draw( void (*f)(double dt) ) {
+	callback_draw = f;
+}
+
+void EZ_setCallback_kill( void (*f)(void) ) {
+	callback_kill = f;
+}
+
+void EZ_setCallback_keyPressed(  void (*f)(EZ_Key_t*) ) {
+	callback_keyPressed = f;
+}
+
+void EZ_setCallback_keyReleased( void (*f)(EZ_Key_t*)) {
+	callback_keyReleased = f;
+}
+
+void EZ_setCallback_mouseMoved(  void (*f)(EZ_Mouse_t*) ) {
+	callback_mouseMoved = f;
+}
 
 
 void EZ_bind(EZ_Image_t* cnvs) {
@@ -359,7 +391,6 @@ static void _updateBars() {
 static void* mainThread(void* arg) {
 	int i;
 
-
 	pthread_detach(pthread_self());
 
 
@@ -402,15 +433,20 @@ static void* mainThread(void* arg) {
 		keyStates[i].keyCode = i;
 
 	/* client init callback */
-	EZ_callback_init();
-	if (canvas->px != NULL) EZ_resize(canvas->w, canvas->h);
-	_updateBars();
+	if (callback_init) callback_init();
+	if (canvas) {
+		EZ_resize(canvas->w, canvas->h);
+		_updateBars();
+	}
+	else EZ_resize(100, 100);
+	
+
 
 
 	/* main loop */
 	while (running && disp) {
 
-
+		
 		/* elapsed time */
 		struct timespec now;
 		double elapsedTime;
@@ -419,7 +455,7 @@ static void* mainThread(void* arg) {
 		lastTime = now;
 
 		/* user function */
-		EZ_callback_draw(elapsedTime);
+		if (callback_draw) callback_draw(elapsedTime);
 
 
 		/* update keystates */
@@ -428,7 +464,6 @@ static void* mainThread(void* arg) {
 			keyStates[i].released = false;
 		}
 		mouseState.wheel = 0;
-
 		/* events and inputs */
 		while (XPending(disp)) {
 			XEvent e;
@@ -447,7 +482,7 @@ static void* mainThread(void* arg) {
 
 				XLookupString(&e.xkey, &(key->typed), 1, NULL, NULL);
 
-				EZ_callback_keyPressed(key);
+				if (callback_keyPressed) callback_keyPressed(key);
 
 				break;
 			}
@@ -462,7 +497,7 @@ static void* mainThread(void* arg) {
 				key->held = false;
 				XLookupString(&e.xkey, &(key->typed), 1, NULL, NULL);
 
-				EZ_callback_keyReleased(key);
+				if (callback_keyReleased) callback_keyReleased(key);
 				break;
 			}
 
@@ -486,7 +521,7 @@ static void* mainThread(void* arg) {
 					default: break;
 				}
 				
-				EZ_callback_keyPressed( &(keyStates[index]) );
+				if (callback_keyPressed) callback_keyPressed( &(keyStates[index]) );
 				break;
 			}
 
@@ -501,22 +536,23 @@ static void* mainThread(void* arg) {
 					default: break;	
 				}
 
-				EZ_callback_keyReleased( &(keyStates[index]) );
+				if (callback_keyReleased) callback_keyReleased( &(keyStates[index]) );
 				break;
 			}
 
 			case MotionNotify: {
 
-				int newx = (e.xmotion.x + 0.5f*(canvasXwinRatio - 1.0f) * winWidth ) * canvas->w / ((float)winWidth  * canvasXwinRatio);
-				int newy = (e.xmotion.y + 0.5f*(canvasYwinRatio - 1.0f) * winHeight) * canvas->h / ((float)winHeight * canvasYwinRatio);
+				if (canvas) {
+					int newx = (e.xmotion.x + 0.5f*(canvasXwinRatio - 1.0f) * winWidth ) * canvas->w / ((float)winWidth  * canvasXwinRatio);
+					int newy = (e.xmotion.y + 0.5f*(canvasYwinRatio - 1.0f) * winHeight) * canvas->h / ((float)winHeight * canvasYwinRatio);
 
-				mouseState.dx = newx - mouseState.x;
-				mouseState.dy = newy - mouseState.y;
-				mouseState.x  = newx;
-				mouseState.y  = newy;
+					mouseState.dx = newx - mouseState.x;
+					mouseState.dy = newy - mouseState.y;
+					mouseState.x  = newx;
+					mouseState.y  = newy;
+				}
 
-				EZ_callback_mouseMoved( &mouseState );
-
+				if (callback_mouseMoved) callback_mouseMoved( &mouseState );
 				break;
 			}
 
@@ -526,7 +562,8 @@ static void* mainThread(void* arg) {
 				winWidth = req.width; winHeight = req.height;
 				free(buffer);
 				buffer = calloc(winWidth*winHeight, 4);
-				_updateBars();
+				
+				if (canvas) _updateBars();
 
 				break;
 			}
@@ -541,13 +578,13 @@ static void* mainThread(void* arg) {
 		}
 
 		/* display */
-		EZ_redraw();
+		if (canvas) EZ_redraw();
 
 
 	}
 
 
-	EZ_callback_kill();
+	if (callback_kill) callback_kill();
 	
 	free(buffer);
 	XFreeGC(disp, gc);

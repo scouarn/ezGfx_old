@@ -70,13 +70,12 @@ EZ_Mouse_t* EZ_getMouse();
 
 
 /* CALLBACK FUNCTIONS */
-
-extern void EZ_callback_init();          /* at the start of the thread, before first frame */
-extern void EZ_callback_draw(double dt); /* called at each frame to update the canvas */
-extern void EZ_callback_kill();          /* after the last frame (free memory...) */
-extern void EZ_callback_keyPressed(EZ_Key_t* key);     /* when a key is pressed */
-extern void EZ_callback_keyReleased(EZ_Key_t* key);	   /* when a key is released */
-extern void EZ_callback_mouseMoved(EZ_Mouse_t* mouse); /* when the mouse is moved */
+void EZ_setCallback_init( void (*f)(void) );   /* at the start of the thread, before first frame */
+void EZ_setCallback_draw( void (*f)(double dt) ); /* called at each frame to update the canvas */
+void EZ_setCallback_kill( void (*f)(void) );   /* after the last frame (free memory...) */
+void EZ_setCallback_keyPressed(  void (*f)(EZ_Key_t*) );   /* when a key is pressed */
+void EZ_setCallback_keyReleased( void (*f)(EZ_Key_t*));	   /* when a key is released */
+void EZ_setCallback_mouseMoved(  void (*f)(EZ_Mouse_t*) ); /* when the mouse is moved */
 
 
 
