@@ -1,5 +1,7 @@
 #include "ezGfx_draw3D.h"
 #include "ezGfx_draw2D.h"
+#include "ezGfx_utils.h"
+
 #include <stdlib.h>
 
 
@@ -93,60 +95,4 @@ void EZ_draw3D_tri(EZ_Image_t* target, EZ_Tri_t* tri,  const mat4x4* projection,
 	EZ_draw2D_fillTri(target, color, proj[0].x, proj[0].y, proj[1].x, proj[1].y, proj[2].x, proj[2].y);
 	/* EZ_draw2D_tri(target, tri->col, proj[0].x, proj[0].y, proj[1].x, proj[1].y, proj[2].x, proj[2].y); */
 
-}
-
-static const vec3f cube_data[12][3] = {
-
-		/* south */
-		{ { -1.0f, -1.0f, -1.0f }, { -1.0f,  1.0f, -1.0f }, {  1.0f,  1.0f, -1.0f } },
-		{ { -1.0f, -1.0f, -1.0f }, {  1.0f,  1.0f, -1.0f }, {  1.0f, -1.0f, -1.0f } },
-
-		/* east */
-		{ {  1.0f, -1.0f, -1.0f }, {  1.0f,  1.0f, -1.0f }, {  1.0f,  1.0f,  1.0f } },
-		{ {  1.0f, -1.0f, -1.0f }, {  1.0f,  1.0f,  1.0f }, {  1.0f, -1.0f,  1.0f } },
-
-		/* north */
-		{ {  1.0f, -1.0f,  1.0f }, {  1.0f,  1.0f,  1.0f }, { -1.0f,  1.0f,  1.0f } },
-		{ {  1.0f, -1.0f,  1.0f }, { -1.0f,  1.0f,  1.0f }, { -1.0f, -1.0f,  1.0f } },
-
-		/* west */
-		{ { -1.0f, -1.0f,  1.0f }, { -1.0f,  1.0f,  1.0f }, { -1.0f,  1.0f, -1.0f } },
-		{ { -1.0f, -1.0f,  1.0f }, { -1.0f,  1.0f, -1.0f }, { -1.0f, -1.0f, -1.0f } },
-
-		/* top */
-		{ { -1.0f,  1.0f, -1.0f }, { -1.0f,  1.0f,  1.0f }, {  1.0f,  1.0f,  1.0f } },
-		{ { -1.0f,  1.0f, -1.0f }, {  1.0f,  1.0f,  1.0f }, {  1.0f,  1.0f, -1.0f } },
-
-		/* bot */
-		{ { -1.0f, -1.0f, -1.0f }, {  1.0f, -1.0f,  1.0f }, { -1.0f, -1.0f,  1.0f } },
-		{ { -1.0f, -1.0f, -1.0f }, {  1.0f, -1.0f, -1.0f }, {  1.0f, -1.0f,  1.0f } },
-
-};
-
-
-/* rubik's cube colors */
-static const EZ_Px_t colors[] = {EZ_RED, EZ_YELLOW, EZ_ORANGE, EZ_WHITE, EZ_BLUE, EZ_GREEN};
-
-
-EZ_Mesh_t* EZ_draw3D_unitCube() {
-	int i, j;
-
-	EZ_Mesh_t* mesh = malloc( sizeof(EZ_Mesh_t) );
-	mesh->triangles = malloc(12 * sizeof(EZ_Tri_t));
-	mesh->nPoly = 12;
-
-	for (i = 0; i < mesh->nPoly; i++) {
-		mesh->triangles[i].col = colors[i/2];
-
-		for (j = 0; j < 3; j++)
-			mesh->triangles[i].points[j].pos = cube_data[i][j];
-	}
-
-	return mesh;
-
-}
-
-void EZ_draw3D_freeMesh(EZ_Mesh_t* mesh) {
-	free(mesh->triangles);
-	free(mesh);
 }

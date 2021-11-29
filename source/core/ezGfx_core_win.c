@@ -162,7 +162,7 @@ static DWORD WINAPI mainThread(LPVOID arg) {
 	/* init keys */
 	int i;
 	for (i = 0; i < _numberOfKeys; i++)
-		keyStates[i].keyCode = i;
+		keyStates[i].code = i;
 
 
 
@@ -330,13 +330,13 @@ static void updateKey(int scancode, int param, bool down) {
 		key->pressed = true;
 		key->held    = true;
 
-		if (callback_keyPressed && key->keyCode) callback_keyPressed(key);
+		if (callback_keyPressed && key->code) callback_keyPressed(key);
 	}
 	else {
 		key->released = true;
 		key->held = false;
 
-		if (callback_keyReleased && key->keyCode) callback_keyReleased(key);
+		if (callback_keyReleased && key->code) callback_keyReleased(key);
 	}	
 
 

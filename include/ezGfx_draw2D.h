@@ -16,27 +16,13 @@
 #define _EZGFX_DRAW2D_H_
 
 
-#include "ezGfx_core.h"
+#include "ezGfx_image.h"
+#include "ezGfx_pixel.h"
+#include "ezGfx_utils.h"
 #include "ezGfx_matrix.h"
 
 
 void EZ_draw2D_setBlendMode(EZ_BlendMode_t mode);
-
-/* interact with the builtin translation vector */
-void EZ_draw2D_translate(int x, int y);
-void EZ_draw2D_setTranslate(int x, int y);
-void EZ_draw2D_getTranslate(int* x, int* y);
-
-
-
-/* print single char with given background and foreground color */
-void EZ_draw2D_printChar(EZ_Image_t* target, unsigned int c, EZ_Font_t* font, EZ_Px_t fg, EZ_Px_t bg, int x, int y);
-
-/* print a string, handle control characters,
- * wraps in a given with and height (in chars)
- * return pointer to the char where it stopped (so to '\0' if it went to the end) */
-const char*	EZ_draw2D_printStr(EZ_Image_t* target, const char* str, EZ_Font_t* font, EZ_Px_t fg, EZ_Px_t bg, int x, int y, int w_chars, int h_chars);
-
 
 void EZ_draw2D_clear(EZ_Image_t* target, EZ_Px_t col); /* clear with uniform color */
 void EZ_draw2D_pixel(EZ_Image_t* target, EZ_Px_t col, int x, int y); /* draw single pixel */

@@ -1,11 +1,11 @@
 # IMPORTANT
 
-* Move ezsfx and tools in a standalone project
 * Matrix with n variables and array union 
-* fonts should be outside draw2D
-* files should be handled by the appropriate extension
 * fullscreen
-
+* Rewrite readme
+* Move ezsfx and tools in a standalone project
+* UTF fonts
+* TTF fonts
 
 # extensions
 
@@ -35,10 +35,6 @@
 
 # platforms
 
-* ms windows support
-* window gl / gdi
-* no xorg support
-* xorg no gl
 * wasm support
 
 

@@ -214,7 +214,7 @@ static void* mainThread(void* arg) {
 
 	/* init keys */
 	for (i = 0; i < _numberOfKeys; i++)
-		keyStates[i].keyCode = i;
+		keyStates[i].code = i;
 
 	/* client init callback */
 	if (callback_init) callback_init();

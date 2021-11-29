@@ -6,88 +6,6 @@ static EZ_BlendMode_t alphaBlending = ALPHA_BLEND;
 
 static void _blend(EZ_Px_t*, EZ_Px_t);
 
-/* translation vector operations */
-static int TX, TY;
-void EZ_draw2D_translate(int x, int y) 	    {TX += x; TY += y;}
-void EZ_draw2D_setTranslate(int x, int y)   {TX =  x; TY =  y;}
-void EZ_draw2D_getTranslate(int* x, int* y) {*x = TX; *y = TY;}
-
-
-
-
-void EZ_draw2D_printChar(EZ_Image_t* target, unsigned int c, EZ_Font_t* font, EZ_Px_t fg, EZ_Px_t bg, int x0, int y0) {
-	int x, y, xByte;
-
-	/* translate */
-	x0 += TX; y0 += TY;
-
-	/* loop line by line */
-	for (y = 0; y < font->h; y++)
-		for (xByte = 0; xByte < font->wb; xByte++)
-		for (x = 0; x < 8 && x < font->w; x++) {
-			EZ_Px_t* dest = &(target->px[x0 + x + 8*xByte + (y0 + y)*target->w]);
-
-			_blend(dest, (font->data[c][xByte + y*font->wb] << x) & 0x80 ? fg : bg);
-		}
-
-}
-
-
-const char* EZ_draw2D_printStr(EZ_Image_t* target, const char* str, EZ_Font_t* font, EZ_Px_t fg, EZ_Px_t bg, int x0, int y0, int w_chars, int h_chars) {
-
-	/* init cursor position */
-	int x = 0, y = 0;
-
-	/* current char to draw */
-	/* forced unsigned to access "extended" ascii */
-	unsigned char* c;
-
-	/* while end of string not found and cursor still in vertical area */
-	for (c = (unsigned char*)str; *c != '\0' && y < h_chars; c++) {
-
-		/* handle control characters */
-		switch (*c) {
-		case '\t' :
-			x += 4;
-		break;
-
-		case '\v' :
-			y += 2;
-		break;
-
-		case '\a' :
-			putchar('\a');
-		break;
-
-		case '\f' : /* new page */
-
-		break;
-
-		case '\n' :
-			x = 0; y++;
-		break;
-
-		case '\r' :
-			x = 0;
-		break;
-
-		case '\x7f' : /* delete */
-			x--;
-			EZ_draw2D_printChar(target, ' ', font, fg, bg, x0 + x*font->w, y0 + y*font->h);
-		break;
-
-		default :
-			EZ_draw2D_printChar(target, *c, font, fg, bg, x0 + x*font->w, y0 + y*font->h);
-			if (++x >= w_chars) {x = 0; y++;} /* wrapping */
-		break;
-		}
-
-	}
-
-	return (const char*)c;
-
-}
-
 
 /* alpha blending */
 void EZ_draw2D_setBlendMode(EZ_BlendMode_t mode) {
@@ -107,8 +25,6 @@ void EZ_draw2D_clear(EZ_Image_t* target, EZ_Px_t col) {
 
 
 void EZ_draw2D_pixel(EZ_Image_t* target, EZ_Px_t col, int x0, int y0) {
-	/* translate */
-	x0 += TX; y0 += TY;
 
 	/* return if ousite of drawing area */
 	if (x0 < 0 || x0 >= target->w || y0 < 0 || y0 >= target->h)
@@ -207,10 +123,6 @@ static void _line(EZ_Image_t* target, EZ_Px_t col, int x1, int y1, int x2, int y
 
 void EZ_draw2D_line(EZ_Image_t* target, EZ_Px_t col, int x1, int y1, int x2, int y2) {
 
-	/* translate */
-	x1 += TX; y1 += TY; 
-	x2 += TX; y2 += TY;
-
 	/* draw single point */
 	if (x1 == x2 && y1 == y2)
 		EZ_draw2D_pixel(target, col, x1, y1);
@@ -232,9 +144,6 @@ void EZ_draw2D_line(EZ_Image_t* target, EZ_Px_t col, int x1, int y1, int x2, int
 
 void EZ_draw2D_rect(EZ_Image_t* target, EZ_Px_t col, int x0, int y0, int w,  int h) {
 
-	/* translate */
-	x0 += TX; y0 += TY;
-
 	/* return if outside of drawing area */
 	if (x0 >= target->w || y0 >= target->h || x0+w < 0 || y0+h < 0) return;
 
@@ -249,9 +158,6 @@ void EZ_draw2D_rect(EZ_Image_t* target, EZ_Px_t col, int x0, int y0, int w,  int
 
 void EZ_draw2D_fillRect(EZ_Image_t* target, EZ_Px_t col, int x0, int y0, int w,  int h) {
 	
-	/* translate */
-	x0 += TX; y0 += TY;
-
 	/* return if outside of drawing area */
 	if (x0 >= target->w || y0 >= target->h || x0+w < 0 || y0+h < 0) return;
 
@@ -267,10 +173,6 @@ void EZ_draw2D_fillRect(EZ_Image_t* target, EZ_Px_t col, int x0, int y0, int w, 
 
 
 void EZ_draw2D_tri(EZ_Image_t* target, EZ_Px_t col, int x1, int y1, int x2, int y2, int x3, int y3) {
-	/* translate */
-	x1 += TX; y1 += TY;
-	x2 += TX; y2 += TY;
-	x3 += TX; y3 += TY;
 
 	/* draw 3 edges */
 	/* clipping implemented in these functions */
@@ -311,12 +213,6 @@ static void _flatTri(EZ_Image_t* target, EZ_Px_t col, int x1, int x2, int xTop, 
 }
 
 void EZ_draw2D_fillTri(EZ_Image_t* target, EZ_Px_t col, int x1, int y1, int x2, int y2, int x3, int y3) {
-
-	
-	/* translates */
-	x1 += TX; y1 += TY;
-	x2 += TX; y2 += TY;
-	x3 += TX; y3 += TY;
 
 	/* sort points (y1 : top, y2 : mid, y3 : bot) */
 	if (y1 > y2) {
@@ -430,9 +326,7 @@ void EZ_draw2D_ellipse(EZ_Image_t* target, EZ_Px_t col, int x0, int y0, int a,  
 void EZ_draw2D_fillEllipse(EZ_Image_t* target, EZ_Px_t col, int x0, int y0, int a,  int b) {
 
 	/* same but with Hlines */
-	/* translate because Hline doesn't translate, */
 	/* not like EZ_draw2D_pixel */
-	x0 += TX; y0 += TY;
 
 	int x, y;
 	float p, dx, dy, a2, b2;
@@ -496,9 +390,6 @@ void EZ_draw2D_fillEllipse(EZ_Image_t* target, EZ_Px_t col, int x0, int y0, int 
 
 void EZ_draw2D_image(EZ_Image_t* target, EZ_Image_t* source, int x0, int y0) {
 
-	/* translate */
-	x0 += TX; y0 += TY;
-
 	/* return if outside of drawing area */
 	if (x0 >= target->w || y0 >= target->h || x0+source->w < 0 || y0+source->h < 0) return;
 
@@ -530,9 +421,6 @@ void EZ_draw2D_image(EZ_Image_t* target, EZ_Image_t* source, int x0, int y0) {
 
 void EZ_draw2D_croppedImage(EZ_Image_t* target, EZ_Image_t* source, int x0, int y0, int u0, int v0, int w, int h) {
 
-	/* translate */
-	x0 += TX; y0 += TY;
-
 	/* return if outside of drawing area */
 	if (x0 >= target->w || y0 >= target->h || x0+w < 0 || y0+h < 0) return;
 
@@ -563,9 +451,6 @@ void EZ_draw2D_croppedImage(EZ_Image_t* target, EZ_Image_t* source, int x0, int 
 }
 
 void EZ_draw2D_resizedImage(EZ_Image_t* target, EZ_Image_t* source, int x0, int y0, int w, int h) {
-
-	/* translate */
-	x0 += TX; y0 += TY;
 
 	/* return if outside of drawing area */
 	if (x0 >= target->w || y0 >= target->h || x0+w < 0 || y0+h < 0) return;
