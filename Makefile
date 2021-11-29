@@ -5,7 +5,7 @@ else
 endif
 
 
-SRC := $(wildcard source/ext/*.c) source/core/$(CORE).c
+SRC := $(wildcard source/common/*.c) source/core/$(CORE).c
 OBJ := $(patsubst %.c,%.o,$(SRC))
 
 CLEAN := $(OBJ) $(LIB)

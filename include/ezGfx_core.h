@@ -108,11 +108,10 @@ typedef struct {
 
 
 EZ_Image_t* EZ_createImage(int w, int h); /* allocates memory for an image of given size */
-EZ_Image_t* EZ_copyImage(EZ_Image_t*);    /* allocates memory and copies data to new image */
 void        EZ_freeImage(EZ_Image_t*);    /* free allocated memory */
 
 EZ_Font_t* EZ_createFont(int w, int h); /* allocates memory for 256 chars with given size in pixels */
-void     EZ_freeFont(EZ_Font_t* font);
+void       EZ_freeFont(EZ_Font_t* font);
 
 
 
