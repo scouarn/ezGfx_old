@@ -263,42 +263,44 @@ static DWORD WINAPI mainThread(LPVOID arg) {
 
 
 static EZ_KeyCode_t keyMap(int scancode) {
-	#define MAPTO(X, Y) case X : return Y;
 	
 	switch (scancode) {
-		MAPTO(VK_LBUTTON, K_LMB) MAPTO(VK_RBUTTON, K_RMB) MAPTO(VK_MBUTTON, K_MMB)
+		case VK_LBUTTON : return  K_LMB; case VK_RBUTTON : return  K_RMB; case VK_MBUTTON : return  K_MMB;
 
-		MAPTO(VK_TAB, K_TAB)        MAPTO(VK_ESCAPE, K_ESCAPE) MAPTO(VK_SPACE, K_SPACE)
-		MAPTO(VK_BACK, K_BACKSPACE)	MAPTO(VK_RETURN, K_RETURN)
+		case VK_TAB :    return  K_TAB;     case VK_ESCAPE : return  K_ESCAPE; 
+		case VK_SPACE :  return  K_SPACE;   case VK_BACK :   return  K_BACKSPACE;	
+		case VK_RETURN : return  K_RETURN;
 
-		MAPTO(VK_PRIOR, K_PGUP) MAPTO(VK_NEXT, K_PGDN)
-		MAPTO(VK_END, K_END)    MAPTO(VK_HOME, K_HOME)
+		case VK_PRIOR : return  K_PGUP; case VK_NEXT : return  K_PGDN;
+		case VK_END :   return  K_END;  case VK_HOME : return  K_HOME;
 
-		MAPTO(VK_LEFT, K_LEFT)   MAPTO(VK_UP, K_UP)
-		MAPTO(VK_RIGHT, K_RIGHT) MAPTO(VK_DOWN, K_DOWN)
+		case VK_LEFT :  return  K_LEFT;  case VK_UP :   return  K_UP;
+		case VK_RIGHT : return  K_RIGHT; case VK_DOWN : return  K_DOWN;
 
-		MAPTO(VK_INSERT, K_INS)      MAPTO(VK_DELETE, K_DEL)	MAPTO(VK_SCROLL, K_SCROLL)
-		MAPTO(VK_NUMLOCK, K_NUMLOCK) MAPTO(VK_PAUSE, K_PAUSE)
+		case VK_INSERT : return  K_INS;    case VK_DELETE :  return  K_DEL;	
+		case VK_SCROLL : return  K_SCROLL; case VK_NUMLOCK : return  K_NUMLOCK; 
+		case VK_PAUSE :  return  K_PAUSE;
 
-		MAPTO(VK_MULTIPLY, KP_MUL)	MAPTO(VK_ADD, KP_PLUS)  MAPTO(VK_SUBTRACT, KP_MINUS)
-		MAPTO(VK_DECIMAL, KP_DEC)   MAPTO(VK_DIVIDE, KP_DIV)
+		case VK_MULTIPLY : return  KP_MUL;	 case VK_ADD :     return  KP_PLUS;  
+		case VK_SUBTRACT : return  KP_MINUS; case VK_DECIMAL : return  KP_DEC; 
+		case VK_DIVIDE : return  KP_DIV;
 
-		MAPTO(VK_CAPITAL, K_CAPS)
-		MAPTO(VK_SHIFT, K_LSHIFT)
-		MAPTO(VK_CONTROL, K_LCTRL)
-		MAPTO(VK_MENU, K_LALT)
+		case VK_CAPITAL : return  K_CAPS;
+		case VK_SHIFT :   return  K_LSHIFT;
+		case VK_CONTROL : return  K_LCTRL;
+		case VK_MENU :    return  K_LALT;
 
-		MAPTO(VK_OEM_1, K_COLON)     MAPTO(VK_OEM_2, K_SLASH)
-		MAPTO(VK_OEM_3, K_TILDE)     MAPTO(VK_OEM_4, K_OPEN)
-		MAPTO(VK_OEM_5, K_BACKSLASH) MAPTO(VK_OEM_6, K_CLOSE)
-		MAPTO(VK_OEM_7, K_QUOTE)     MAPTO(VK_OEM_8, K_SLASH)
-		MAPTO(VK_OEM_PLUS, K_PLUS)   MAPTO(VK_OEM_COMMA, K_COMMA)
-		MAPTO(VK_OEM_MINUS, K_MINUS) MAPTO(VK_OEM_PERIOD, K_PERIOD)
+		case VK_OEM_1 :    return  K_COLON;     case VK_OEM_2 :      return  K_SLASH;
+		case VK_OEM_3 :    return  K_TILDE;     case VK_OEM_4 :      return  K_OPEN;
+		case VK_OEM_5 :    return  K_BACKSLASH; case VK_OEM_6 :      return  K_CLOSE;
+		case VK_OEM_7 :    return  K_QUOTE;     case VK_OEM_8 :      return  K_SLASH;
+		case VK_OEM_PLUS : return  K_PLUS;      case VK_OEM_COMMA :  return  K_COMMA;
+		case VK_OEM_MINUS : return  K_MINUS;    case VK_OEM_PERIOD : return  K_PERIOD;
 
-		case 0x30 ... 0x39 : return scancode - 0x30 + K_0;
-		case 0x41 ... 0x5A : return scancode - 0x41 + K_A;
-		case VK_NUMPAD0...VK_NUMPAD9 : return scancode - VK_NUMPAD0 + KP_0;
+		case 0x30 ... 0x39 :  return scancode - 0x30 + K_0;
+		case 0x41 ... 0x5A :  return scancode - 0x41 + K_A;
 		case VK_F1...VK_F12 : return scancode - VK_F1 + K_F1;
+		case VK_NUMPAD0...VK_NUMPAD9 : return scancode - VK_NUMPAD0 + KP_0;
 
 		default : return K_ERROR;
 	}
