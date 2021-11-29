@@ -305,7 +305,6 @@ static EZ_KeyCode_t keyMap(int scancode) {
 		default : return K_ERROR;
 	}
 
-	#undef MAPTO
 }
 
 
