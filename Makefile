@@ -1,8 +1,4 @@
-ifeq ($(OS),Windows_NT) 
-	include config_win.mk
-else
-	include config_linux.mk
-endif
+include config.mk
 
 
 SRC := $(wildcard source/common/*.c) source/core/$(CORE).c

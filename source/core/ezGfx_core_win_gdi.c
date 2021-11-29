@@ -2,7 +2,6 @@
 #include <ctype.h>
 
 #include <windows.h>
-#include <Windowsx.h>
 
 
 /* Application */
@@ -394,8 +393,8 @@ static LRESULT CALLBACK windowProcedure(HWND hwnd, UINT msg, WPARAM wParam, LPAR
 		__rect__ rec;
 		getCanvasRect(&rec);
 
-		int winX = GET_X_LPARAM(lParam);
-		int winY = GET_Y_LPARAM(lParam);
+		int winX = (int)((unsigned int)(lParam)) & 0xffff;
+		int winY = (int)((unsigned int)(lParam) >> 16) & 0xffff;
 
 		int newX = (winX - rec.x1) * canvas->w / rec.cx;
 		int newY = (winY - rec.y1) * canvas->h / rec.cy;
