@@ -1,7 +1,11 @@
 # IMPORTANT
 
-* Move ezsfx in a standalone project
-* Error handling macros
+* Move ezsfx and tools in a standalone project
+* Matrix with n variables and array union 
+* fonts should be outside draw2D
+* files should be handled by the appropriate extension
+* fullscreen
+
 
 # extensions
 
@@ -9,7 +13,6 @@
 
 * glsl fragment shaders
 * gl matrices
-* EZ MAT
 
 
 * dithering

@@ -1,23 +1,16 @@
-TARGET := test
-TARGET_EXEC := $(TARGET).exe
-
 #plateform
 CORE := ezGfx_core_win
 
-#ezgfx dependencies
-LIBS := -lm
-LIBS += -lGdi32	# windows GDI
-
-
+#dependencies
+LIBS := -lm -lGdi32
 
 #the compiler and some flags
 CC := gcc 
-CFLAGS := -O3 -Wall -Werror=vla -Iinclude
+CFLAGS := -O3 -Wall -Iinclude
 OBJFLAGS := -c -DBUILD_DLL
 LIBFLAGS := -shared
-TGTFLAGS := -Wl,-rpath,./ -L./ -lezgfx
 
-MAKE := mingw32-make
+#output target
 LIB := libezgfx.dll
 
 define forceremove
