@@ -34,7 +34,7 @@ ifeq ($(TARGET),UNIX)
 	CORE := ezGfx_core_linux_xorg
 	LIB := libezgfx.so
 
-	LIBS := -lm -lX11 -lpthread
+	LIBS := -lX11 -lpthread
 	OBJFLAGS := -c -fPIC
 	LIBFLAGS := -shared
 
@@ -48,7 +48,7 @@ else ifeq ($(TARGET),WIN)
 	CORE := ezGfx_core_win_gdi
 	LIB := libezgfx.dll
 
-	LIBS := -lm -lgdi32
+	LIBS := -lgdi32
 	OBJFLAGS := -c -DBUILD_DLL
 	LIBFLAGS := -shared
 

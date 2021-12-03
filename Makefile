@@ -30,7 +30,7 @@ $(LIB) : $(OBJ)
 
 #compile demos
 demo/% : demo/%.c
-	$(CC) $(CFLAGS) -o $@ $^ -Wl,-rpath,`pwd` -L. -lezgfx 
+	$(CC) $(CFLAGS) -o $@ $^ -lm -Wl,-rpath,`pwd` -L. -lezgfx
 
 
 #make objects

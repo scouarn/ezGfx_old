@@ -4,6 +4,7 @@ TODO
 ## Misc
 
 * Matrix with n variables and array union 
+* Other projection matrices + IDENTITY matrix
 * fullscreen
 * Rewrite readme
 * Move ezsfx and tools in a standalone project

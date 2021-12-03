@@ -38,7 +38,7 @@ static const vec3f cube_data[12][3] = {
 static const EZ_Px_t colors[] = {EZ_RED, EZ_YELLOW, EZ_ORANGE, EZ_WHITE, EZ_BLUE, EZ_GREEN};
 
 
-EZ_Mesh_t* EZ_draw3D_unitCube() {
+EZ_Mesh_t* EZ_mesh_unitCube() {
 	int i, j;
 
 	EZ_Mesh_t* mesh = malloc( sizeof(EZ_Mesh_t) );
@@ -64,7 +64,7 @@ void EZ_draw3D_freeMesh(EZ_Mesh_t* mesh) {
 
 
 
-EZ_Mesh_t* EZ_load_OBJ(const char* fname) {
+EZ_Mesh_t* EZ_mesh_loadOBJ(const char* fname) {
 
 	char c;
 	EZ_Mesh_t* mesh = malloc( sizeof(EZ_Mesh_t) );
@@ -194,7 +194,7 @@ EZ_Mesh_t* EZ_load_OBJ(const char* fname) {
 }
 
 
-void EZ_save_OBJ(EZ_Mesh_t* mesh, const char* fname) {
+void EZ_mesh_saveOBJ(EZ_Mesh_t* mesh, const char* fname) {
 
 
 	/* open file */
