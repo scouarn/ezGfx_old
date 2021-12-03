@@ -15,8 +15,8 @@ CLEAN := $(OBJ) $(wildcard bin/*)
 all : lib
 all : demo
 
-lib : $(LIB)
-demo : $(LIB) $(DEMO)
+lib : bin $(LIB)
+demo : bin $(LIB) $(DEMO)
 
 
 clean :
@@ -32,6 +32,9 @@ $(LIB) : $(OBJ)
 bin/% : source/demo/%.c
 	$(CC) $(CFLAGS) -o $@ $^ -lm -Wl,-rpath,. -Lbin -lezgfx
 
+#gitignore wants to ignore the directory itself...
+bin :
+	mkdir bin
 
 #make objects
 %.o : %.c
