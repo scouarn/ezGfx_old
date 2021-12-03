@@ -13,11 +13,9 @@ TODO
 ## Misc
 * Bug in 3D demo windows -> bug with alpha blending returning black ?
 * fullscreen
-
 * Write documentation
 * Move ezsfx and tools in a standalone project
-* UTF fonts
-* TTF fonts
+
 
 
 ## New Extensions
@@ -70,6 +68,11 @@ TODO
 * FFT
 * audio in
 
+
+## Fonts
+
+* UTF fonts
+* TTF fonts
 
 ## Formats
 
