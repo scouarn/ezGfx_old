@@ -1,4 +1,7 @@
-# IMPORTANT
+TODO
+====
+
+## Misc
 
 * Matrix with n variables and array union 
 * fullscreen
@@ -7,11 +10,15 @@
 * UTF fonts
 * TTF fonts
 
-# extensions
 
-* Textbox, "windows", buttons * gui extension
+## New Extensions
 
+* GUI : windows, textboxes, buttons, sliders...
 * glsl fragment shaders
+
+
+## Matrices
+
 * gl matrices
 
 
