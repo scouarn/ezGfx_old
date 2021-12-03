@@ -6,4 +6,5 @@
 .bak/*
 *.exe
 *.dll
+bin/*
 System Volume Information
