@@ -5,10 +5,10 @@ SRC := $(wildcard source/common/*.c) source/core/$(CORE).c
 OBJ := $(patsubst %.c,%.o,$(SRC))
 
 
-DEMOSRC := $(wildcard demo/*.c)
-DEMO := $(patsubst %.c,%,$(DEMOSRC))
+DEMOSRC := $(wildcard source/demo/*.c)
+DEMO := $(patsubst source/demo/%.c,bin/%,$(DEMOSRC))
 
-CLEAN := $(OBJ) $(LIB) $(DEMO)
+CLEAN := $(OBJ) $(wildcard bin/*)
 
 .PHONY : all lib demo
 
@@ -29,8 +29,8 @@ $(LIB) : $(OBJ)
 
 
 #compile demos
-demo/% : demo/%.c
-	$(CC) $(CFLAGS) -o $@ $^ -lm -Wl,-rpath,`pwd` -L. -lezgfx
+bin/% : source/demo/%.c
+	$(CC) $(CFLAGS) -o $@ $^ -lm -Wl,-rpath,. -Lbin -lezgfx
 
 
 #make objects

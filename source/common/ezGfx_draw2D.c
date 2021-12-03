@@ -484,34 +484,34 @@ void EZ_draw2D_resizedImage(EZ_Image_t* target, EZ_Image_t* source, int x0, int 
 }
 
 
-void EZ_draw2D_transformedImage(EZ_Image_t* target, EZ_Image_t* source, const mat3x3* trans) {
+void EZ_draw2D_transformedImage(EZ_Image_t* target, EZ_Image_t* source, EZ_Mat3_t* trans) {
 
 
 	/* compute target-space bounding box */
 	int x1, x2, y1, y2;
-	vec2f dst, src;
+	EZ_Vec_t dst, src;
 
 	/* top left corner */
-	src = (vec2f){0.0f, 0.0f};
-	dst = mat3x3_V2D_MUL(*trans, src);
+	src = (EZ_Vec_t){{0.0f, 0.0f}};
+	EZ_mat3_vdown(&dst, trans, &src);
 	x1 = dst.x; x2 = dst.x;
 	y1 = dst.y; y2 = dst.y;
 
 	/* top right corner */
 	src.x = source->w;
-	dst = mat3x3_V2D_MUL(*trans, src);
+	EZ_mat3_vdown(&dst, trans, &src);
 	x1 = MIN(x1, dst.x); x2 = MAX(x2,dst.x);
 	y1 = MIN(y1, dst.y); y2 = MAX(y2,dst.y);
 
 	/* bottom right corner */
 	src.y = source->h;
-	dst = mat3x3_V2D_MUL(*trans, src);
+	EZ_mat3_vdown(&dst, trans, &src);
 	x1 = MIN(x1, dst.x); x2 = MAX(x2,dst.x);
 	y1 = MIN(y1, dst.y); y2 = MAX(y2,dst.y);
 
 	/* bottom left corner */
 	src.x = 0.0f;
-	dst = mat3x3_V2D_MUL(*trans, src);
+	EZ_mat3_vdown(&dst, trans, &src);
 	x1 = MIN(x1, dst.x); x2 = MAX(x2,dst.x);
 	y1 = MIN(y1, dst.y); y2 = MAX(y2,dst.y);
 
@@ -520,7 +520,8 @@ void EZ_draw2D_transformedImage(EZ_Image_t* target, EZ_Image_t* source, const ma
 	y1 = CLAMP(y1, 0, target->h); y2 = CLAMP(y2, 0, target->h);
 
 	/* compute inverted transform matrix */
-	mat3x3 inv = mat3x3_INV(*trans);
+	EZ_Mat3_t inv;
+	EZ_mat3_inv(&inv, trans);
 
 	/* scan accross bounding box */
 	int x, y;
@@ -529,7 +530,7 @@ void EZ_draw2D_transformedImage(EZ_Image_t* target, EZ_Image_t* source, const ma
 
 		/* conver to source space using inverse transform */
 		src.x = x; src.y = y;
-		dst = mat3x3_V2D_MUL(inv, src);
+		EZ_mat3_vdown(&dst, &inv, &src);
 
 		/* skip if outside of the source image */
 		if (dst.x < 0 || dst.x >= source->w || dst.y < 0 || dst.y >= source->h)

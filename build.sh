@@ -1,7 +1,13 @@
 #!/usr/bin/bash
 
+mkdir tmp
+
 make clean all -E "TARGET := UNIX"
-mv libezgfx.so bin/
+mv bin/* tmp
 
 make clean all -E "TARGET := WIN"
-mv libezgfx.dll bin/
+mv bin/* tmp
+
+make clean
+mv tmp/* bin
+rmdir tmp

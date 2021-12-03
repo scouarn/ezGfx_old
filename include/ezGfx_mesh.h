@@ -3,18 +3,18 @@
 
 #include "ezGfx_pixel.h"
 #include "ezGfx_image.h"
-#include "ezGfx_matrix.h"
+#include "ezGfx_vec.h"
 
 typedef struct {
-  vec3f pos;
-  vec3f uv;
+  EZ_Vec_t pos;
+  EZ_Vec_t uv;
   EZ_Px_t col;
 
 } EZ_Vertex_t;
 
 typedef struct {
   EZ_Vertex_t points[3];
-  vec3f norm;
+  EZ_Vec_t norm;
   EZ_Px_t col;
 
 } EZ_Tri_t;

@@ -5,31 +5,31 @@
 #include <stdio.h>
 
 
-static const vec3f cube_data[12][3] = {
+static const EZ_Vec_t cube_data[12][3] = {
 
 		/* south */
-		{ { -1.0f, -1.0f, -1.0f }, { -1.0f,  1.0f, -1.0f }, {  1.0f,  1.0f, -1.0f } },
-		{ { -1.0f, -1.0f, -1.0f }, {  1.0f,  1.0f, -1.0f }, {  1.0f, -1.0f, -1.0f } },
+		{ {{ -1.0f, -1.0f, -1.0f }}, {{ -1.0f,  1.0f, -1.0f }}, {{  1.0f,  1.0f, -1.0f }} },
+		{ {{ -1.0f, -1.0f, -1.0f }}, {{  1.0f,  1.0f, -1.0f }}, {{  1.0f, -1.0f, -1.0f }} },
 
 		/* east */
-		{ {  1.0f, -1.0f, -1.0f }, {  1.0f,  1.0f, -1.0f }, {  1.0f,  1.0f,  1.0f } },
-		{ {  1.0f, -1.0f, -1.0f }, {  1.0f,  1.0f,  1.0f }, {  1.0f, -1.0f,  1.0f } },
+		{ {{  1.0f, -1.0f, -1.0f }}, {{  1.0f,  1.0f, -1.0f }}, {{  1.0f,  1.0f,  1.0f }} },
+		{ {{  1.0f, -1.0f, -1.0f }}, {{  1.0f,  1.0f,  1.0f }}, {{  1.0f, -1.0f,  1.0f }} },
 
 		/* north */
-		{ {  1.0f, -1.0f,  1.0f }, {  1.0f,  1.0f,  1.0f }, { -1.0f,  1.0f,  1.0f } },
-		{ {  1.0f, -1.0f,  1.0f }, { -1.0f,  1.0f,  1.0f }, { -1.0f, -1.0f,  1.0f } },
+		{ {{  1.0f, -1.0f,  1.0f }}, {{  1.0f,  1.0f,  1.0f }}, {{ -1.0f,  1.0f,  1.0f }} },
+		{ {{  1.0f, -1.0f,  1.0f }}, {{ -1.0f,  1.0f,  1.0f }}, {{ -1.0f, -1.0f,  1.0f }} },
 
 		/* west */
-		{ { -1.0f, -1.0f,  1.0f }, { -1.0f,  1.0f,  1.0f }, { -1.0f,  1.0f, -1.0f } },
-		{ { -1.0f, -1.0f,  1.0f }, { -1.0f,  1.0f, -1.0f }, { -1.0f, -1.0f, -1.0f } },
+		{ {{ -1.0f, -1.0f,  1.0f }}, {{ -1.0f,  1.0f,  1.0f }}, {{ -1.0f,  1.0f, -1.0f }} },
+		{ {{ -1.0f, -1.0f,  1.0f }}, {{ -1.0f,  1.0f, -1.0f }}, {{ -1.0f, -1.0f, -1.0f }} },
 
 		/* top */
-		{ { -1.0f,  1.0f, -1.0f }, { -1.0f,  1.0f,  1.0f }, {  1.0f,  1.0f,  1.0f } },
-		{ { -1.0f,  1.0f, -1.0f }, {  1.0f,  1.0f,  1.0f }, {  1.0f,  1.0f, -1.0f } },
+		{ {{ -1.0f,  1.0f, -1.0f }}, {{ -1.0f,  1.0f,  1.0f }}, {{  1.0f,  1.0f,  1.0f }} },
+		{ {{ -1.0f,  1.0f, -1.0f }}, {{  1.0f,  1.0f,  1.0f }}, {{  1.0f,  1.0f, -1.0f }} },
 
 		/* bot */
-		{ { -1.0f, -1.0f, -1.0f }, {  1.0f, -1.0f,  1.0f }, { -1.0f, -1.0f,  1.0f } },
-		{ { -1.0f, -1.0f, -1.0f }, {  1.0f, -1.0f, -1.0f }, {  1.0f, -1.0f,  1.0f } },
+		{ {{ -1.0f, -1.0f, -1.0f }}, {{  1.0f, -1.0f,  1.0f }}, {{ -1.0f, -1.0f,  1.0f }} },
+		{ {{ -1.0f, -1.0f, -1.0f }}, {{  1.0f, -1.0f, -1.0f }}, {{  1.0f, -1.0f,  1.0f }} },
 
 };
 
@@ -62,6 +62,7 @@ void EZ_draw3D_freeMesh(EZ_Mesh_t* mesh) {
 }
 
 
+typedef struct {int x,y,z;} vec3i;
 
 
 EZ_Mesh_t* EZ_mesh_loadOBJ(const char* fname) {
@@ -122,11 +123,11 @@ EZ_Mesh_t* EZ_mesh_loadOBJ(const char* fname) {
 
 
 	/* allocate room for parsing vertices and triangles */
-	vec3f* vertex_buffer = calloc(n_vertices, sizeof(vec3f)); /* 3 float coords */
+	EZ_Vec_t* vertex_buffer = calloc(n_vertices, sizeof(EZ_Vec_t)); /* 3 float coords */
 	vec3i* face_buffer   = calloc(n_faces, sizeof(vec3i));    /* 3 integer indices (starts at 1!!) */
 
 	/* vertex and triangle beeing parsed */
-	vec3f* v = vertex_buffer;
+	EZ_Vec_t* v = vertex_buffer;
 	vec3i* t = face_buffer;
 
 	/* char read, to detect error */
@@ -136,7 +137,7 @@ EZ_Mesh_t* EZ_mesh_loadOBJ(const char* fname) {
 		switch (c) {
 
 		case 'v' :
-			read = fscanf(file, "%f %f %f", &v->x, &v->y, &v->z);
+			read = fscanf(file, "%lg %lg %lg", &v->x, &v->y, &v->z);
 			if (read == 0) {
 				EZ_throw("Error during vertex parsing in mesh", fname);
 				fclose(file);

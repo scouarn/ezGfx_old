@@ -32,7 +32,7 @@ CC =
 ifeq ($(TARGET),UNIX)
 
 	CORE := ezGfx_core_linux_xorg
-	LIB := libezgfx.so
+	LIB := bin/libezgfx.so
 
 	LIBS := -lX11 -lpthread
 	OBJFLAGS := -c -fPIC
@@ -46,7 +46,7 @@ ifeq ($(TARGET),UNIX)
 else ifeq ($(TARGET),WIN)
 
 	CORE := ezGfx_core_win_gdi
-	LIB := libezgfx.dll
+	LIB := bin/libezgfx.dll
 
 	LIBS := -lgdi32
 	OBJFLAGS := -c -DBUILD_DLL
