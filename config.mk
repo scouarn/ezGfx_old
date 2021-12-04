@@ -4,7 +4,7 @@ CFLAGS := -O3 -Wall -Iinclude
 
 ifeq ($(OS),Windows_NT)
 	
-	CC := mingw32-gcc
+	CC := gcc
 
 	LIBS := -lgdi32
 	OBJFLAGS := -c -DBUILD_DLL

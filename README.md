@@ -6,15 +6,15 @@ Detailed documentation is not yet available.
 
 
 
-
 TODO
 ====
 
 ## Misc
-* Bug in 3D demo windows -> bug with alpha blending returning black ?
+
 * fullscreen
-* Write documentation
 * Move ezsfx and tools in a standalone project
+* Write documentation
+* Bug in 3D demo with 32 bits systems -> bug with alpha blending returning black ?
 
 
 
@@ -22,8 +22,6 @@ TODO
 
 * GUI : windows, textboxes, buttons, sliders...
 * glsl fragment shaders
-* gl__ matrices
-* dithering
 
 * lua / python / lisp / perl / js / bash / brainfuck / BNF defined / ocaml/ ??
 	=>on the fly compiled scripting language ?
@@ -33,18 +31,20 @@ TODO
 * splines calculation / bezier curves 2D/3D
 
 * voxel engine
-
 * physics
 
-* oscilloscope emulator demo
-
-* "mode 7" demo
 
 
 ## Platforms
 
 * wasm support
 * linux with no WM
+
+
+## 2D ext
+
+* dithering
+* "mode 7" demo
 
 
 ## 3D ext
@@ -58,6 +58,7 @@ TODO
 
 ## Sound
 
+* oscilloscope emulator demo
 * windows sound
 * no alsa
 * on the fly file reading (no pcm array but "stream"... block by block)
@@ -84,3 +85,4 @@ TODO
 * font ttf
 * config files
 * json files
+

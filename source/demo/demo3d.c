@@ -13,6 +13,7 @@ EZ_Mat4_t trans;
 
 float a = 1.0;
 
+
 void setup() {
 
 	canvas = EZ_createImage(256, 256);
@@ -23,6 +24,7 @@ void setup() {
 	EZ_bind(canvas);
 }
 
+
 void draw(double dt) {
 	EZ_draw2D_clear(canvas, EZ_BW(51));
 
@@ -30,11 +32,12 @@ void draw(double dt) {
 	EZ_mat4_applyRotX(&trans, a);
 	EZ_mat4_applyRotY(&trans, 0.8*a);
 
-	a += 0.005;
+	a += dt;
 
 	EZ_draw3D_drawMesh(canvas, cube, &proj, &trans);
 
 }
+
 
 void kill() {
 	EZ_freeImage(canvas);

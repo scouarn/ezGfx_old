@@ -30,7 +30,7 @@ $(LIB) : $(OBJ)
 
 #compile demos
 bin/% : source/demo/%.c
-	$(CC) $(CFLAGS) -o $@ $^ -lm -Wl,-rpath,. -Lbin -lezgfx
+	$(CC) $(CFLAGS) -o $@ $^ -lm -Wl,-rpath,`pwd`/bin -Lbin -lezgfx
 
 #gitignore wants to ignore the directory itself...
 bin :
