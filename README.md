@@ -23,16 +23,15 @@ TODO
 
 * GUI : windows, textboxes, buttons, sliders...
 * glsl fragment shaders
+* splines calculation / bezier curves 2D/3D
+* voxel engine
+* physics
 
 * lua / python / lisp / perl / js / bash / brainfuck / BNF defined / ocaml/ ??
-	=>on the fly compiled scripting language ?
+	=> on the fly compiled scripting language ?
 	https://github.com/lua/lua
 	
 
-* splines calculation / bezier curves 2D/3D
-
-* voxel engine
-* physics
 
 
 
