@@ -26,16 +26,15 @@ void EZ_freeImage(EZ_Image_t* img) {
 
 EZ_Image_t* EZ_load_BMP(const char* fname) {
 
-	EZ_Image_t* bitmap = malloc( sizeof(EZ_Image_t) );
-
 	/* open file */
 	FILE *file = fopen(fname,"rb");
 	if (file == NULL) {
 		EZ_throw("Couldn't load file", fname);
-		bitmap->px = NULL;
-		return bitmap;
+		return NULL;
 	}
 
+	/* init image */
+	EZ_Image_t* bitmap = malloc( sizeof(EZ_Image_t) );
 
 	/* skip n bytes */
 	#define POP(n) for (int i = 0; i < n; i++) getc(file);

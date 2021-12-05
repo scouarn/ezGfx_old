@@ -68,36 +68,23 @@ typedef struct {int x,y,z;} vec3i;
 EZ_Mesh_t* EZ_mesh_loadOBJ(const char* fname) {
 
 	char c;
-	EZ_Mesh_t* mesh = malloc( sizeof(EZ_Mesh_t) );
-
-	int n_vertices = 0;
-	int n_faces = 0;
-
-	FILE *file;
-
 
 	/* go to next line, stop if end_of_file encountered */
-	#define NEXT() while(c != '\n') if (c == EOF) break; else c = getc(file);
-
+	#define NEXTLINE() while(c != '\n' && c != EOF) c = getc(file);
 
 
 	/* open file in text mode */
-	file = fopen(fname,"r");
+	FILE *file = fopen(fname,"r");
 
 	if (file == NULL) {
-		EZ_throw("Couldn't load file", fname);
+		EZ_throw("Couldn't open file", fname);
 		return NULL;
 	}
 
 
-
-
-	
-
-
-
 	/*		1ST PASS : count number of things to parse	*/
-
+	int n_vertices = 0;
+	int n_faces = 0;
 	while ((c = getc(file)) != EOF) {
 
 		switch (c) {
@@ -113,22 +100,22 @@ EZ_Mesh_t* EZ_mesh_loadOBJ(const char* fname) {
 		default : break;
 
 		}
-		NEXT();
+		NEXTLINE();
 	}
-
 
 	fseek(file, 0, SEEK_SET);
 
-	/*		2ND PASS : parse	*/
+
+	/*		2ND PASS : parsing	*/
 
 
 	/* allocate room for parsing vertices and triangles */
 	EZ_Vec_t* vertex_buffer = calloc(n_vertices, sizeof(EZ_Vec_t)); /* 3 float coords */
-	vec3i* face_buffer   = calloc(n_faces, sizeof(vec3i));    /* 3 integer indices (starts at 1!!) */
+	vec3i*    face_buffer   = calloc(n_faces,    sizeof(vec3i));    /* 3 integer indices (starts at 1!!) */
 
 	/* vertex and triangle beeing parsed */
 	EZ_Vec_t* v = vertex_buffer;
-	vec3i* t = face_buffer;
+	vec3i*    t = face_buffer;
 
 	/* char read, to detect error */
 	int read;
@@ -138,28 +125,31 @@ EZ_Mesh_t* EZ_mesh_loadOBJ(const char* fname) {
 
 		case 'v' :
 			read = fscanf(file, "%lg %lg %lg", &v->x, &v->y, &v->z);
+			v++;
+
 			if (read == 0) {
 				EZ_throw("Error during vertex parsing in mesh", fname);
 				fclose(file);
 				return NULL;
 			}
-			v++;
 		break;
 
 		case 'f' : 
 			read = fscanf(file, "%d %d %d", &t->x, &t->y, &t->z);
+			t++;
+
 			if (read == 0) {
 				EZ_throw("Error during face parsing in mesh", fname);
 				fclose(file);
+
 				return NULL;
 			}
-			t++;
 		break;
 
 		default : break;
 
 		}
-		NEXT();
+		NEXTLINE();
 	}
 
 
@@ -167,6 +157,7 @@ EZ_Mesh_t* EZ_mesh_loadOBJ(const char* fname) {
 
 
 	/* init mesh data */
+	EZ_Mesh_t* mesh = malloc( sizeof(EZ_Mesh_t) );
 	mesh->nPoly = n_faces;
 	mesh->triangles = calloc(n_faces, sizeof(EZ_Tri_t));
 
@@ -176,7 +167,7 @@ EZ_Mesh_t* EZ_mesh_loadOBJ(const char* fname) {
 
 		vec3i indices = face_buffer[i];
 
-		//!!\\ indices start at 1
+		/* indices start at 1 */
 		mesh->triangles[i].points[0].pos = vertex_buffer[indices.x - 1];
 		mesh->triangles[i].points[1].pos = vertex_buffer[indices.y - 1];
 		mesh->triangles[i].points[2].pos = vertex_buffer[indices.z - 1];

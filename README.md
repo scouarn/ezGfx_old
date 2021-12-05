@@ -12,7 +12,7 @@ TODO
 
 ## Misc
 
-* fullscreen
+* fullscreen (?)
 * Move ezsfx and tools in a standalone project
 * Write documentation
 * Bug in 3D demo with 32 bits systems -> bug with alpha blending returning black ?

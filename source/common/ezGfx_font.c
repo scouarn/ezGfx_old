@@ -133,12 +133,10 @@ EZ_Font_t* EZ_load_PSF2(const char* fname) {
 
 	/* open file */
 	FILE *file = fopen(fname,"rb");
-	EZ_Font_t* font = malloc( sizeof(EZ_Font_t) );
 
 	if (file == NULL) {
 		EZ_throw("Couldn't load file", fname);
-		font->data = NULL;
-		return font;
+		return NULL;
 	}
 
 
@@ -147,14 +145,14 @@ EZ_Font_t* EZ_load_PSF2(const char* fname) {
 	fread(&header, sizeof(struct PSF_font_header), 1, file);
 
 	if (header.magic != PSF_FONT_MAGIC) {
-		EZ_throw("Couldn't load file (corrupted)", fname);
+		EZ_throw("Wrong magic number", fname);
 		fclose(file);
-		font->data = NULL;
-		return font;
+
+		return NULL;
 	}
 
 	/* read font */
-	font = EZ_createFont(header.width, header.height);
+	EZ_Font_t* font = EZ_createFont(header.width, header.height);
 	fread(font->data[0], header.bytesperglyph, 256, file);
 
 
