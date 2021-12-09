@@ -11,11 +11,11 @@ TODO
 ====
 
 ## Misc
-
+* 3D faces drawn on top of each other
+* check key behaviour linux vs windows
 * fullscreen (?)
-* Move ezsfx and tools in a standalone project
 * Write documentation
-* Bug in 3D demo with 32 bits systems -> bug with alpha blending returning black ?
+* Bug in 3D demo with 32 bits systems -> bug with alpha blending returning black ? Solved with the normalize bug ?
 
 
 

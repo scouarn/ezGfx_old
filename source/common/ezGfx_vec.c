@@ -59,5 +59,5 @@ double EZ_vec_norm(EZ_Vec_t* u) {
 }
 
 void EZ_vec_normal(EZ_Vec_t* res, EZ_Vec_t* u) {
-	EZ_vec_scale(res, u, EZ_vec_norm(u));
+	EZ_vec_scale(res, u, 1.0/EZ_vec_norm(u));
 }

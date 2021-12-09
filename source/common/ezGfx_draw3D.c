@@ -65,10 +65,6 @@ void EZ_draw3D_tri(EZ_Image_t* target, EZ_Tri_t* tri,  EZ_Mat4_t* projection, EZ
 		proj[1].z < 0.0f || 
 		proj[2].z < 0.0f) return;
 
-	/*  if (proj[0].z < 0.0f &&  */
-	/*  	proj[1].z < 0.0f && */
-	/*  	proj[2].z < 0.0f) return; */
-
 
 	/* project to 2D  - apply projection matrix */
 	for (int j = 0; j < 3; j++)
@@ -109,7 +105,6 @@ void EZ_draw3D_tri(EZ_Image_t* target, EZ_Tri_t* tri,  EZ_Mat4_t* projection, EZ
 
 
 	/* draw the triangle */
-
 	EZ_draw2D_fillTri(target, color, proj[0].x, proj[0].y, proj[1].x, proj[1].y, proj[2].x, proj[2].y);
 	/* EZ_draw2D_tri(target, tri->col, proj[0].x, proj[0].y, proj[1].x, proj[1].y, proj[2].x, proj[2].y); */
 

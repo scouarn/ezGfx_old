@@ -17,7 +17,8 @@ float a = 1.0;
 void setup() {
 
 	canvas = EZ_createImage(256, 256);
-	cube = EZ_mesh_unitCube();
+	cube = EZ_mesh_loadOBJ("test.obj");
+	// cube = EZ_mesh_unitCube();
 
 	EZ_mat4_setProj(&proj, QUARTER_PI, (float)WIDTH / HEIGHT, 0.1, 1000);
 
