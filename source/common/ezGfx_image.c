@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-EZ_Image_t* EZ_createImage(int w, int h) {
+EZ_Image_t* EZ_image_make(int w, int h) {
 
 	EZ_Image_t* img = malloc( sizeof(EZ_Image_t) );
 	
@@ -15,7 +15,7 @@ EZ_Image_t* EZ_createImage(int w, int h) {
 }
 
 
-void EZ_freeImage(EZ_Image_t* img) {
+void EZ_image_free(EZ_Image_t* img) {
 	free(img->px);
 	free(img);
 }
@@ -24,7 +24,7 @@ void EZ_freeImage(EZ_Image_t* img) {
 
 
 
-EZ_Image_t* EZ_load_BMP(const char* fname) {
+EZ_Image_t* EZ_image_loadBMP(const char* fname) {
 
 	/* open file */
 	FILE *file = fopen(fname,"rb");
@@ -120,7 +120,7 @@ EZ_Image_t* EZ_load_BMP(const char* fname) {
 
 }
 
-void EZ_save_BMP(EZ_Image_t* img, const char* fname) {
+void EZ_image_saveBMP(EZ_Image_t* img, const char* fname) {
 
 
 	/* open file */

@@ -49,7 +49,7 @@ EZ_Mesh_t* EZ_mesh_unitCube() {
 		mesh->triangles[i].col = colors[i/2];
 
 		for (j = 0; j < 3; j++)
-			mesh->triangles[i].points[j].pos = cube_data[i][j];
+			mesh->triangles[i].pos[j] = cube_data[i][j];
 	}
 
 	return mesh;
@@ -68,6 +68,7 @@ typedef struct {int x,y,z;} vec3i;
 EZ_Mesh_t* EZ_mesh_loadOBJ(const char* fname) {
 
 	char c;
+	int i;
 
 	/* go to next line, stop if end_of_file encountered */
 	#define NEXTLINE() while(c != '\n' && c != EOF) c = getc(file);
@@ -163,14 +164,13 @@ EZ_Mesh_t* EZ_mesh_loadOBJ(const char* fname) {
 
 
 	/* copy parsed data to mesh */
-	for (int i = 0; i < n_faces; i++) {
-
+	for (i = 0; i < n_faces; i++) {
 		vec3i indices = face_buffer[i];
 
 		/* indices start at 1 */
-		mesh->triangles[i].points[0].pos = vertex_buffer[indices.x - 1];
-		mesh->triangles[i].points[1].pos = vertex_buffer[indices.y - 1];
-		mesh->triangles[i].points[2].pos = vertex_buffer[indices.z - 1];
+		mesh->triangles[i].pos[0] = vertex_buffer[indices.x - 1];
+		mesh->triangles[i].pos[1] = vertex_buffer[indices.y - 1];
+		mesh->triangles[i].pos[2] = vertex_buffer[indices.z - 1];
 
 		mesh->triangles[i].col = EZ_WHITE;
 	}

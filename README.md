@@ -11,11 +11,12 @@ TODO
 ====
 
 ## Misc
-* 3D faces drawn on top of each other
+
+* 3D faces drawn on top of each other -> depth buffuring
 * check key behaviour linux vs windows
 * fullscreen (?)
 * Write documentation
-* Bug in 3D demo with 32 bits systems -> bug with alpha blending returning black ? Solved with the normalize bug ?
+* Bug in 3D demo with 32 bits systems -> bug with alpha blending returning black ? Solved with the normalize bug ? double/float problem with vectors ?
 
 
 

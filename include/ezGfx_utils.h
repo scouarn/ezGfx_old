@@ -27,14 +27,7 @@
 		 				_x < _a ? _a : _x > _b ? _b : _x; })
 
 
-/*
-#define MAX(a, b) ((a) < (b) ? (b) : (a))
-#define MIN(a, b) ((a) < (b) ? (a) : (b))
-#define CLAMP(x, a, b) ((x) < (a) ? (a) : ((x) > (b) ? (b) : (x)))
-*/
-
-
-#define SWAP(a, b) ({const __typeof__(a) t = (a); (a) = (b); (b) = t;})
+#define SWAP(a, b) ({__typeof__(a) t = (a); (a) = (b); (b) = t;})
 
 #define LERP(x, a, b) ({ __typeof__ (x) _x = (x); \
 				_x*(a) + (1.0 - _x)*(b); })
