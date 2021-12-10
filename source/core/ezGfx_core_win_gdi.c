@@ -189,7 +189,7 @@ static DWORD WINAPI mainThread(LPVOID arg) {
 	wc.lpszMenuName = NULL;	
 	wc.hIconSm = LoadIcon(NULL, IDI_APPLICATION);  
 
-	EZ_assert(RegisterClassEx(&wc), "Couldn't register window class");
+	ERR_assert(RegisterClassEx(&wc), "Couldn't register window class");
 	
 	/* create window */
 	hwnd = CreateWindowA(
@@ -200,12 +200,12 @@ static DWORD WINAPI mainThread(LPVOID arg) {
 		NULL, NULL, hInstance, NULL	
 	);
 
-	EZ_assert(hwnd, "Couldn't create Window");
+	ERR_assert(hwnd, "Couldn't create Window");
 
 	/* init graphics context */
 	screenDC = GetDC(hwnd);
 	buffer = CreateCompatibleDC(screenDC);
-	EZ_assert(buffer && screenDC, "Couldn't init device contexts.");
+	ERR_assert(buffer && screenDC, "Couldn't init device contexts.");
 
 
 	/* client init callback */
