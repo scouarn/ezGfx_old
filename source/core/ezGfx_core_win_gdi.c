@@ -45,7 +45,7 @@ void EZ_bind(EZ_Image_t* cnvs) {
   	if (bmp) DeleteObject(bmp);
 
 	bmp = CreateDIBSection(buffer, (BITMAPINFO*)&bmpinfo, DIB_RGB_COLORS, (void*)&pixels, NULL, 0);
-	EZ_assert(bmp, "Couldn't init bitmap for buffer.");
+	ERR_assert(bmp, "Couldn't init bitmap for buffer.");
 
 }
 
@@ -123,14 +123,14 @@ void EZ_redraw() {
 	DeleteObject(brush);
 
 	/* copy texture to buffer */
-	EZ_assert(
+	ERR_assert(
 		SetDIBits(buffer, bmp, 0, canvas->h, canvas->px, (BITMAPINFO*)(&bmpinfo), DIB_RGB_COLORS),
 		"Couldn't copy texture to buffer.");
 
 
 	/* draw texture */
 	SelectObject(buffer, bmp);
-	EZ_assert(
+	ERR_assert(
 		StretchBlt(screenDC, rec.x1, rec.y1, rec.cx, rec.cy,
 		buffer, 0, 0, canvas->w, canvas->h,
 		SRCCOPY),

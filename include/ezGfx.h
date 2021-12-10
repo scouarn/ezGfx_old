@@ -1,6 +1,7 @@
 #ifndef _EZGFX_H_
 #define _EZGFX_H_
 
+#include "ezErr.h"
 
 #include "ezGfx_utils.h"
 #include "ezGfx_core.h"

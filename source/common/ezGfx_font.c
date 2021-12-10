@@ -1,5 +1,5 @@
 #include "ezGfx_font.h"
-#include "ezGfx_utils.h"
+#include "ezErr.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -135,7 +135,7 @@ EZ_Font_t* EZ_load_PSF2(const char* fname) {
 	FILE *file = fopen(fname,"rb");
 
 	if (file == NULL) {
-		EZ_throw("Couldn't load file", fname);
+		ERR_warning("Couldn't load file %s", fname);
 		return NULL;
 	}
 
@@ -145,7 +145,7 @@ EZ_Font_t* EZ_load_PSF2(const char* fname) {
 	fread(&header, sizeof(struct PSF_font_header), 1, file);
 
 	if (header.magic != PSF_FONT_MAGIC) {
-		EZ_throw("Wrong magic number", fname);
+		ERR_warning("Wrong magic number in %s", fname);
 		fclose(file);
 
 		return NULL;
@@ -169,7 +169,7 @@ void EZ_save_PSF2(EZ_Font_t* font, const char* fname) {
 	FILE *file = fopen(fname,"wb");
 
 	if (file == NULL) {
-		EZ_throw("Couldn't save file", fname);
+		ERR_warning("Couldn't save file %s", fname);
 		return;
 	}
 

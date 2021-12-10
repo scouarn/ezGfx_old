@@ -7,7 +7,7 @@
 /* Stuff that is not platform dependant but part of the core */
 
 #include "ezGfx_core.h"
-#include "ezGfx_utils.h"
+#include "ezErr.h"
 
 #include <time.h>
 #include <string.h>

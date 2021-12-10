@@ -1,5 +1,5 @@
 #include "ezGfx_image.h"
-#include "ezGfx_utils.h"
+#include "ezErr.h"
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -29,7 +29,7 @@ EZ_Image_t* EZ_load_BMP(const char* fname) {
 	/* open file */
 	FILE *file = fopen(fname,"rb");
 	if (file == NULL) {
-		EZ_throw("Couldn't load file", fname);
+		ERR_warning("Couldn't load file %s", fname);
 		return NULL;
 	}
 
@@ -74,8 +74,12 @@ EZ_Image_t* EZ_load_BMP(const char* fname) {
 	fread(&b_mask, 4, 1, file);
 	fread(&a_mask, 4, 1, file);
 
-	if (depth != 24 && depth != 32) EZ_error("Unsupported pixel format");
-	if (a_mask == 0) EZ_throw("No alpha channel", fname);
+	if (depth != 24 && depth != 32) {
+		ERR_warning("Unsupported pixel format in %s", fname);
+		return NULL;
+	}
+
+	if (a_mask == 0) ERR_warning("No alpha channel in %s", fname);
 
 	
 	/* read pixels */
@@ -123,7 +127,7 @@ void EZ_save_BMP(EZ_Image_t* img, const char* fname) {
 	FILE *file = fopen(fname,"wb");
 
 	if (file == NULL) {
-		EZ_throw("Couldn't save file", fname);
+		ERR_warning("Couldn't save file %s", fname);
 		return;
 	}
 
@@ -194,7 +198,7 @@ void EZ_save_BMP(EZ_Image_t* img, const char* fname) {
 		fwrite(img->px + i*img->w, sizeof(EZ_Px_t), img->w,  file); 
 
 
-	//close
+	/* close */
 	fclose(file);
 
 

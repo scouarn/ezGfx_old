@@ -184,7 +184,7 @@ static void* mainThread(void* arg) {
 
 	/* create display */
 	disp   = XOpenDisplay(NULL);
-	EZ_assert(disp, "Couldn't initialize X display");
+	ERR_assert(disp, "Couldn't initialize X display");
 
 	/* get screen */
 	screen = DefaultScreen(disp);
@@ -202,7 +202,7 @@ static void* mainThread(void* arg) {
 
 	/* window destruction handling */
 	wm_delete = XInternAtom(disp, "WM_DELETE_WINDOW", True);
-	EZ_assert(XSetWMProtocols(disp, win, &wm_delete, 1), 
+	ERR_assert(XSetWMProtocols(disp, win, &wm_delete, 1), 
 			"Couldn't set X11 protocol for handling window destruction");
 
 	/* graphics context */

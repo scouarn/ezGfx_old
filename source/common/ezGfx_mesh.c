@@ -1,4 +1,4 @@
-#include "ezGfx_utils.h"
+#include "ezErr.h"
 #include "ezGfx_mesh.h"
 
 #include <stdlib.h>
@@ -77,7 +77,7 @@ EZ_Mesh_t* EZ_mesh_loadOBJ(const char* fname) {
 	FILE *file = fopen(fname,"r");
 
 	if (file == NULL) {
-		EZ_throw("Couldn't open file", fname);
+		ERR_warning("Couldn't open file %s", fname);
 		return NULL;
 	}
 
@@ -128,7 +128,7 @@ EZ_Mesh_t* EZ_mesh_loadOBJ(const char* fname) {
 			v++;
 
 			if (read == 0) {
-				EZ_throw("Error during vertex parsing in mesh", fname);
+				ERR_warning("Error during vertex parsing in %s", fname);
 				fclose(file);
 				return NULL;
 			}
@@ -139,7 +139,7 @@ EZ_Mesh_t* EZ_mesh_loadOBJ(const char* fname) {
 			t++;
 
 			if (read == 0) {
-				EZ_throw("Error during face parsing in mesh", fname);
+				ERR_warning("Error during face parsing in %s", fname);
 				fclose(file);
 
 				return NULL;
@@ -193,12 +193,12 @@ void EZ_mesh_saveOBJ(EZ_Mesh_t* mesh, const char* fname) {
 	FILE *file = fopen(fname,"w"); /* TEXT MODE */
 
 	if (file == NULL) {
-		EZ_throw("Couldn't save file", fname);
+		ERR_warning("Couldn't save file %s", fname);
 		return;
 	}
 
 
-	EZ_warning("Not implemented");
+	ERR_warning("Not implemented");
 
 	fclose(file);
 
