@@ -7,6 +7,7 @@
 
 typedef struct {
 	EZ_Vec_t pos;
+	EZ_Vec_t normal;
 	float u, v;
 } EZ_Vertex_t;
 

@@ -11,18 +11,15 @@ void EZ_mesh_free(EZ_Mesh_t* mesh) {
 }
 
 
-typedef struct {int pos[3], uv[3];} _face;
-typedef struct {float x,y,z;} _pos;
-typedef struct {float u,v;} _uv;
 
 
-static char _peak(FILE* fp) {
+/* https://www.loc.gov/preservation/digital/formats/fdd/fdd000507.shtml
+ * https://www.fileformat.info/format/wavefrontobj/egff.htm
+ * https://en.wikipedia.org/wiki/Wavefront_.obj_file
+ */
 
-	char c = getc(fp);
-	ungetc(c, fp);
 
-	return c;
-}
+
 
 
 EZ_Mesh_t* EZ_mesh_loadOBJ(const char* fname) {
@@ -30,9 +27,9 @@ EZ_Mesh_t* EZ_mesh_loadOBJ(const char* fname) {
 
 
 	/* open file in text mode */
-	FILE *file = fopen(fname,"r");
+	FILE *fp = fopen(fname,"r");
 
-	if (file == NULL) {
+	if (fp == NULL) {
 		ERR_warning("Couldn't open file %s", fname);
 		return NULL;
 	}
@@ -44,19 +41,25 @@ EZ_Mesh_t* EZ_mesh_loadOBJ(const char* fname) {
 
 
 	char c;
-	int nPos = 0, nFaces = 0, nUV = 0;
+	int nPos = 0, nFaces = 0, nUV = 0, nNorm = 0;
 
 	/* go to next line, stop if end_of_file encountered */
-	#define NEXTLINE() while(c != '\n' && c != EOF) c = getc(file);
+	#define NEXTLINE() while(c != '\n' && c != EOF) c = getc(fp);
 
 	do {
-		c = getc(file);
+		c = getc(fp);
 
 		switch (c) {
 
 			case 'v' :
-				if (_peak(file) == 't') nUV++;
-				else nPos++;
+				if ((c = getc(fp)) == 't') nUV++;
+				else if (c == 'n') nNorm++;
+
+				else {
+					ungetc(c, fp);
+					nPos++;
+				}
+
 			break;
 
 			case 'f' :
@@ -74,9 +77,7 @@ EZ_Mesh_t* EZ_mesh_loadOBJ(const char* fname) {
 
 
 
-	fseek(file, 0, SEEK_SET);
-
-
+	fseek(fp, 0, SEEK_SET);
 
 
 
@@ -84,56 +85,120 @@ EZ_Mesh_t* EZ_mesh_loadOBJ(const char* fname) {
 	/* 2ND PASS : PARSING	*/
 
 
+
+	/* init mesh data */
+	EZ_Mesh_t* mesh = malloc( sizeof(EZ_Mesh_t) );
+	mesh->triangles = calloc(nFaces, sizeof(EZ_Tri_t));
+	mesh->nPoly = nFaces;
+
+
+
 	/* allocate room for parsing */
-	_pos* pos_buffer = malloc( nPos * sizeof(_pos) );
-	_pos* pos = pos_buffer;
+	EZ_Vec_t* v_buffer  = malloc( nPos  * sizeof(EZ_Vec_t) );
+	EZ_Vec_t* vt_buffer = malloc( nUV   * sizeof(EZ_Vec_t) );
+	EZ_Vec_t* vn_buffer = malloc( nNorm * sizeof(EZ_Vec_t) );
 
-	_uv* uv_buffer = malloc( nUV * sizeof(_uv) );
-	_uv* uv  = uv_buffer;
+	int v_index  = 0, vt_index = 0, vn_index = 0, f_index = 0;
 
-	_face* face_buffer = malloc( nFaces * sizeof(_face) );
-	_face* face  = face_buffer;
-
-
-	/* char read, to detect error */
-	int read;
 
 	do {
 
-		c = getc(file);
+		c = getc(fp);
 
 		switch (c) {
 
 		case 'v' :
 
 			/* UV */
-			if (_peak(file) == 't') {
-				read = fscanf(file, "t %g %g", &uv->u, &uv->v);
-				uv++;
+			if ((c = getc(fp)) == 't') {
+
+				fscanf(fp, "%g %g", 
+					&vt_buffer[vt_index].x, 
+					&vt_buffer[vt_index].y
+				);
+
+				vt_index++;
+			}
+
+			else if (c == 'n') {
+
+				fscanf(fp, "%g %g %g", 
+					&vn_buffer[v_index].x, 
+					&vn_buffer[v_index].y, 
+					&vn_buffer[v_index].z
+				);
+
+				vn_index++;
 			}
 
 			/* POSITION */
 			else {
-				read = fscanf(file, "%g %g %g", &pos->x, &pos->y, &pos->z);
-				pos++;
+				ungetc(c, fp);
+
+				fscanf(fp, "%g %g %g", 
+					&v_buffer[v_index].x, 
+					&v_buffer[v_index].y, 
+					&v_buffer[v_index].z
+				);
+
+				v_buffer[v_index].w = 1.0;
+
+				v_index++;
 			}
 
 		break;
 
 
-		case 'f' : 
+		/* Write directly to the mesh structure */
+		case 'f' : {
+			int i, v = 0, vt = 0, vn = 0; 
 
-			for (int i = 0; i < 3; i++) {
+			for (i = 0; i < 3; i++) {
 
-				read = fscanf(file, "%d", &face->pos[i]);
+				/* parse v */
+				fscanf(fp, "%d", &v);
 
-				if (_peak(file) == '/')
-					read += fscanf(file, "/%d", &face->uv[i]);					
+				if ((c = getc(fp)) == '/') {
+
+					/* parse vt (can fail) */
+					fscanf(fp, "%d", &vt);
+
+					/* parse vn */
+					if ((c = getc(fp)) == '/')
+						fscanf(fp, "%d", &vn);
+					
+					else 
+						ungetc(c, fp);
+
+				}
+				else ungetc(c, fp);
+
+
+				/* write information */
+				/* -1 means the last one */
+				/* 1 means the first*/
+				/* 0 means nothing (default to 0,0,0,0 : cf calloc) */
+				if (v < 0) {
+					mesh->triangles[f_index].vert[i].pos = v_buffer[v_index + v];	
+				}
+				else if (v > 0) {
+					mesh->triangles[f_index].vert[i].pos = v_buffer[v - 1];
+				}
+
+				if (vt > 0) {
+					mesh->triangles[f_index].vert[i].u = vt_buffer[vt - 1].x;
+					mesh->triangles[f_index].vert[i].v = vt_buffer[vt - 1].y;
+				}
+
+				if (vn > 0) {
+					mesh->triangles[f_index].vert[i].normal = vn_buffer[vn - 1];
+				}
 
 			}
 
-			face++;		
+			f_index++;
 
+		}
 		break;
 
 
@@ -150,48 +215,13 @@ EZ_Mesh_t* EZ_mesh_loadOBJ(const char* fname) {
 	} while (c != EOF);
 
 
-	fclose(file);
+	fclose(fp);
 
 
 
-	/* WRITE TO A MESH STRUCTURE */
-
-
-	/* init mesh data */
-	EZ_Mesh_t* mesh = malloc( sizeof(EZ_Mesh_t) );
-	mesh->triangles = calloc(nFaces, sizeof(EZ_Tri_t));
-	mesh->nPoly = nFaces;
-
-	int i,j;
-
-	/* copy parsed data to mesh */
-	for (i = 0; i < nFaces; i++) {
-		_face indices = face_buffer[i];
-		
-		mesh->triangles[i].col = EZ_WHITE;
-
-		for (j = 0; j < 3; j++) {
-
-			/* indices start at 1 */
-			if (nPos > 0){
-				mesh->triangles[i].vert[j].pos.x = pos_buffer[indices.pos[j] - 1].x;
-				mesh->triangles[i].vert[j].pos.y = pos_buffer[indices.pos[j] - 1].y;
-				mesh->triangles[i].vert[j].pos.z = pos_buffer[indices.pos[j] - 1].z;
-				mesh->triangles[i].vert[j].pos.w = 1.0;
-			}
-
-			if (nUV > 0) {
-				mesh->triangles[i].vert[j].u     =  uv_buffer[indices.uv[j] - 1].u;
-				mesh->triangles[i].vert[j].v     =  uv_buffer[indices.uv[j] - 1].v;
-			}
-		}
-
-	}
-
-
-	free(pos_buffer);
-	free(uv_buffer);
-	free(face_buffer);
+	free(v_buffer);
+	free(vt_buffer);
+	free(vn_buffer);
 
 
 	return mesh;
