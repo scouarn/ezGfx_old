@@ -28,7 +28,7 @@ void setup() {
 
 	texture = EZ_image_loadBMP("assets/texture.bmp");
 	cube = EZ_mesh_loadOBJ("assets/cube.obj");
-	// cube = EZ_mesh_unitCube();
+	// cube = DEBUG_EZ_mesh_unitCube();
 
 	ERR_assert(texture && cube, "Couldn't load assets");
 
