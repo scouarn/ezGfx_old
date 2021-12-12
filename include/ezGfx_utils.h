@@ -32,6 +32,10 @@
 #define LERP(x, a, b) ({ __typeof__ (x) _x = (x); \
 				_x*(a) + (1.0 - _x)*(b); })
 
+
+#define MAP(x, a, b, u, v) (u + (v - u) * ((x - a) / (b - a)))
+
+
 #define ABS(x) ({ __typeof__ (x) _x = (x); \
 				_x < 0 ? -_x : _x; })
 

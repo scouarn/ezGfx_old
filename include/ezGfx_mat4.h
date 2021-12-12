@@ -9,8 +9,8 @@ typedef struct {
 } EZ_Mat4_t;
 
 void EZ_mat4_mul  (EZ_Mat4_t* res, EZ_Mat4_t* A, EZ_Mat4_t* B);
-void EZ_mat4_vmul (EZ_Vec_t* res,  EZ_Mat4_t* A, EZ_Vec_t* v);
-void EZ_mat4_vdown(EZ_Vec_t* res,  EZ_Mat4_t* A, EZ_Vec_t* v);
+void EZ_mat4_vmul (EZ_Vec_t*  res, EZ_Mat4_t* A, EZ_Vec_t* v);
+void EZ_mat4_vdown(EZ_Vec_t*  res, EZ_Mat4_t* A, EZ_Vec_t* v);
 
 void EZ_mat4_copy (EZ_Mat4_t* res, EZ_Mat4_t* A);
 void EZ_mat4_add  (EZ_Mat4_t* res, EZ_Mat4_t* A, EZ_Mat4_t* B);

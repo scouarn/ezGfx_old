@@ -34,7 +34,8 @@ typedef enum {
 	EZ_3D_WIRE,
 	EZ_3D_FLAT,
 	EZ_3D_FLAT_SHADED,
-	EZ_3D_TEXTURE
+	EZ_3D_TEXTURE,
+	EZ_3D_TEXTURE_UNCORRECTED /* PS1 look */
 	
 } EZ_3DMode_t;
 
@@ -44,7 +45,7 @@ void           EZ_draw3D_freeTarget(EZ_3DTarget_t* tgt);
 
 void EZ_draw3D_startScene(EZ_3DTarget_t* tgt); /* reset the depth buffer */
 void EZ_draw3D_mesh(EZ_3DTarget_t* tgt, EZ_Mesh_t* mesh, EZ_Mat4_t* trns, EZ_3DMode_t mode);
-void EZ_draw3D_tri (EZ_3DTarget_t* tgt, EZ_Tri_t*   tri, EZ_Mat4_t* trns, EZ_3DMode_t mode);
+void EZ_draw3D_tri (EZ_3DTarget_t* tgt, EZ_Image_t* texture, EZ_Tri_t* tri, EZ_Mat4_t* trns, EZ_3DMode_t mode);
 
 
 #endif /* ezGfx_draw3D_h */

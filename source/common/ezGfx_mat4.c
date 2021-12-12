@@ -25,17 +25,17 @@ void EZ_mat4_mul(EZ_Mat4_t* res, EZ_Mat4_t* A, EZ_Mat4_t* B) {
 	}
 }
 
-
-void EZ_mat4_vmul(EZ_Vec_t* res, EZ_Mat4_t* A, EZ_Vec_t* v) {
+void EZ_mat4_vmul(EZ_Vec_t*  res, EZ_Mat4_t* A, EZ_Vec_t* v) {
 	int i, k;
 	EZ_Vec_t* tmp = (res == v) ? malloc( sizeof(EZ_Vec_t) ) : res;
-
+	
 	for (i = 0; i < DIM; i++) {
 
 		tmp->v[i] = 0.0;
 
 		for (k = 0; k < DIM; k++)
 			tmp->v[i] += A->v[i][k] * v->v[k];
+
 	}
 
 	if (res == v) {

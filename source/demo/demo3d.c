@@ -7,6 +7,7 @@
 #define HEIGHT 256
 
 EZ_Image_t* canvas;
+EZ_Image_t* texture;
 EZ_Mesh_t* cube;
 EZ_3DTarget_t* render;
 EZ_Mat4_t proj;
@@ -25,11 +26,16 @@ void setup() {
 
 	render = EZ_draw3D_makeTarget(canvas, &proj, &world);
 
-	// cube = EZ_mesh_loadOBJ("test.obj");
-	cube = EZ_mesh_unitCube();
+	texture = EZ_image_loadBMP("assets/texture.bmp");
+	cube = EZ_mesh_loadOBJ("assets/cube.obj");
+	// cube = EZ_mesh_unitCube();
 
+	ERR_assert(texture && cube, "Couldn't load assets");
+
+	cube->texture = texture; 
 
 	EZ_bind(canvas);
+
 }
 
 
@@ -43,14 +49,18 @@ void draw(double dt) {
 
 	a += dt;
 	EZ_draw3D_startScene(render);
-	EZ_draw3D_mesh(render, cube, &trans, EZ_3D_FLAT_SHADED);
+	EZ_draw3D_mesh(render, cube, &trans, EZ_3D_TEXTURE);
+
+	EZ_draw2D_image(canvas, texture, 0, 0);
 
 }
 
 
 void kill() {
 	EZ_image_free(canvas);
+	EZ_image_free(texture);
 	EZ_draw3D_freeTarget(render);
+	EZ_mesh_free(cube);
 }
 
 

@@ -54,51 +54,75 @@ static void _normal(EZ_Vec_t* res, EZ_Vec_t* p1, EZ_Vec_t* p2, EZ_Vec_t* p3) {
 }
 
 
-/* do the non linear operation of the projection */
-static void _mulwdiv(EZ_Vec_t* C, EZ_Mat4_t* A, EZ_Vec_t* B) {
-
-	double w = A->v[3][0] * B->x
-	         + A->v[3][1] * B->y
-	         + A->v[3][2] * B->z
-	         + A->v[3][3];
-
-	EZ_Vec_t proj;
-	EZ_mat4_vdown(&proj, A, B);
-	
-	/* don't divide by 0 */
-	if (w != 0.0) EZ_vec_scale(C, &proj, 1.0 / w);
-}
 
 
 #define PROJECT_SUCCESS 0
 #define PROJECT_BEHIND  1
 #define PROJECT_AWAY    2
+#define PROJECT_DIVZERO 3
 
-static int _project(EZ_Tri_t* tri, EZ_Mat4_t* proj, EZ_Mat4_t* trns, int width, int height) {
+
+
+
+void EZ_draw3D_tri(EZ_3DTarget_t* tgt, EZ_Image_t* texture, EZ_Tri_t* tri, EZ_Mat4_t* trns, EZ_3DMode_t mode) { 
+
+	#define PX tgt->img->px
+	#define WIDTH tgt->img->w
+	#define HEIGHT tgt->img->h
 
 	int i;
-	EZ_Vec_t transformed[3];
-	EZ_Vec_t projected[3];
+
+	EZ_Mat4_t fullTrans;
+	EZ_Vec_t transformed[3], projected[3];
+	
+	struct { 
+		int x, y;
+		float u, v, z;
+	} res[3];
+
+
+	/* project the triangle */
+	EZ_mat4_mul(&fullTrans, tgt->trns, trns);
+
 
 	/* transform  -  apply transform matrix */
-	for (i = 0; i < 3; i++)
-		EZ_mat4_vdown(&transformed[i], trns, &(tri->pos[i]) );
+	for (i = 0; i < 3; i++) {
+		EZ_mat4_vmul(&transformed[i], trns, &(tri->vert[i].pos) );
+
+		/* don't render faces that are behind the camera */
+		if (transformed[i].z < 0.0) 
+			return;
+	}
 
 
-	/* compute world space normal */
-	_normal(&tri->normal, &transformed[0], &transformed[1], &transformed[2]);
+	/* project to 2D */
+	for (i = 0; i < 3; i++) {
 
-	/* don't render faces that are behind the camera */
-	if (transformed[0].z < 0.0f || 
-		transformed[1].z < 0.0f || 
-		transformed[2].z < 0.0f) 
-
-		return PROJECT_BEHIND;
+		/* apply projection matrix */
+		EZ_mat4_vmul(&projected[i], tgt->proj, &transformed[i]);
 
 
-	/* project to 2D  - apply projection matrix */
-	for (i = 0; i < 3; i++)
-		_mulwdiv(&projected[i], proj, &transformed[i]);
+		/* non linear part of the projection */
+		/* don't divide by 0 */
+		if (projected[i].w == 0.0) 
+			return;
+
+
+		const float z = 1.0 / projected[i].w;
+
+		EZ_vec_scale(&projected[i], &projected[i], z);
+
+
+		/* convert to pixel space */
+		/* from -1 to +1 with y from bottom to top */
+		res[i].x = (projected[i].x + 1.0f) * 0.5f * WIDTH;
+		res[i].y = (projected[i].y + 1.0f) * 0.5f * HEIGHT;
+
+		/* write uv information */
+		res[i].u = tri->vert[i].u * z;
+		res[i].v = tri->vert[i].v * z;
+		res[i].z = z;
+	}
 
 
 	/* culling */
@@ -108,155 +132,123 @@ static int _project(EZ_Tri_t* tri, EZ_Mat4_t* proj, EZ_Mat4_t* trns, int width, 
 	const float nz = (projected[1].x - projected[0].x) * (projected[2].y - projected[0].y) -
 				     (projected[1].y - projected[0].y) * (projected[2].x - projected[0].x);
 
-	if (nz > 0.0f) return PROJECT_AWAY;
+	if (nz > 0.0f) return;
 	
 
-	/* convert to pixel space */
-	/* from -1 to +1 with y from bottom to top */
-	for (i = 0; i < 3; i++) {
-		tri->screen[i].x = (projected[i].x + 1.0f) * 0.5f * width;
-		tri->screen[i].y = (projected[i].y + 1.0f) * 0.5f * height;
-		tri->screen[i].z =  projected[i].z;
-	}
 
 
-	return PROJECT_SUCCESS;
+	/* compute world space normal */
+	_normal(&tri->normal, &transformed[0], &transformed[1], &transformed[2]);
 
 
-}
+	/* light and shading */
+	EZ_Vec_t l_dir = {{0.0f, 0.0f, 1.0f}};
+	float shade = CLAMP(EZ_vec_dot(&tri->normal, &l_dir), 0.25f, 1.0f);
 
 
-
-
-void EZ_draw3D_tri(EZ_3DTarget_t* tgt, EZ_Tri_t* tri, EZ_Mat4_t* trns, EZ_3DMode_t mode) { 
-
-	/* project the triangle */
-	EZ_Mat4_t fullTrans;
-	EZ_mat4_mul(&fullTrans, tgt->trns, trns);
-
-	int result = _project(tri, tgt->proj, &fullTrans, tgt->img->w, tgt->img->h);
-	if (result != PROJECT_SUCCESS) return;
-
-
-
-	EZ_Px_t shade;
-
-	switch (mode) {
-
-		case EZ_3D_WIRE : shade = EZ_WHITE; break;
-		case EZ_3D_FLAT : shade = tri->col; break;
-
-		case EZ_3D_FLAT_SHADED : {
-
-			/* light and shading */
-			EZ_Vec_t l_dir = {{0.0f, 0.0f, 1.0f}};
-			float b  = CLAMP(EZ_vec_dot(&tri->normal, &l_dir), 0.25f, 1.0f);
-
-			shade = tri->col;
-			shade.r *= b;
-			shade.g *= b;
-			shade.b *= b;
-		}
-		break;
-
-		default : shade = EZ_MAGENTA; break;
-	}
-
-
-	/* draw the triangle */
-
-	#define TS0 tri->screen[0]
-	#define TS1 tri->screen[1]
-	#define TS2 tri->screen[2]
-	#define TPX tgt->img->px
-	#define TIW tgt->img->w
-	#define TIH tgt->img->h
 
 	/* sort points (0_y : top, 1_y : mid, 2_y : bot) */
-	if (TS0.y > TS1.y) {
-		SWAP(TS0, TS1);
+	if (res[0].y > res[1].y) {
+		SWAP(res[0],  res[1]);
 	}
-	if (TS0.y > TS2.y) {
-		SWAP(TS0, TS2);
+	if (res[0].y > res[2].y) {
+		SWAP(res[0],  res[2]);
 	}
-	if (TS1.y > TS2.y) {
-		SWAP(TS1, TS2);
+	if (res[1].y > res[2].y) {
+		SWAP(res[1],  res[2]);
 	}
-
 
 	/* compute slopes */
-	int dyTop = TS1.y - TS0.y;
-	int dxTop = TS1.x - TS0.x;
+	int dx1 = res[1].x - res[0].x;
+	int dy1 = res[1].y - res[0].y;
 
-	int dyMid = TS2.y - TS0.y;
-	int dxMid = TS2.x - TS0.x;
+	int dx2 = res[2].x - res[0].x;
+	int dy2 = res[2].y - res[0].y;
 
-	int dyBot = TS2.y - TS1.y;
-	int dxBot = TS2.x - TS1.x;
+	int dx3 = res[2].x - res[1].x;
+	int dy3 = res[2].y - res[1].y;
 
-	float slopeTop = (float)dxTop/dyTop;
-	float slopeMid = (float)dxMid/dyMid;
-	float slopeBot = (float)dxBot/dyBot;
+	float dx_start = (float)dx1/dy1;
+	float dx_end   = (float)dx2/dy2;
 
 
 	/* "vertical" clipping */
-	int y0 = CLAMP(TS0.y, 0, TIH);
-	int y1 = CLAMP(TS1.y, 0, TIH);
-	int y2 = CLAMP(TS2.y, 0, TIH);
-
-
-	int sx, sy;
-	/*float tx, ty;*/
-
+	int y_start = CLAMP(res[0].y, 0, HEIGHT);
+	int y_end   = CLAMP(res[2].y, 0, HEIGHT);
 
 	/* get values of x for left and right line at y0 */
-	float xTop = (TS0.x - TS0.y * slopeTop) + y0 * slopeTop;
-	float xMid = (TS0.x - TS0.y * slopeMid) + y0 * slopeMid;
+	float x_start = res[0].x + (y_start - res[0].y) * dx_start;
+	float x_end   = res[0].x + (y_start - res[0].y) * dx_end;
+
+	int sx, sy;
+
 
 
 	/* scan lines */
-	for (sy = y0; sy < y2; sy++) {
+	for (sy = y_start; sy < y_end; sy++) {
 
 		/* this line actually avoids dividing by zero,
 		   by skipping the top triangle when y1 == y2 (same for y2 == y3) */
-		if (sy == y1) {
-			slopeTop = slopeBot;
-			xMid = (TS0.x - TS0.y * slopeMid) + y1 * slopeMid;
-			xTop = (TS1.x - TS1.y * slopeBot) + y1 * slopeBot;	
+		if (sy == res[1].y) {
+			dx_start = (float)dx3/dy3;
+			x_start = res[1].x; /* seems to glitch if not corrected */
 		}
 
+
 		/* "horizontal" clipping*/
-		int xLeft  = CLAMP( MIN(xTop, xMid), 0, TIW);
-		int xRight = CLAMP( MAX(xTop, xMid), 0, TIW);
+		int xLeft  = CLAMP(x_start, 0, WIDTH);
+		int xRight = CLAMP(x_end,   0, WIDTH);
+
+		/* left-right sorting */
+		if (xLeft > xRight)
+			SWAP(xLeft, xRight);
+
 
 		switch (mode) {
 
 			case EZ_3D_WIRE :
-				TPX[xLeft + sy * TIW] = shade;
-				TPX[xLeft + sy * TIW] = shade;
+				PX[xLeft + sy * WIDTH] = EZ_WHITE;
+				PX[xLeft + sy * WIDTH] = EZ_WHITE;
 			break;
 
 
 			case EZ_3D_FLAT :
-			case EZ_3D_FLAT_SHADED :
-
 				for (sx = xLeft; sx < xRight; sx++)
-					TPX[sx + sy * TIW] = shade;
-
+					PX[sx + sy * WIDTH] = tri->col;
 			break;
 
-			case EZ_3D_TEXTURE :
+
+			case EZ_3D_FLAT_SHADED : {
+
+				EZ_Px_t col = tri->col;
+				col.r *= shade;
+				col.g *= shade;
+				col.b *= shade;
+
 				for (sx = xLeft; sx < xRight; sx++)
-					TPX[sx + sy * TIW] = shade;
+					PX[sx + sy * WIDTH] = col;
+			}
 			break;
+
+			case EZ_3D_TEXTURE : {
+					
+				for (sx = xLeft; sx < xRight; sx++) {
+
+					PX[sx + sy * WIDTH] = texture->px[0 + 0 * texture->w];
+				}
+
+			}
+			break;
+
+
+			default : break;
 
 
 		}
 
-
-		xTop += slopeTop; xMid += slopeMid;
+		x_start += dx_start; 
+		x_end   += dx_end;
 	}
-
 
 
 
@@ -267,7 +259,7 @@ void EZ_draw3D_mesh(EZ_3DTarget_t* tgt, EZ_Mesh_t* mesh, EZ_Mat4_t* trns, EZ_3DM
 
 	/* draw each triangle */
 	for (i = 0; i < mesh->nPoly; i++) {
-		EZ_draw3D_tri(tgt, mesh->triangles + i, trns, mode);
+		EZ_draw3D_tri(tgt, mesh->texture, mesh->triangles + i, trns, mode);
 	}
 
 }

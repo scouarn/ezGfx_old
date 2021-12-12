@@ -10,20 +10,44 @@ Detailed documentation is not yet available.
 TODO
 ====
 
+## 3D ext
+
+https://www.youtube.com/watch?v=nBzCS-Y0FcY&t=853s
+
+* get back the Vertex struct
+* xTop / xMid = ... * slope => can be simplified ?
+* 3D faces drawn on top of each other -> depth buffuring
+* textri 
+* textri with no perspective correction (PS1 look)
+
+* Bug in 3D demo with 32 bits systems -> bug with alpha blending returning black ? Solved with the normalize bug ? double/float problem with vectors ?
+
+* normal information
+* mesh files with material color
+* mesh files with uv
+
+* quaternion rotation on vec4f ?
+* Other projection matrices
+
+* swap instead of xLeft / xRight => no clipping...
+
+
+
 ## Misc
 
-* 3D faces drawn on top of each other -> depth buffuring
+* matrix inversion
+* github/readme display gif
+* port the new triangle routine to draw2D
 * check key behaviour linux vs windows
 * fullscreen (?)
 * Write documentation
-* Bug in 3D demo with 32 bits systems -> bug with alpha blending returning black ? Solved with the normalize bug ? double/float problem with vectors ?
-
+* Redo vectors again...
 
 
 ## New Extensions
 
 * GUI : windows, textboxes, buttons, sliders...
-* glsl fragment shaders
+* glsl fragment shaders => standalone project
 * splines calculation / bezier curves 2D/3D
 * voxel engine
 * physics
@@ -31,7 +55,7 @@ TODO
 * lua / python / lisp / perl / js / bash / brainfuck / BNF defined / ocaml/ ??
 	=> on the fly compiled scripting language ?
 	https://github.com/lua/lua
-	
+
 
 
 
@@ -44,17 +68,9 @@ TODO
 
 ## 2D ext
 
-* dithering
+* dithering / demo
 * "mode 7" demo
 
-
-## 3D ext
-
-* textri 
-* textri with no perspective correction (PS1 look)
-* mesh files with uv
-* quaternion rotation on vec4f ?
-* Other projection matrices
 
 
 ## Sound
