@@ -95,7 +95,7 @@ void EZ_mat3_sub(EZ_Mat3_t* res, EZ_Mat3_t* A, EZ_Mat3_t* B) {
 	}
 }
 
-void EZ_mat3_scale(EZ_Mat3_t* res, EZ_Mat3_t* A, double B) {
+void EZ_mat3_scale(EZ_Mat3_t* res, EZ_Mat3_t* A, float B) {
 	int i, j;
 
 	for (i = 0; i < DIM; i++) 
@@ -105,5 +105,5 @@ void EZ_mat3_scale(EZ_Mat3_t* res, EZ_Mat3_t* A, double B) {
 	}
 }
 
-double EZ_mat3_det(EZ_Mat3_t* A) {return 0;}
+float EZ_mat3_det(EZ_Mat3_t* A) {return 0;}
 void EZ_mat3_inv(EZ_Mat3_t* res, EZ_Mat3_t* A) {}

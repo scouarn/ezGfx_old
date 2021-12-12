@@ -30,16 +30,16 @@ void EZ_vec_cross(EZ_Vec_t* res, EZ_Vec_t* u, EZ_Vec_t* v) {
 	res->w = 0.0;
 }
 
-void EZ_vec_scale(EZ_Vec_t* res, EZ_Vec_t* u, double x) {
+void EZ_vec_scale(EZ_Vec_t* res, EZ_Vec_t* u, float x) {
 	int i;
 	for (i = 0; i < DIM; i++)
 		res->v[i] = u->v[i] * x;
 }
 
 
-double EZ_vec_dot(EZ_Vec_t* u, EZ_Vec_t* v) {
+float EZ_vec_dot(EZ_Vec_t* u, EZ_Vec_t* v) {
 	int i;
-	double res = 0.0;
+	float res = 0.0;
 
 	for (i = 0; i < DIM; i++)
 		res += u->v[i] * v->v[i];
@@ -47,15 +47,15 @@ double EZ_vec_dot(EZ_Vec_t* u, EZ_Vec_t* v) {
 	return res;
 }
 
-double EZ_vec_normsq(EZ_Vec_t* u) {
+float EZ_vec_normsq(EZ_Vec_t* u) {
 	return EZ_vec_dot(u, u);
 }
 
-double EZ_vec_norm(EZ_Vec_t* u) {
-	return sqrt( EZ_vec_normsq(u) );
+float EZ_vec_norm(EZ_Vec_t* u) {
+	return sqrtf( EZ_vec_normsq(u) );
 }
 
 void EZ_vec_normal(EZ_Vec_t* res, EZ_Vec_t* u) {
-	double norm = EZ_vec_norm(u);
+	float norm = EZ_vec_norm(u);
 	if (norm != 0.0) EZ_vec_scale(res, u, 1.0/norm);
 }

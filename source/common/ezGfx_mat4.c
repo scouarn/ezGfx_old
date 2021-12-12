@@ -95,7 +95,7 @@ void EZ_mat4_sub(EZ_Mat4_t* res, EZ_Mat4_t* A, EZ_Mat4_t* B) {
 	}
 }
 
-void EZ_mat4_scale(EZ_Mat4_t* res, EZ_Mat4_t* A, double B) {
+void EZ_mat4_scale(EZ_Mat4_t* res, EZ_Mat4_t* A, float B) {
 	int i, j;
 
 	for (i = 0; i < DIM; i++) 
@@ -105,7 +105,7 @@ void EZ_mat4_scale(EZ_Mat4_t* res, EZ_Mat4_t* A, double B) {
 	}
 }
 
-double EZ_mat4_det(EZ_Mat4_t* A) {return 0;}
+float EZ_mat4_det(EZ_Mat4_t* A) {return 0;}
 void EZ_mat4_inv(EZ_Mat4_t* res, EZ_Mat4_t* A) {}
 
 
@@ -120,8 +120,8 @@ void EZ_mat4_setId(EZ_Mat4_t* res) {
 }
 
 void EZ_mat4_setProj(EZ_Mat4_t* res, float fov, float a, float zn, float zf) {
-	double f = 1.0 / tanf(0.5*fov);
-	double q = zf / (zf - zn);
+	float f = 1.0 / tanf(0.5*fov);
+	float q = zf / (zf - zn);
 
 	res->v[0][0] = f;   res->v[0][1] = 0.0; res->v[0][2] = 0.0; res->v[0][3] = 0.0; 
 	res->v[1][0] = 0.0; res->v[1][1] = f*a; res->v[1][2] = 0.0; res->v[1][3] = 0.0; 
