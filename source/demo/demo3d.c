@@ -49,7 +49,7 @@ void draw(double dt) {
 
 	a += dt;
 	EZ_draw3D_startScene(render);
-	EZ_draw3D_mesh(render, cube, &trans, EZ_3D_TEXTURE);
+	EZ_draw3D_mesh(render, cube, &trans, EZ_3D_FLAT_SHADED);
 
 	EZ_draw2D_image(canvas, texture, 0, 0);
 

@@ -14,17 +14,16 @@ TODO
 
 https://www.youtube.com/watch?v=nBzCS-Y0FcY&t=853s
 
-* get back the Vertex struct
-* xTop / xMid = ... * slope => can be simplified ?
-* 3D faces drawn on top of each other -> depth buffuring
+* face normal information
+* mesh files with material color
+
+* transform/3D improvement : stop multipliing matrices for each triangle, pass the precalculated local "3D object" transform which is the same for each triangle of the mesh
+
 * textri 
 * textri with no perspective correction (PS1 look)
+* 3D faces drawn on top of each other -> depth buffuring
 
 * Bug in 3D demo with 32 bits systems -> bug with alpha blending returning black ? Solved with the normalize bug ? double/float problem with vectors ?
-
-* normal information
-* mesh files with material color
-* mesh files with uv
 
 * quaternion rotation on vec4f ?
 * Other projection matrices
