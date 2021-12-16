@@ -23,7 +23,6 @@ void setup() {
 
 	EZ_mat4_setProj(&proj, QUARTER_PI, (float)WIDTH / HEIGHT, 0.001, 1000);
 	EZ_mat4_setId(&world);
-
 	render = EZ_draw3D_makeTarget(canvas, &proj, &world);
 
 	texture = EZ_image_loadBMP("assets/texture.bmp");
@@ -34,9 +33,10 @@ void setup() {
 
 	cube->texture = texture; 
 
-	EZ_bind(canvas);
 
+	// EZ_setFullscreen(true);
 	EZ_frameRate(60.0);
+	EZ_bind(canvas);
 }
 
 
@@ -48,14 +48,13 @@ void draw(double dt) {
 	EZ_mat4_applyRotX(&trans, a);
 	EZ_mat4_applyRotY(&trans, 0.8*a);
 
-	a += dt;
 	EZ_draw3D_startScene(render);
 	EZ_draw3D_mesh(render, cube, &trans, EZ_3D_FLAT_SHADED);
 
+	a += dt;
+
 	EZ_draw2D_image(canvas, texture, 0, 0);
-
-	printf("%lg ms\n", dt*1000.0);
-
+	// printf("%lg ms\n", dt*1000.0);
 }
 
 
@@ -66,11 +65,22 @@ void kill() {
 	EZ_mesh_free(cube);
 }
 
+void keydown(EZ_Key_t* k) {
+
+	if (k->code == K_F11)
+		EZ_setFullscreen(true);
+
+	else if (k->code == K_F12)
+		EZ_setFullscreen(false);
+
+}
+
 
 int main() {
 
 	EZ_setCallback_init(setup);
 	EZ_setCallback_draw(draw);
+	EZ_setCallback_keyPressed(keydown);
 
 	EZ_start();
 	EZ_join();

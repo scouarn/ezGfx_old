@@ -47,13 +47,27 @@ void EZ_rename(const char* name) {
 }
 
 void EZ_resize(int w, int h) {
+
+	if (bFullscreen) return;
 	XResizeWindow(disp, win, w, h);
-	winWidth = w;
-	winHeight = h;
+
 }
 
 void EZ_setFullscreen(bool val) {
-	
+	bFullscreen = val;
+
+	XEvent xev = {0};
+	Atom wm_state   = XInternAtom(disp, "_NET_WM_STATE", False);
+	Atom fullscreen = XInternAtom(disp, "_NET_WM_STATE_FULLSCREEN", False);
+	xev.type = ClientMessage;
+	xev.xclient.window = win;
+	xev.xclient.message_type = wm_state;
+	xev.xclient.format = 32;
+	xev.xclient.data.l[0] = val; // true or false
+	xev.xclient.data.l[1] = fullscreen;
+	xev.xclient.data.l[2] = 0;
+	XSendEvent(disp, DefaultRootWindow(disp), False,
+		SubstructureNotifyMask, &xev);
 }
 
 void EZ_setMaximized(bool val) {
@@ -79,12 +93,9 @@ void EZ_redraw() {
 	__rect__ rec;
 	getCanvasRect(&rec);
 
-	
-
 	/* copy canvas to buffer */
 	xRatio = (float)canvas->w / rec.cx;
 	yRatio = (float)canvas->h / rec.cy;
-
 
 	/* for each pixel on the screen (that have to be drawn) */
 	for (x = rec.x1; x < rec.x2; x++) 
@@ -178,9 +189,6 @@ static EZ_KeyCode_t keyMap(int keyCode) {
 
 static void* mainThread(void* arg) {
 	int i;
-
-	pthread_detach(pthread_self());
-
 
 	/* create display */
 	disp   = XOpenDisplay(NULL);
@@ -342,7 +350,7 @@ static void* mainThread(void* arg) {
 			case ConfigureNotify: { /* resize */
 				XConfigureEvent req = e.xconfigure;
 			
-				winWidth = req.width; 
+				winWidth  = req.width; 
 				winHeight = req.height;
 
 				size_t size = winWidth * winHeight * sizeof(EZ_Px_t);

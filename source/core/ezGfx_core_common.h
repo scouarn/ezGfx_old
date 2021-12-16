@@ -17,11 +17,12 @@
 
 /* Time */
 static struct timespec startTime;
+static double frameRate = -1.0; /* default negative (unlimited fps) */
 static volatile bool running;
-static volatile double frameRate = -1.0; /* default negative (unlimited fps) */
 
 /* Drawing */
 static EZ_Image_t* canvas;
+static bool bFullscreen = false;  
 static int winWidth;
 static int winHeight;
 
@@ -100,7 +101,9 @@ EZ_Mouse_t* EZ_getMouse() {
 
 static void getCanvasRect(__rect__* rec) {
 
-	if (!canvas) return;
+	if (!canvas || canvas->h == 0 || winHeight == 0) {
+		return;
+	}
 
 
 	float cvsAspct = canvas->w / canvas->h;

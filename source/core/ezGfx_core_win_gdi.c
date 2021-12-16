@@ -11,6 +11,7 @@ static DWORD WINAPI mainThread(LPVOID arg);
 static LRESULT CALLBACK windowProcedure( HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 static HWND hwnd;
 static HINSTANCE hInstance;
+static WINDOWPLACEMENT lastWinPos;
 
 
 /* Gfx context */
@@ -76,10 +77,12 @@ void EZ_rename(const char* name) {
 
 void EZ_resize(int w, int h) {
 
+	if (bFullscreen) return;
+
 	RECT rec = {0, 0, w, h};
 	AdjustWindowRect(&rec, WS_OVERLAPPEDWINDOW, false);
 
-	rec.right -= rec.left;
+	rec.right  -= rec.left;
 	rec.bottom -= rec.top;
 
 	SetWindowPos(hwnd, NULL, 0, 0, rec.right, rec.bottom, SWP_NOMOVE);
@@ -88,8 +91,43 @@ void EZ_resize(int w, int h) {
 
 void EZ_setFullscreen(bool val) {
 	
+	if (val == bFullscreen) return;	
+	bFullscreen = val;
+
+	/* https://devblogs.microsoft.com/oldnewthing/20100412-00/?p=14353 */
+
+	
+	DWORD dwStyle = GetWindowLong(hwnd, GWL_STYLE);
+
+	if (val) {
+		MONITORINFO mi = { sizeof(mi) };
+		if (GetWindowPlacement(hwnd, &lastWinPos)
+		 && GetMonitorInfo(MonitorFromWindow(hwnd, MONITOR_DEFAULTTOPRIMARY), &mi)) 
+		{	
+			SetWindowLong(hwnd, GWL_STYLE, dwStyle & ~WS_OVERLAPPEDWINDOW);
+			SetWindowPos(hwnd, HWND_TOP,
+				mi.rcMonitor.left, mi.rcMonitor.top,
+				mi.rcMonitor.right - mi.rcMonitor.left,
+				mi.rcMonitor.bottom - mi.rcMonitor.top,
+				SWP_NOOWNERZORDER | SWP_FRAMECHANGED
+			);
+
+		}
+	}
+	else {
+		SetWindowLong(hwnd, GWL_STYLE, dwStyle | WS_OVERLAPPEDWINDOW);
+		SetWindowPlacement(hwnd, &lastWinPos);
+		SetWindowPos(hwnd, NULL, 0, 0, 0, 0,
+			SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER |
+			SWP_NOOWNERZORDER | SWP_FRAMECHANGED
+		);
+
+		bFullscreen = false;
+	}
+
 
 }
+
 
 void EZ_setMaximized(bool val) {
 
@@ -111,7 +149,7 @@ void EZ_redraw() {
 	HPEN pen = CreatePen(PS_NULL, 1, RGB(0, 0, 0));
     SelectObject(screenDC, pen);
 
-	HBRUSH brush = (HBRUSH)(COLOR_WINDOW+1);
+	HBRUSH brush = (HBRUSH)GetStockObject(BLACK_BRUSH);
 	SelectObject(screenDC, brush);
 
 	Rectangle(screenDC, 0, 0, rec.x1, winHeight); /* left */
@@ -153,6 +191,7 @@ void EZ_redraw() {
 
 static DWORD WINAPI mainThread(LPVOID arg) {
 
+	int i;
 
 	/* init time */
 	LARGE_INTEGER period;
@@ -161,7 +200,6 @@ static DWORD WINAPI mainThread(LPVOID arg) {
 	double lastTime = EZ_getTime();
 
 	/* init keys */
-	int i;
 	for (i = 0; i < _numberOfKeys; i++)
 		keyStates[i].code = i;
 
@@ -185,10 +223,10 @@ static DWORD WINAPI mainThread(LPVOID arg) {
 	wc.cbClsExtra = 0;
 	wc.cbWndExtra = 0;
 	wc.hInstance = hInstance;
+	wc.hbrBackground = (HBRUSH)GetStockObject(BLACK_BRUSH);
+	wc.lpszMenuName = NULL;	
 	wc.hIcon = LoadIcon(NULL, IDI_APPLICATION);
 	wc.hCursor = LoadCursor(NULL, IDC_ARROW);
-	wc.hbrBackground = (HBRUSH)(COLOR_WINDOW+1);
-	wc.lpszMenuName = NULL;	
 	wc.hIconSm = LoadIcon(NULL, IDI_APPLICATION);  
 
 	ERR_assert(RegisterClassEx(&wc), "Couldn't register window class");
@@ -226,7 +264,6 @@ static DWORD WINAPI mainThread(LPVOID arg) {
 
 
 		/* update keystates */
-		int i;
 		for (i = 0; i < _numberOfKeys; i++) {
 			keyStates[i].pressed  = false;
 			keyStates[i].released = false;
@@ -331,6 +368,7 @@ static EZ_KeyCode_t keyMap(int scancode) {
 
 static void updateKey(int scancode, int param, bool down) {
 
+
 	EZ_KeyCode_t code = keyMap(scancode);
 	if (!code) return;
 
@@ -373,13 +411,12 @@ static LRESULT CALLBACK windowProcedure(HWND hwnd, UINT msg, WPARAM wParam, LPAR
 
 	break;
 
-    case WM_CLOSE:		
+	case WM_CLOSE:		
 		EZ_stop();
 		DestroyWindow(hwnd);
 	break;
 
-    case WM_DESTROY:
-    	EZ_stop();
+	case WM_DESTROY:
 		PostQuitMessage(0);
 	break;
 
@@ -392,7 +429,16 @@ static LRESULT CALLBACK windowProcedure(HWND hwnd, UINT msg, WPARAM wParam, LPAR
 		winHeight = HIWORD(lParam);
 	break;
 
-	case WM_SYSKEYDOWN: updateKey(wParam, lParam, 1); break;
+	/* has to handle WM_CLOSE / ALT+F4 */
+	case WM_SYSKEYDOWN: 
+		updateKey(wParam, lParam, 1); 
+
+		if (wParam == VK_F4 && (lParam >> 29) & 0x1) {
+			EZ_stop();
+			DestroyWindow(hwnd);
+		}
+	break;
+
 	case WM_SYSKEYUP:   updateKey(wParam, lParam, 0); break;
 	
 	case WM_KEYDOWN: updateKey(wParam, lParam, 1); break;
@@ -439,9 +485,9 @@ static LRESULT CALLBACK windowProcedure(HWND hwnd, UINT msg, WPARAM wParam, LPAR
 		if (callback_mouse) callback_mouse(&mouseState);
 	break;
 
-    default:
+	default:
 		return DefWindowProc(hwnd, msg, wParam, lParam);
-    }
+	}
 
 	return 0;
 }

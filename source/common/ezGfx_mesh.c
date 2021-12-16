@@ -286,7 +286,7 @@ static const EZ_Vec_t cube_data[12][3] = {
 static const EZ_Px_t colors[] = {EZ_RED, EZ_YELLOW, EZ_ORANGE, EZ_WHITE, EZ_BLUE, EZ_GREEN};
 
 
-EZ_Mesh_t* EZ_mesh_unitCube() {
+EZ_Mesh_t* DEBUG_EZ_mesh_unitCube() {
 	int i, j;
 
 	EZ_Mesh_t* mesh = malloc( sizeof(EZ_Mesh_t) );
