@@ -23,12 +23,8 @@ https://www.youtube.com/watch?v=nBzCS-Y0FcY&t=853s
 * textri with no perspective correction (PS1 look)
 * 3D faces drawn on top of each other -> depth buffuring
 
-* Bug in 3D demo with 32 bits systems -> bug with alpha blending returning black ? Solved with the normalize bug ? double/float problem with vectors ?
-
 * quaternion rotation on vec4f ?
 * Other projection matrices
-
-* swap instead of xLeft / xRight => no clipping...
 
 
 
@@ -38,7 +34,6 @@ https://www.youtube.com/watch?v=nBzCS-Y0FcY&t=853s
 * github/readme display gif
 * port the new triangle routine to draw2D
 * check key behaviour linux vs windows
-* fullscreen (?)
 * Write documentation
 * Redo vectors again...
 

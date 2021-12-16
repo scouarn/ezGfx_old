@@ -73,6 +73,7 @@ void keydown(EZ_Key_t* k) {
 	else if (k->code == K_F12)
 		EZ_setFullscreen(false);
 
+	printf("key %d, char %c\n", k->code, k->typed);
 }
 
 
