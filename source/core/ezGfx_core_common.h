@@ -17,8 +17,8 @@
 
 /* Time */
 static struct timespec startTime;
-static struct timespec lastTime;
 static volatile bool running;
+static volatile double frameRate = -1.0; /* default negative (unlimited fps) */
 
 /* Drawing */
 static EZ_Image_t* canvas;
@@ -82,6 +82,10 @@ double EZ_getTime() {
 	time = (now.tv_sec - startTime.tv_sec) + (now.tv_nsec - startTime.tv_nsec) / 1000000000.0;
 
 	return time;
+}
+
+void EZ_frameRate(double fps) {
+	frameRate = fps;
 }
 
 EZ_Key_t* EZ_getKey(EZ_KeyCode_t code) {

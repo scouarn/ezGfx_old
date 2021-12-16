@@ -1,11 +1,11 @@
 #include "ezGfx_core_common.h"
 
 #include <pthread.h>
+#include <unistd.h>
 
 #include <X11/X.h>
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
-
 
 /* App */
 static Window win;
@@ -210,7 +210,7 @@ static void* mainThread(void* arg) {
 
 	/* init time */
 	clock_gettime(CLOCK_MONOTONIC, &startTime);
-	clock_gettime(CLOCK_MONOTONIC, &lastTime);
+	double lastTime = EZ_getTime();
 
 	/* init keys */
 	for (i = 0; i < _numberOfKeys; i++)
@@ -225,20 +225,12 @@ static void* mainThread(void* arg) {
 	buffer = malloc(winWidth * winHeight * sizeof(EZ_Px_t));
 
 
-
 	/* main loop */
 	while (running && disp) {
 
-		
-		/* elapsed time */
-		struct timespec now;
-		double elapsedTime;
-		clock_gettime(CLOCK_MONOTONIC, &now);
-		elapsedTime = (now.tv_sec - lastTime.tv_sec) + (now.tv_nsec - lastTime.tv_nsec) / 1000000000.0;
-		lastTime = now;
+		/* time control */
+		double loopBegin = EZ_getTime();
 
-		/* user function */
-		if (callback_draw) callback_draw(elapsedTime);
 
 		/* update keystates */
 		for (i = 0; i < _numberOfKeys; i++) {
@@ -373,8 +365,26 @@ static void* mainThread(void* arg) {
 			}
 		}
 
+
+		/* user function (recalculate delta after waiting) */
+		double now = EZ_getTime();
+		if (callback_draw) callback_draw(now - lastTime);
+		lastTime = now;
+
+
 		/* display */
 		if (canvas) EZ_redraw();
+
+
+		/* framerate keeping */
+		if (frameRate > 0.0) {
+
+			double delta = EZ_getTime() - loopBegin;
+			long remain = (1.0 / frameRate - delta) * 1000000;
+
+			if (remain > 0)
+				usleep(remain);
+		}
 
 
 	}

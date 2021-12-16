@@ -194,7 +194,7 @@ EZ_Mesh_t* EZ_mesh_loadOBJ(const char* fname) {
 					mesh->triangles[f_index].vert[i].normal = vn_buffer[vn - 1];
 				}
 
-				mesh->triangles[f_index].col< = EZ_WHITE;	
+				mesh->triangles[f_index].col = EZ_WHITE;	
 			}
 
 			f_index++;

@@ -155,8 +155,10 @@ static DWORD WINAPI mainThread(LPVOID arg) {
 
 
 	/* init time */
+	LARGE_INTEGER period;
+	HANDLE timer = CreateWaitableTimer(NULL, TRUE, NULL);
 	clock_gettime(CLOCK_MONOTONIC, &startTime);
-	clock_gettime(CLOCK_MONOTONIC, &lastTime);
+	double lastTime = EZ_getTime();
 
 	/* init keys */
 	int i;
@@ -219,14 +221,8 @@ static DWORD WINAPI mainThread(LPVOID arg) {
 
 
 		/* elapsed time */
-		struct timespec now;
-		double elapsedTime;
-		clock_gettime(CLOCK_MONOTONIC, &now);
-		elapsedTime = (now.tv_sec - lastTime.tv_sec) + (now.tv_nsec - lastTime.tv_nsec) / 1000000000.0;
-		lastTime = now;
+		double loopBegin = EZ_getTime();
 
-		/* user function */
-		if (callback_draw) callback_draw(elapsedTime);
 
 
 		/* update keystates */
@@ -244,9 +240,34 @@ static DWORD WINAPI mainThread(LPVOID arg) {
 			DispatchMessage(&Msg);
 		}	
 
+
+
+		/* user function (recalculate delta after waiting) */
+		double now = EZ_getTime();
+		if (callback_draw) callback_draw(now - lastTime);
+		lastTime = now;
+
+
 		/* display */
 		if (canvas && hwnd == GetActiveWindow()) /* if not active redraw will crash the program */
 			EZ_redraw();
+
+
+		/* framerate keeping */
+		if (frameRate > 0.0) {
+			
+			double delta = EZ_getTime() - loopBegin;
+			long remain = (1.0 / frameRate - delta) * 10000000;
+
+			if (remain > 0) {
+
+				period.QuadPart = -remain;
+				SetWaitableTimer(timer, &period, 0, NULL, NULL, 0);
+				WaitForSingleObject(timer, INFINITE);
+			}
+
+		}
+
 
 	}
 
@@ -256,6 +277,7 @@ static DWORD WINAPI mainThread(LPVOID arg) {
 	DeleteDC(buffer);
 	DeleteDC(screenDC);
 	CloseHandle(thread_handle);
+	CloseHandle(timer);
 
 	return 0;
 }

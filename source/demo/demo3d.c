@@ -36,6 +36,7 @@ void setup() {
 
 	EZ_bind(canvas);
 
+	EZ_frameRate(60.0);
 }
 
 
@@ -52,6 +53,8 @@ void draw(double dt) {
 	EZ_draw3D_mesh(render, cube, &trans, EZ_3D_FLAT_SHADED);
 
 	EZ_draw2D_image(canvas, texture, 0, 0);
+
+	printf("%lg ms\n", dt*1000.0);
 
 }
 

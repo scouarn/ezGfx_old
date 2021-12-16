@@ -31,10 +31,14 @@ void EZ_rename(const char*);      /* change the name of the window */
 void EZ_resize(int w, int h);     /* change the size of the window */
 
 void EZ_redraw(); /* force screen redraw (will call the draw callback) */
-void EZ_setMaximized(bool);  /* maximize window */
-void EZ_setFullscreen(bool); /* window fullscreen */
+void EZ_setMaximized(bool);    /* maximize window */
+void EZ_setFullscreen(bool);   /* window fullscreen */
 double EZ_getTime(); /* returns time in seconds since start of the thread */
 
+/* window framerate
+ * zero or negative -> max speed (default) 
+ */
+void EZ_frameRate(double fps);
 
 
 /* CALLBACK FUNCTIONS */
