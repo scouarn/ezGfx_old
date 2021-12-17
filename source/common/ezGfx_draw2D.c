@@ -182,74 +182,74 @@ void EZ_draw2D_tri(EZ_Image_t* target, EZ_Px_t col, int x1, int y1, int x2, int 
 }
 
 
-static void _flatTri(EZ_Image_t* target, EZ_Px_t col, int x1, int x2, int xTop, int yTop, int yBase) {
-	
-	/* dont divide by 0 ! */
-	if (yBase-yTop == 0) return;
-
-	/* equation for the left and right lines */
-	float Lslope = (float)(x1-xTop)/(yBase-yTop);
-	float Rslope = (float)(x2-xTop)/(yBase-yTop);
-
-	float Lordog = xTop - yTop * Lslope;
-	float Rordog = xTop - yTop * Rslope;
-
-	/* clip to fit drawing area */
-	int y1 = CLAMP(MIN(yTop, yBase),  0, target->h);
-	int y2 = CLAMP(MAX(yTop, yBase),  0, target->h);
-
-	/* get values of x for left and right line at y1 */
-	float Lx = Lordog + y1 * Lslope;
-	float Rx = Rordog + y1 * Rslope;
-
-
-	/* draw vertical lines from left to right (between Lx and Rx) */
-	for (int y = y1; y <= y2; y++) {
-		_HLine(target, col, y, Lx, Rx);
-		Lx += Lslope; Rx += Rslope;
-	}
-
-
-}
 
 void EZ_draw2D_fillTri(EZ_Image_t* target, EZ_Px_t col, int x1, int y1, int x2, int y2, int x3, int y3) {
 
 	/* sort points (y1 : top, y2 : mid, y3 : bot) */
 	if (y1 > y2) {
-		int t;
-		t = y1; y1 = y2; y2 = t;
-		t = x1; x1 = x2; x2 = t;
+		SWAP(y1, y2);
+		SWAP(x1, x2);
 	}
 	if (y1 > y3) {
-		int t;
-		t = y1; y1 = y3; y3 = t;
-		t = x1; x1 = x3; x3 = t;
+		SWAP(y1, y3);
+		SWAP(x1, x3);
 	}
 	if (y2 > y3) {
-		int t;
-		t = y2; y2 = y3; y3 = t;
-		t = x2; x2 = x3; x3 = t;
+		SWAP(y2, y3);
+		SWAP(x2, x3);
 	}
 
-	/* triangle flat on the top */
-	if (y1 == y2)
-		_flatTri(target, col, MIN(x1, x2), MAX(x1, x2), x3, y3, y1);
+	/* compute slopes */
+	int dx1 = x2 - x1;
+	int dy1 = y2 - y1;
 
-	/* triangle flat on the bottom */
-	else if (y2 == y3)
-		_flatTri(target, col, MIN(x2, x3), MAX(x2, x3), x1, y1, y3);
+	int dx2 = x3 - x1;
+	int dy2 = y3 - y1;
 
-	else {
+	int dx3 = x3 - x2;
+	int dy3 = y3 - y2;
 
-		/* slice triangle in two flat triangles */
-		float ratio  = (float)(y1 - y2 - 0.5f) / (y1 - y3);
-		int xSlice = ratio*x3 + (1.0f - ratio)*x1;
+	float dx_start = (float)dx1/dy1;
+	float dx_end   = (float)dx2/dy2;
 
-		/* draw the 2 new triangles */
-		_flatTri(target, col, MIN(x2, xSlice), MAX(x2, xSlice), x1, y1, y2 - 1);
-		_flatTri(target, col, MIN(x2, xSlice), MAX(x2, xSlice), x3, y3, y2);
 
+	/* "vertical" clipping */
+	int y_start = CLAMP(y1, 0, target->h);
+	int y_end   = CLAMP(y3, 0, target->h);
+
+	/* get values of x for left and right line at y0 */
+	float x_start = x1 + (y_start - y1) * dx_start;
+	float x_end   = x1 + (y_start - y1) * dx_end;
+
+	int sx, sy;
+
+	/* scan lines */
+	for (sy = y_start; sy < y_end; sy++) {
+
+		/* this line actually avoids dividing by zero,
+		   by skipping the top triangle when y1 == y2 (same for y2 == y3) */
+		if (sy == y2) {
+			dx_start = (float)dx3/dy3;
+			x_start = x2; /* seems to glitch if not corrected */
+		}
+
+
+		/* "horizontal" clipping*/
+		int xLeft  = CLAMP(x_start, 0, target->w);
+		int xRight = CLAMP(x_end,   0, target->w);
+
+		/* left-right sorting */
+		if (xLeft > xRight)
+			SWAP(xLeft, xRight);
+
+		/* draw */
+		for (sx = xLeft; sx < xRight; sx++)
+			target->px[sx + sy * target->w] = col;
+
+		x_start += dx_start; 
+		x_end   += dx_end;
 	}
+
 
 }
 

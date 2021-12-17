@@ -5,6 +5,7 @@ ezGfx
 Semi-private repo for a simple cross-platform graphics library project.
 Detailed documentation is not yet available. 
 
+![screen-gif](./demo3d.gif)
 
 
 TODO
@@ -33,7 +34,6 @@ https://www.youtube.com/watch?v=nBzCS-Y0FcY&t=853s
 * github/readme display gif
 * Redo vectors again...
 * scancode style keys
-* port the new triangle routine to draw2D
 * Write documentation
 
 
