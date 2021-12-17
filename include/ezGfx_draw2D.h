@@ -41,7 +41,7 @@ void EZ_draw2D_fillEllipse(EZ_Image_t* target, EZ_Px_t col, int x, int y, int se
 void EZ_draw2D_image           (EZ_Image_t* target, EZ_Image_t* source, int x, int y); 							   /* image copy with top left corner in x,y */
 void EZ_draw2D_croppedImage    (EZ_Image_t* target, EZ_Image_t* source, int x, int y, int u, int v, int w, int h); /* destination x,y and crop from u,v to u+w,v+h */
 void EZ_draw2D_resizedImage    (EZ_Image_t* target, EZ_Image_t* source, int x, int y, int w, int h); 			   /* resize to given size, skip or duplicate pixels when needed */
-void EZ_draw2D_transformedImage(EZ_Image_t* target, EZ_Image_t* source, EZ_Mat3_t* transformation); /* takes a 3x3 matrix */     	       /* draw image with given affine transformation matrix */
+void EZ_draw2D_transformedImage(EZ_Image_t* target, EZ_Image_t* source, EZ_Mat3_t* trans); /* takes a 3x3 matrix *//* draw image with given affine transformation matrix */
 
 
 #endif /* ezGfx_draw2D_h */

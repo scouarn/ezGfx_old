@@ -30,12 +30,11 @@ https://www.youtube.com/watch?v=nBzCS-Y0FcY&t=853s
 
 ## Misc
 
-* matrix inversion
 * github/readme display gif
-* port the new triangle routine to draw2D
-* check key behaviour linux vs windows
-* Write documentation
 * Redo vectors again...
+* scancode style keys
+* port the new triangle routine to draw2D
+* Write documentation
 
 
 ## New Extensions

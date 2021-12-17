@@ -18,7 +18,16 @@ void EZ_mat3_sub  (EZ_Mat3_t* res, EZ_Mat3_t* A, EZ_Mat3_t* B);
 void EZ_mat3_scale(EZ_Mat3_t* res, EZ_Mat3_t* A, float B);
 
 float EZ_mat3_det(EZ_Mat3_t* A);
-void EZ_mat3_inv(EZ_Mat3_t* res, EZ_Mat3_t* A);
+void  EZ_mat3_inv(EZ_Mat3_t* res, EZ_Mat3_t* A);
 
+void EZ_mat3_setId(EZ_Mat3_t* res);
+
+void EZ_mat3_setTranslate(EZ_Mat3_t* res, float x, float y);
+void EZ_mat3_setScale(EZ_Mat3_t* res, float x, float y);
+void EZ_mat3_setRot(EZ_Mat3_t* res, float a);
+
+void EZ_mat3_applyTranslate(EZ_Mat3_t* res, float x, float y);
+void EZ_mat3_applyScale(EZ_Mat3_t* res, float x, float y);
+void EZ_mat3_applyRot(EZ_Mat3_t* res, float a);
 
 #endif /* ezGfx_mat3_h */
