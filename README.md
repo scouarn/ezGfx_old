@@ -5,7 +5,9 @@ ezGfx
 Semi-private repo for a simple cross-platform graphics library project.
 Detailed documentation is not yet available. 
 
-![screen-gif](./demo3d.gif)
+<p align="center">
+  <img src="./demo3d.gif"/>
+</p>
 
 
 TODO
