@@ -2,20 +2,19 @@
 
 #include <pthread.h>
 #include <unistd.h>
-
-#include <linux/fb.h>		/* linux frame buffer */
-#include <linux/kd.h>  		/* terminal type/mode */
-#include <linux/input.h>	/* kb and mouse */
-#include <sys/ioctl.h>		/* system calls */
-#include <sys/mman.h>		/* MAP_ flags */
-#include <fcntl.h>			/* open device */
-#include <unistd.h>			/* close device */
-#include <signal.h>			/* failsafe */
+#include <linux/fb.h>
+#include <linux/kd.h>
+#include <linux/input.h>
+#include <sys/ioctl.h>
+#include <sys/mman.h>
+#include <fcntl.h>
+#include <signal.h>	
+#include <errno.h>
 
 
 #define DEV_FRAME_BUFFER "/dev/fb0"
 #define DEV_TERM         "/dev/console"
-#define DEV_MOUSE        "/dev/input/mouse0"
+#define DEV_MOUSE        "/dev/input/event7"
 
 
 
@@ -157,7 +156,7 @@ static void* mainThread(void* arg) {
 
 
 	/* Open mouse device */
-	ERR_assert(-1 != (hMouse = open(DEV_MOUSE, O_RDONLY)), 
+	ERR_assert(-1 != (hMouse = open(DEV_MOUSE, O_RDONLY | O_NONBLOCK)), 
 		"Couldn't open mouse device.");
 
 
@@ -165,19 +164,17 @@ static void* mainThread(void* arg) {
 	for (i = 0; i < _numberOfKeys; i++)
 		keyStates[i].code = i;
 
-
-
-
+	mouseState.x = 0;
+	mouseState.y = 0;
 
 	/* open the console device */
 	ERR_assert(-1 != (hTerm = open(DEV_TERM, O_NOCTTY)),
-		"Failed to open console device, maybe try running as root.");
+		"Failed to open console device.");
 
 	/* switch to graphics mode */
-	/*
 	ERR_assert(-1 != ioctl(hTerm, KDSETMODE, KD_GRAPHICS),
 		"Failed to enter graphics mode");
-	*/
+
 
 	/* override interrupts so it goes back to text mode CRITICAL! */
 	signal(SIGABRT, __failsafe__); 
@@ -210,17 +207,47 @@ static void* mainThread(void* arg) {
 			keyStates[i].released = false;
 		}
 		mouseState.wheel = 0;
+		mouseState.dx = 0;
+		mouseState.dy = 0;
 
-		struct input_event event;
+		struct input_event ev;
+		while(0 < read(hMouse, &ev, sizeof(struct input_event))  ) {
 
-		while(0 != read(hMouse, &event, sizeof(struct input_event))  ) {
+			if (ev.type == EV_REL)
+			switch (ev.code) {
 
-			printf("type %d\tcode %d\tvalue %d\n",
-				event.type, event.code, event.value);
+				case REL_X :
+					mouseState.dx = ev.value;
+				break;
 
-    	}
+				case REL_Y :
+					mouseState.dy = ev.value;
+				break;
 
-    	printf("frame\n");
+				case REL_WHEEL :
+					mouseState.wheel = ev.value;
+				break;
+
+			}
+
+		}
+
+		ERR_assert(errno == EAGAIN, "Error while reading mouse device.");
+
+		if (mouseState.dx != 0
+		 || mouseState.dy != 0
+		 || mouseState.wheel != 0) {
+			
+			int maxW = canvas ? canvas->w : 100;
+			int maxH = canvas ? canvas->h : 100;
+
+			mouseState.x = CLAMP(mouseState.x + mouseState.dx, 0, maxW);
+			mouseState.y = CLAMP(mouseState.y + mouseState.dy, 0, maxH);
+
+			if (callback_mouse) callback_mouse(&mouseState);
+		}
+
+
 
 
 		/* user function (recalculate delta after waiting) */

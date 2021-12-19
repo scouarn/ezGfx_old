@@ -8,6 +8,7 @@
 
 #include "ezGfx_core.h"
 #include "ezErr.h"
+#include "ezGfx_utils.h"
 
 #include <time.h>
 #include <string.h>

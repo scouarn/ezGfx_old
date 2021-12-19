@@ -33,7 +33,10 @@ https://www.youtube.com/watch?v=nBzCS-Y0FcY&t=853s
 
 ## Misc
 
-* linux with no WM ==> inputs (kb + mouse)
+* linux with no WM ==> kb inputs
+                   ==> pb with stdout when running ? missing newline ?
+                   ==> signals
+
 * github/readme display gif
 * Redo vectors again...
 * scancode style keys
