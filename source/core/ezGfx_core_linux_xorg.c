@@ -152,9 +152,9 @@ static EZ_KeyCode_t keyMap(int keyCode) {
 		case 0x22 : return K_OPEN;    case 0x23 : return K_CLOSE;
 		case 0x15 : return K_PLUS;    case 0x14 : return K_MINUS;
 
-		case 0x5b : return KP_DEC;	case 0x68 : return K_RETURN;
+		case 0x5b : return KP_DEC;	case 0x68 : return KP_ENTER;
 		case 0x3f : return KP_MUL;  case 0x6a : return KP_DIV;
-		case 0x56 : return K_PLUS;  case 0x52 : return K_MINUS;
+		case 0x56 : return KP_PLUS; case 0x52 : return KP_MINUS;
 
 		case 0x5a : return KP_0;  case 0x57 : return KP_1;  case 0x58 : return KP_2;
 		case 0x59 : return KP_3;  case 0x53 : return KP_4;  case 0x54 : return KP_5;

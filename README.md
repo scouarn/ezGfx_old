@@ -33,7 +33,8 @@ https://www.youtube.com/watch?v=nBzCS-Y0FcY&t=853s
 
 ## Misc
 
-* linux with no WM ==> kb inputs
+* linux with no WM ==> automatic device detection
+                   ==> mouse buttons
                    ==> pb with stdout when running ? missing newline ?
                    ==> signals
 

@@ -15,6 +15,7 @@
 #define DEV_FRAME_BUFFER "/dev/fb0"
 #define DEV_TERM         "/dev/console"
 #define DEV_MOUSE        "/dev/input/event7"
+#define DEV_KEYBOARD     "/dev/input/by-id/usb-SEM_USB_Keyboard-event-kbd"
 
 
 
@@ -23,6 +24,7 @@ static pthread_t thread;
 static void* mainThread(void* arg);
 static int hTerm;
 static int hMouse;
+static int hKb;
 
 /* Graphic context */
 static char* fbmem;
@@ -109,7 +111,63 @@ void EZ_redraw() {
 static EZ_KeyCode_t keyMap(int keyCode) {
 
 	switch (keyCode) {
+		
+		case KEY_SPACE :      return K_SPACE;   case KEY_BACKSPACE : return K_BACKSPACE;
+		case KEY_ESC :        return K_ESCAPE;  case KEY_TAB :       return K_TAB;
+		case KEY_ENTER :      return K_RETURN;
+
+		case KEY_LEFTSHIFT :  return K_LSHIFT;  case KEY_RIGHTSHIFT : return K_RSHIFT;
+		case KEY_LEFTCTRL :   return K_LCTRL;   case KEY_RIGHTCTRL :  return K_RCTRL;
+		case KEY_LEFTALT :    return K_LALT;    case KEY_RIGHTALT :   return K_RALT;
+
+		case KEY_CAPSLOCK :   return K_CAPS;    case KEY_NUMLOCK : return K_NUMLOCK;
+		case KEY_SCROLLLOCK : return K_SCROLL;  case KEY_PAUSE :   return K_PAUSE;
+		case KEY_INSERT :     return K_INS;     case KEY_DELETE :  return K_DEL;
+		
+		case KEY_HOME :       return K_HOME;    case KEY_END : return K_END;
+		case KEY_PAGEUP :     return K_PGUP;    case KEY_PAGEDOWN : return K_PGDN;
+		
+		case KEY_LEFT :       return K_LEFT;    case KEY_UP : return K_UP;
+		case KEY_RIGHT :      return K_RIGHT;   case KEY_DOWN : return K_DOWN;
+
+		case KEY_DOT :        return K_PERIOD;
+		case KEY_SEMICOLON :  return K_COLON;   case KEY_COMMA :      return K_COMMA;
+		case KEY_APOSTROPHE : return K_QUOTE;   case KEY_GRAVE :      return K_TILDE;
+		case KEY_SLASH :      return K_SLASH;   case KEY_BACKSLASH :  return K_BACKSLASH;
+		case KEY_LEFTBRACE :  return K_OPEN;    case KEY_RIGHTBRACE : return K_CLOSE;
+		case KEY_EQUAL :      return K_PLUS;    case KEY_MINUS :      return K_MINUS;
+
+		case KEY_KPDOT :      return KP_DEC;  case KEY_KPENTER : return KP_ENTER;
+		case KEY_KPASTERISK : return KP_MUL;  case KEY_KPSLASH : return KP_DIV;
+		case KEY_KPPLUS :     return KP_PLUS; case KEY_KPMINUS : return K_MINUS;
+
+		case KEY_KP0 : return KP_0;  case KEY_KP1 : return KP_1;  case KEY_KP2 : return KP_2;
+		case KEY_KP3 : return KP_3;  case KEY_KP4 : return KP_4;  case KEY_KP5 : return KP_5;
+		case KEY_KP6 : return KP_6;  case KEY_KP7 : return KP_7;  case KEY_KP8 : return KP_8;
+		case KEY_KP9 : return KP_9;
+
+		case KEY_0 : return K_0;   case KEY_1 : return K_1;   case KEY_2 : return K_2;
+		case KEY_3 : return K_3;   case KEY_4 : return K_4;   case KEY_5 : return K_5;
+		case KEY_6 : return K_6;   case KEY_7 : return K_7;   case KEY_8 : return K_8;
+		case KEY_9 : return K_9;
+
+		case KEY_F1  : return K_F1;  case KEY_F2  : return K_F2;  case KEY_F3  : return K_F3;
+		case KEY_F4  : return K_F4;  case KEY_F5  : return K_F5;  case KEY_F6  : return K_F6;
+		case KEY_F7  : return K_F7;  case KEY_F8  : return K_F8;  case KEY_F9  : return K_F9;
+		case KEY_F10 : return K_F10; case KEY_F11 : return K_F11; case KEY_F12 : return K_F12;
+
+		case KEY_Q : return K_Q;   case KEY_W : return K_W;   case KEY_E : return K_E;
+		case KEY_R : return K_R;   case KEY_T : return K_T;   case KEY_Y : return K_Y;
+		case KEY_U : return K_U;   case KEY_I : return K_I;   case KEY_O : return K_O;
+		case KEY_P : return K_P;   case KEY_A : return K_A;   case KEY_S : return K_S;
+		case KEY_D : return K_D;   case KEY_F : return K_F;   case KEY_G : return K_G;
+		case KEY_H : return K_H;   case KEY_J : return K_J;   case KEY_K : return K_K;
+		case KEY_L : return K_L;   case KEY_Z : return K_Z;   case KEY_X : return K_X;
+		case KEY_C : return K_C;   case KEY_V : return K_V;   case KEY_B : return K_B;
+		case KEY_N : return K_N;   case KEY_M : return K_M;
+
 		default : return K_ERROR;
+
 	}
 }
 
@@ -159,13 +217,17 @@ static void* mainThread(void* arg) {
 	ERR_assert(-1 != (hMouse = open(DEV_MOUSE, O_RDONLY | O_NONBLOCK)), 
 		"Couldn't open mouse device.");
 
+	mouseState.x = 0;
+	mouseState.y = 0;
 
-	/* init keys */
+
+	/* Open keyboard */
+	ERR_assert(-1 != (hKb = open(DEV_KEYBOARD, O_RDONLY | O_NONBLOCK)), 
+		"Couldn't open keyboard device.");
+
 	for (i = 0; i < _numberOfKeys; i++)
 		keyStates[i].code = i;
 
-	mouseState.x = 0;
-	mouseState.y = 0;
 
 	/* open the console device */
 	ERR_assert(-1 != (hTerm = open(DEV_TERM, O_NOCTTY)),
@@ -200,17 +262,13 @@ static void* mainThread(void* arg) {
 		/* time control */
 		double loopBegin = EZ_getTime();
 
+		struct input_event ev;
 
-		/* update keystates */
-		for (i = 0; i < _numberOfKeys; i++) {
-			keyStates[i].pressed  = false;
-			keyStates[i].released = false;
-		}
+		/* Handle mouse events */
 		mouseState.wheel = 0;
 		mouseState.dx = 0;
 		mouseState.dy = 0;
 
-		struct input_event ev;
 		while(0 < read(hMouse, &ev, sizeof(struct input_event))  ) {
 
 			if (ev.type == EV_REL)
@@ -248,6 +306,27 @@ static void* mainThread(void* arg) {
 		}
 
 
+		/* Handle keyboard events */
+		for (i = 0; i < _numberOfKeys; i++) {
+			keyStates[i].pressed  = false;
+			keyStates[i].released = false;
+		}
+
+		while(0 < read(hKb, &ev, sizeof(struct input_event))  ) {
+			
+			if (ev.type != EV_KEY) continue;
+
+			EZ_KeyCode_t kcode = keyMap(ev.code);
+
+			bool isPressed = ev.value > 0;
+
+			keyStates[kcode].pressed  =  isPressed;
+			keyStates[kcode].held     =  isPressed;
+			keyStates[kcode].released = !isPressed;
+
+			if (isPressed && callback_keyPressed) callback_keyPressed(&keyStates[kcode]);
+			else if (!isPressed && callback_keyReleased) callback_keyReleased(&keyStates[kcode]);
+		}
 
 
 		/* user function (recalculate delta after waiting) */
@@ -282,8 +361,11 @@ static void* mainThread(void* arg) {
 
 	munmap(fbmem, buffSize);
 	free(buffer);
+	
 	close(hFb);
 	close(hTerm);
+	close(hMouse);
+	close(hKb);
 
 	pthread_exit(NULL);
 

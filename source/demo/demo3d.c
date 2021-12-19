@@ -54,7 +54,7 @@ void draw(double dt) {
 	a += dt;
 
 	EZ_draw2D_image(canvas, texture, 0, 0);
-	printf("%lg ms\n", dt*1000.0);
+	// printf("%lg ms\n", dt*1000.0);
 }
 
 
@@ -73,7 +73,7 @@ void keydown(EZ_Key_t* k) {
 	else if (k->code == K_F12)
 		EZ_setFullscreen(false);
 
-	printf("key %d, char %c\n", k->code, k->typed);
+	printf("key %d\n", k->code);
 }
 
 
