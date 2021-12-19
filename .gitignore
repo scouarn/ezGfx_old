@@ -1,5 +1,6 @@
 *tar.gz
 *.zip
+*.log
 *.o
 *.so
 *.wav

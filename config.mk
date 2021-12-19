@@ -4,7 +4,7 @@ CFLAGS := -O3 -Wall -Iinclude
 
 ifeq ($(OS),Windows_NT)
 	
-	#CC := mingw32-gcc
+# 	CC := mingw32-gcc
 	CC := x86_64-w64-mingw32-gcc
 
 	LIBS := -lgdi32
@@ -20,11 +20,15 @@ else
 
 	CC := gcc
 
-	LIBS := -lX11 -lpthread
+	LIBS := 
+# 	LIBS += -lX11
+	LIBS += -lpthread
+
 	OBJFLAGS := -c -fPIC
 	LIBFLAGS := -shared
 
-	CORE := ezGfx_core_linux_xorg
+# 	CORE := ezGfx_core_linux_xorg # requires -lX11
+	CORE := ezGfx_core_linux_void
 	LIB := bin/libezgfx.so
 
 	forceremove = rm -rf $(1)

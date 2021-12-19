@@ -102,6 +102,10 @@ EZ_Mouse_t* EZ_getMouse() {
 static void getCanvasRect(__rect__* rec) {
 
 	if (!canvas || canvas->h == 0 || winHeight == 0) {
+		rec->x1 = 0; rec->y1 = 0;
+		rec->x2 = 0; rec->y2 = 0;
+		rec->cx = 0; rec->cy = 0;
+		
 		return;
 	}
 

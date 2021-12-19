@@ -33,6 +33,7 @@ https://www.youtube.com/watch?v=nBzCS-Y0FcY&t=853s
 
 ## Misc
 
+* linux with no WM ==> inputs (kb + mouse)
 * github/readme display gif
 * Redo vectors again...
 * scancode style keys
@@ -42,10 +43,8 @@ https://www.youtube.com/watch?v=nBzCS-Y0FcY&t=853s
 ## New Extensions
 
 * GUI : windows, textboxes, buttons, sliders...
-* glsl fragment shaders => standalone project
 * splines calculation / bezier curves 2D/3D
 * voxel engine
-* physics
 
 * lua / python / lisp / perl / js / bash / brainfuck / BNF defined / ocaml/ ??
 	=> on the fly compiled scripting language ?
@@ -55,10 +54,10 @@ https://www.youtube.com/watch?v=nBzCS-Y0FcY&t=853s
 
 
 
+
 ## Platforms
 
 * wasm support
-* linux with no WM
 
 
 ## 2D ext

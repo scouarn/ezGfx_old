@@ -54,7 +54,7 @@ void draw(double dt) {
 	a += dt;
 
 	EZ_draw2D_image(canvas, texture, 0, 0);
-	// printf("%lg ms\n", dt*1000.0);
+	printf("%lg ms\n", dt*1000.0);
 }
 
 
