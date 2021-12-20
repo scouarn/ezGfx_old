@@ -33,16 +33,13 @@ https://www.youtube.com/watch?v=nBzCS-Y0FcY&t=853s
 
 ## Misc
 
+* super/"windows" keys
 * keystate : include mod key
-
+* scancode style keys on windows
 * linux with no WM ==> automatic device detection
-                   ==> typed
-                   ==> pb with stdout when running ? missing newline ?
-                   ==> signals
 
 * github/readme display gif
 * Redo vectors again...
-* scancode style keys
 * Write documentation
 
 

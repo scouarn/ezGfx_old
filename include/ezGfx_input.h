@@ -17,11 +17,19 @@ typedef enum {
 	_numberOfKeys
 } EZ_KeyCode_t;
 
+/*
+#define K_MOD_CTRL  0x1
+#define K_MOD_SHIFT 0x2
+#define K_MOD_ALT   0x4
+#define K_MOD_SUPER 0x8
+*/
+
 typedef struct {
 	bool pressed;	/* has it been pressed on this frame ? */
 	bool released;	/* has it been released on this frame ? */
 	bool held;		/* is it still held ? */
 	char typed;		/* the actual character typed ('\0' if not ascii) */
+	/*int  mod;*/		/* bit field with modifier keys */
 	EZ_KeyCode_t code;
 } EZ_Key_t;
 
