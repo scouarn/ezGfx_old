@@ -31,16 +31,21 @@ https://www.youtube.com/watch?v=nBzCS-Y0FcY&t=853s
 
 
 
-## Misc
+## Inputs
 
 * super/"windows" keys
 * keystate : include mod key
 * scancode style keys on windows
 * linux with no WM ==> automatic device detection
+* key typed on windows
 
-* github/readme display gif
+
+## Misc 
+
 * Redo vectors again...
 * Write documentation
+* wasm support
+
 
 
 ## New Extensions
@@ -57,46 +62,19 @@ https://www.youtube.com/watch?v=nBzCS-Y0FcY&t=853s
 
 
 
-
-## Platforms
-
-* wasm support
-
-
 ## 2D ext
 
 * dithering / demo
 * "mode 7" demo
 
 
-
-## Sound
-
-* oscilloscope emulator demo
-* windows sound
-* no alsa
-* on the fly file reading (no pcm array but "stream"... block by block)
-* oscillo sound viewer
-* midi / sequencer
-* instruments
-* score / midi editor
-* FFT
-* audio in
-
-
 ## Fonts
-
 * UTF fonts
 * TTF fonts
 
-## Formats
 
-* mesh files & materials
-* midi
-* vst
+## Formats
 * png
 * jpeg
-* font ttf
-* config files
-* json files
+* config files / json files
 
