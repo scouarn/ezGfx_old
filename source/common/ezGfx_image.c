@@ -1,7 +1,10 @@
 #include "ezGfx_image.h"
+#include "ezGfx_utils.h"
 #include "ezErr.h"
+
 #include <stdlib.h>
 #include <stdio.h>
+
 
 EZ_Image_t* EZ_image_make(int w, int h) {
 
@@ -20,7 +23,14 @@ void EZ_image_free(EZ_Image_t* img) {
 	free(img);
 }
 
+EZ_Px_t* EZ_image_samplef(EZ_Image_t* img, float x, float y) {
 
+	int sample_x = CLAMP(x * img->w, 0, img->w - 1);
+	int sample_y = CLAMP(y * img->h, 0, img->h - 1);
+
+	return &(img->px[sample_x + sample_y * img->w]);
+			
+}
 
 
 

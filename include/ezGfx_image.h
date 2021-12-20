@@ -11,7 +11,9 @@ typedef struct {
 
 
 EZ_Image_t* EZ_image_make(int w, int h); /* allocates memory for an image of given size */
-void        EZ_image_free(EZ_Image_t*);    /* free allocated memory */
+void        EZ_image_free(EZ_Image_t*);  /* free allocated memory */
+
+EZ_Px_t*    EZ_image_samplef(EZ_Image_t* img, float x, float y); /* returns a pointer to the pixel (normalized coordinates) */
 
 EZ_Image_t* EZ_image_loadBMP(const char* fname);
 void        EZ_image_saveBMP(EZ_Image_t* image, const char* fname);

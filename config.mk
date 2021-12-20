@@ -27,8 +27,8 @@ else
 	OBJFLAGS := -c -fPIC
 	LIBFLAGS := -shared
 
-# 	CORE := ezGfx_core_linux_xorg
-	CORE := ezGfx_core_linux_void
+	CORE := ezGfx_core_linux_xorg
+# 	CORE := ezGfx_core_linux_void
 	LIB := bin/libezgfx.so
 
 	forceremove = rm -rf $(1)

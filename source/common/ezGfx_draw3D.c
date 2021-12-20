@@ -53,7 +53,10 @@ static void _normal(EZ_Vec_t* res, EZ_Vec_t* p1, EZ_Vec_t* p2, EZ_Vec_t* p3) {
 	EZ_vec_normal(res, &normal);
 }
 
-
+typedef struct {
+	int x, y;
+	float u, v, z;
+} screen_pos;
 
 
 #define PROJECT_SUCCESS 0
@@ -62,27 +65,11 @@ static void _normal(EZ_Vec_t* res, EZ_Vec_t* p1, EZ_Vec_t* p2, EZ_Vec_t* p3) {
 #define PROJECT_DIVZERO 3
 
 
-
-
-void EZ_draw3D_tri(EZ_3DTarget_t* tgt, EZ_Image_t* texture, EZ_Tri_t* tri, EZ_Mat4_t* trns, EZ_3DMode_t mode) { 
-
-	#define PX tgt->img->px
-	#define WIDTH tgt->img->w
-	#define HEIGHT tgt->img->h
+static int _projtri(EZ_3DTarget_t* tgt, screen_pos res[3], EZ_Tri_t* tri, EZ_Mat4_t* trns) {
 
 	int i;
 
-	EZ_Mat4_t fullTrans;
 	EZ_Vec_t transformed[3], projected[3];
-	
-	struct { 
-		int x, y;
-		float u, v, z;
-	} res[3];
-
-
-	/* project the triangle */
-	EZ_mat4_mul(&fullTrans, tgt->trns, trns);
 
 
 	/* transform  -  apply transform matrix */
@@ -91,7 +78,7 @@ void EZ_draw3D_tri(EZ_3DTarget_t* tgt, EZ_Image_t* texture, EZ_Tri_t* tri, EZ_Ma
 
 		/* don't render faces that are behind the camera */
 		if (transformed[i].z < 0.0) 
-			return;
+			return PROJECT_BEHIND;
 	}
 
 
@@ -105,7 +92,7 @@ void EZ_draw3D_tri(EZ_3DTarget_t* tgt, EZ_Image_t* texture, EZ_Tri_t* tri, EZ_Ma
 		/* non linear part of the projection */
 		/* don't divide by 0 */
 		if (projected[i].w == 0.0) 
-			return;
+			return PROJECT_DIVZERO;
 
 
 		const float z = 1.0 / projected[i].w;
@@ -115,12 +102,10 @@ void EZ_draw3D_tri(EZ_3DTarget_t* tgt, EZ_Image_t* texture, EZ_Tri_t* tri, EZ_Ma
 
 		/* convert to pixel space */
 		/* from -1 to +1 with y from bottom to top */
-		res[i].x = (projected[i].x + 1.0f) * 0.5f * WIDTH;
-		res[i].y = (projected[i].y + 1.0f) * 0.5f * HEIGHT;
-
-		/* write uv information */
-		res[i].u = tri->vert[i].u * z;
-		res[i].v = tri->vert[i].v * z;
+		res[i].x = (projected[i].x + 1.0f) * 0.5f * tgt->img->w;
+		res[i].y = (projected[i].y + 1.0f) * 0.5f * tgt->img->h;
+		res[i].u = tri->vert[i].u;
+		res[i].v = tri->vert[i].v;
 		res[i].z = z;
 	}
 
@@ -132,22 +117,17 @@ void EZ_draw3D_tri(EZ_3DTarget_t* tgt, EZ_Image_t* texture, EZ_Tri_t* tri, EZ_Ma
 	const float nz = (projected[1].x - projected[0].x) * (projected[2].y - projected[0].y) -
 				     (projected[1].y - projected[0].y) * (projected[2].x - projected[0].x);
 
-	if (nz > 0.0f) return;
+	if (nz > 0.0f) return PROJECT_BEHIND;
 	
-
-
 
 	/* compute world space normal */
 	_normal(&tri->normal, &transformed[0], &transformed[1], &transformed[2]);
 
-
 	/* light and shading */
 	EZ_Vec_t l_dir = {{0.0f, 0.0f, 1.0f}};
-	float shade = CLAMP(EZ_vec_dot(&tri->normal, &l_dir), 0.25f, 1.0f);
+	tri->illum = CLAMP(EZ_vec_dot(&tri->normal, &l_dir), 0.0, 1.0);
 
-
-
-	/* sort points (0_y : top, 1_y : mid, 2_y : bot) */
+	/* sort for drawing */
 	if (res[0].y > res[1].y) {
 		SWAP(res[0],  res[1]);
 	}
@@ -158,99 +138,193 @@ void EZ_draw3D_tri(EZ_3DTarget_t* tgt, EZ_Image_t* texture, EZ_Tri_t* tri, EZ_Ma
 		SWAP(res[1],  res[2]);
 	}
 
-	/* compute slopes */
-	int dx1 = res[1].x - res[0].x;
-	int dy1 = res[1].y - res[0].y;
 
-	int dx2 = res[2].x - res[0].x;
-	int dy2 = res[2].y - res[0].y;
+	return PROJECT_SUCCESS;
 
-	int dx3 = res[2].x - res[1].x;
-	int dy3 = res[2].y - res[1].y;
+}
 
-	float dx_start = (float)dx1/dy1;
-	float dx_end   = (float)dx2/dy2;
+void EZ_draw3D_wireTri(EZ_3DTarget_t* tgt, EZ_Tri_t* tri, EZ_Mat4_t* trns) {
 
 
-	/* "vertical" clipping */
-	int y_start = CLAMP(res[0].y, 0, HEIGHT);
-	int y_end   = CLAMP(res[2].y, 0, HEIGHT);
+	screen_pos vtx[3];
 
-	/* get values of x for left and right line at y0 */
-	float x_start = res[0].x + (y_start - res[0].y) * dx_start;
-	float x_end   = res[0].x + (y_start - res[0].y) * dx_end;
+	if (PROJECT_SUCCESS != _projtri(tgt, vtx, tri, trns)) return;
 
-	int sx, sy;
 
+	float dxdy1 = (float)(vtx[1].x - vtx[0].x)/(vtx[1].y - vtx[0].y);
+	float dxdy2 = (float)(vtx[2].x - vtx[0].x)/(vtx[2].y - vtx[0].y);
+
+	float x_start = vtx[0].x;
+	float x_end   = vtx[0].x;
+
+	/* scan lines */
+	for (int y = vtx[0].y; y < vtx[2].y; y++) {
+
+		/* switch to bottom half of the triangle */
+		if (y == vtx[1].y) {
+			
+			dxdy1 = (float)(vtx[2].x - vtx[1].x)/(vtx[2].y - vtx[1].y);
+			x_start = vtx[1].x;
+
+		}
+
+
+		tgt->img->px[(int)x_start + y * tgt->img->w] = tri->col;
+		tgt->img->px[(int)x_end   + y * tgt->img->w] = tri->col;
+
+
+		x_start += dxdy1;
+		x_end   += dxdy2;
+
+	}
+	
+}
+
+void EZ_draw3D_flatTri(EZ_3DTarget_t* tgt, EZ_Tri_t* tri, EZ_Mat4_t* trns) {
+
+
+	screen_pos vtx[3];
+
+	if (PROJECT_SUCCESS != _projtri(tgt, vtx, tri, trns)) return;
+
+
+	float dxdy1 = (float)(vtx[1].x - vtx[0].x)/(vtx[1].y - vtx[0].y);
+	float dxdy2 = (float)(vtx[2].x - vtx[0].x)/(vtx[2].y - vtx[0].y);
+
+	float x_start = vtx[0].x;
+	float x_end   = vtx[0].x;
+
+	/* scan lines */
+	for (int y = vtx[0].y; y < vtx[2].y; y++) {
+
+		/* switch to bottom half of the triangle */
+		if (y == vtx[1].y) {
+			dxdy1 = (float)(vtx[2].x - vtx[1].x)/(vtx[2].y - vtx[1].y);
+			x_start = vtx[1].x;
+		}
+
+		int x_left, x_right;
+
+		if (x_start < x_end) {
+			x_left  = x_start;
+			x_right = x_end;
+		} 
+		else {
+			x_left  = x_end;
+			x_right = x_start;
+		}
+
+		for (int x = x_left; x < x_right; x++) {
+
+			EZ_Px_t px = tri->col;
+
+			px.r *= tri->illum;
+			px.g *= tri->illum;
+			px.b *= tri->illum;
+
+			tgt->img->px[x + y * tgt->img->w] = px;
+		}
+
+		x_start += dxdy1;
+		x_end   += dxdy2;
+
+	}
+
+}
+
+void EZ_draw3D_texTri(EZ_3DTarget_t* tgt, EZ_Image_t* tex, EZ_Tri_t* tri, EZ_Mat4_t* trns) { 
+
+
+	screen_pos vtx[3];
+
+	if (PROJECT_SUCCESS != _projtri(tgt, vtx, tri, trns)) return;
+
+
+	float dxdy1 = (float)(vtx[1].x - vtx[0].x)/(vtx[1].y - vtx[0].y);
+	float dxdy2 = (float)(vtx[2].x - vtx[0].x)/(vtx[2].y - vtx[0].y);
+
+	float dudy1 = (float)(vtx[1].u - vtx[0].u)/(vtx[1].y - vtx[0].y);
+	float dudy2 = (float)(vtx[2].u - vtx[0].u)/(vtx[2].y - vtx[0].y);
+
+	float dvdy1 = (float)(vtx[1].v - vtx[0].v)/(vtx[1].y - vtx[0].y);
+	float dvdy2 = (float)(vtx[2].v - vtx[0].v)/(vtx[2].y - vtx[0].y);
+
+
+	float x_start = vtx[0].x;
+	float x_end   = vtx[0].x;
+
+	float u_start = vtx[0].u;
+	float u_end   = vtx[0].u;
+			
+	float v_start = vtx[0].v;
+	float v_end   = vtx[0].v;
 
 
 	/* scan lines */
-	for (sy = y_start; sy < y_end; sy++) {
+	for (int y = vtx[0].y; y < vtx[2].y; y++) {
 
-		/* this line actually avoids dividing by zero,
-		   by skipping the top triangle when y1 == y2 (same for y2 == y3) */
-		if (sy == res[1].y) {
-			dx_start = (float)dx3/dy3;
-			x_start = res[1].x; /* seems to glitch if not corrected */
-		}
+		/* switch to bottom half of the triangle */
+		if (y == vtx[1].y) {
+			
+			dxdy1 = (float)(vtx[2].x - vtx[1].x)/(vtx[2].y - vtx[1].y);
+			dudy1 = (float)(vtx[2].u - vtx[1].u)/(vtx[2].y - vtx[1].y);
+			dvdy1 = (float)(vtx[2].v - vtx[1].v)/(vtx[2].y - vtx[1].y);
 
-
-		/* "horizontal" clipping*/
-		int xLeft  = CLAMP(x_start, 0, WIDTH);
-		int xRight = CLAMP(x_end,   0, WIDTH);
-
-		/* left-right sorting */
-		if (xLeft > xRight)
-			SWAP(xLeft, xRight);
-
-
-		switch (mode) {
-
-			case EZ_3D_WIRE :
-				PX[xLeft + sy * WIDTH] = EZ_WHITE;
-				PX[xLeft + sy * WIDTH] = EZ_WHITE;
-			break;
-
-
-			case EZ_3D_FLAT :
-				for (sx = xLeft; sx < xRight; sx++)
-					PX[sx + sy * WIDTH] = tri->col;
-			break;
-
-
-			case EZ_3D_FLAT_SHADED : {
-
-				EZ_Px_t col = tri->col;
-				col.r *= shade;
-				col.g *= shade;
-				col.b *= shade;
-
-				for (sx = xLeft; sx < xRight; sx++)
-					PX[sx + sy * WIDTH] = col;
-			}
-			break;
-
-			case EZ_3D_TEXTURE : {
-					
-				for (sx = xLeft; sx < xRight; sx++) {
-
-					PX[sx + sy * WIDTH] = texture->px[0 + 0 * texture->w];
-				}
-
-			}
-			break;
-
-
-			default : break;
-
+			x_start = vtx[1].x;
+			u_start = vtx[1].u;
+			v_start = vtx[1].v;
 
 		}
 
-		x_start += dx_start; 
-		x_end   += dx_end;
+
+		float dudx = (float)(u_end - u_start)/(x_end - x_start);
+		float dvdx = (float)(v_end - v_start)/(x_end - x_start);
+
+		/* sort */
+		int x_left, x_right;
+		float u_left, v_left;
+
+		if (x_start < x_end) {
+			x_left  = x_start;
+		    x_right = x_end;
+		   	u_left  = u_start;
+		    v_left  = v_start;
+		} 
+		else {
+			x_left  = x_end;
+		    x_right = x_start;
+		    u_left  = u_end;
+		    v_left  = v_end;
+		}
+
+
+		/* draw line */
+		float u = u_left;
+		float v = v_left;
+
+		for (int x = x_left; x < x_right; x++) {
+
+			EZ_Px_t px = *EZ_image_samplef(tex, u, v);
+
+			px.r *= tri->illum;
+			px.g *= tri->illum;
+			px.b *= tri->illum;
+
+			tgt->img->px[x + y * tgt->img->w] = px;
+
+			u += dudx;
+			v += dvdx;
+		}
+
+		x_start += dxdy1;
+		x_end   += dxdy2;
+
+		u_start += dudy1;
+		u_end   += dudy2;
+
+		v_start += dvdy1;
+		v_end   += dvdy2;
 	}
-
-
 
 }
 
@@ -259,7 +333,6 @@ void EZ_draw3D_mesh(EZ_3DTarget_t* tgt, EZ_Mesh_t* mesh, EZ_Mat4_t* trns, EZ_3DM
 
 	/* draw each triangle */
 	for (i = 0; i < mesh->nPoly; i++) {
-		EZ_draw3D_tri(tgt, mesh->texture, mesh->triangles + i, trns, mode);
+		EZ_draw3D_texTri(tgt, mesh->texture, mesh->triangles + i, trns);
 	}
-
 }

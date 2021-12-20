@@ -27,11 +27,11 @@ void setup() {
 
 	texture = EZ_image_loadBMP("assets/texture.bmp");
 	cube = EZ_mesh_loadOBJ("assets/cube.obj");
-	// cube = DEBUG_EZ_mesh_unitCube();
 
 	ERR_assert(texture && cube, "Couldn't load assets");
 
 	cube->texture = texture; 
+
 
 
 	// EZ_setFullscreen(true);
@@ -43,17 +43,18 @@ void setup() {
 void draw(double dt) {
 
 	EZ_draw2D_clear(canvas, EZ_BW(51));
-
-	EZ_mat4_setTranslate(&trans, 2.0*cos(a), 2.0*sin(a), 10.0-cos(a));
-	EZ_mat4_applyRotX(&trans, a);
-	EZ_mat4_applyRotY(&trans, 0.8*a);
+	
+	EZ_mat4_setId(&trans);
+	EZ_mat4_applyTranslate(&trans, 0, 0, 10.0);
+	// EZ_mat4_applyTranslate(&trans, 2.0*cos(a), 2.0*sin(a), 5.0-cos(a));
+	// EZ_mat4_applyRotX(&trans, a);
+	EZ_mat4_applyRotY(&trans, 1.5*a);
 
 	EZ_draw3D_startScene(render);
-	EZ_draw3D_mesh(render, cube, &trans, EZ_3D_FLAT_SHADED);
+	EZ_draw3D_mesh(render, cube, &trans, EZ_3D_TEXTURE);
 
 	a += dt;
 
-	EZ_draw2D_image(canvas, texture, 0, 0);
 	// printf("%lg ms\n", dt*1000.0);
 }
 
@@ -72,6 +73,7 @@ void keydown(EZ_Key_t* k) {
 		case K_F11 : EZ_setFullscreen(true);  break;
 		case K_F12 : EZ_setFullscreen(false); break;
 		case K_ESCAPE : EZ_stop(); break;
+		case K_TAB : EZ_image_saveBMP(canvas, "screenshot.bmp");
 
 		default : break;
 	}

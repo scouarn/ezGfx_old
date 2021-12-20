@@ -12,17 +12,17 @@ typedef struct {
 } EZ_Vertex_t;
 
 typedef struct {
-  EZ_Vertex_t vert[3];
-  EZ_Vec_t normal;
-  EZ_Px_t col;
-  
+	EZ_Vertex_t vert[3];
+	EZ_Vec_t normal;
+	EZ_Px_t col;
+	float illum;
+
 } EZ_Tri_t;
 
 
 typedef struct {
   EZ_Tri_t* triangles;
   unsigned long nPoly;
-
   EZ_Image_t* texture;
 
 } EZ_Mesh_t;
