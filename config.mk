@@ -21,13 +21,13 @@ else
 	CC := gcc
 
 	LIBS := 
-# 	LIBS += -lX11
+	LIBS += -lX11
 	LIBS += -lpthread
 
 	OBJFLAGS := -c -fPIC
 	LIBFLAGS := -shared
 
-# 	CORE := ezGfx_core_linux_xorg # requires -lX11
+# 	CORE := ezGfx_core_linux_xorg
 	CORE := ezGfx_core_linux_void
 	LIB := bin/libezgfx.so
 

@@ -10,7 +10,7 @@
 #include <fcntl.h>
 #include <signal.h>	
 #include <errno.h>
-
+#include <termios.h>
 
 #define DEV_FRAME_BUFFER "/dev/fb0"
 #define DEV_TERM         "/dev/console"
@@ -111,6 +111,10 @@ void EZ_redraw() {
 static EZ_KeyCode_t keyMap(int keyCode) {
 
 	switch (keyCode) {
+
+		case BTN_LEFT :   return K_LMB;
+		case BTN_RIGHT :  return K_RMB;
+		case BTN_MIDDLE : return K_MMB;
 		
 		case KEY_SPACE :      return K_SPACE;   case KEY_BACKSPACE : return K_BACKSPACE;
 		case KEY_ESC :        return K_ESCAPE;  case KEY_TAB :       return K_TAB;
@@ -172,18 +176,18 @@ static EZ_KeyCode_t keyMap(int keyCode) {
 }
 
 
-void __failsafe__(int sig) {
-	EZ_stop();
-}
-
 static void* mainThread(void* arg) {
 	int i;
+
+	struct termios prev;
+	struct termios settings;
+	struct input_event ev;
 
 
 	/* https://docs.huihoo.com/doxygen/linux/kernel/3.7/structfb__var__screeninfo.html */
 	/* https://cmcenroe.me/2018/01/30/fbclock.html */
 	/* https://jiafei427.wordpress.com/2017/03/13/linux-reading-the-mouse-events-datas-from-devinputmouse0/ */
-
+	/* https://viewsourcecode.org/snaptoken/kilo/02.enteringRawMode.html */
 
 	/* open frame buffer device */
 	ERR_assert(-1 != (hFb = open(DEV_FRAME_BUFFER, O_RDWR)), 
@@ -225,9 +229,19 @@ static void* mainThread(void* arg) {
 	ERR_assert(-1 != (hKb = open(DEV_KEYBOARD, O_RDONLY | O_NONBLOCK)), 
 		"Couldn't open keyboard device.");
 
-	for (i = 0; i < _numberOfKeys; i++)
+	for (i = 0; i < _numberOfKeys; i++) {
 		keyStates[i].code = i;
+		keyStates[i].typed = '\0';
+	}
 
+	/* Set terminal to raw mode (typed key) */
+	tcgetattr(STDIN_FILENO, &prev);
+	settings = prev;
+	settings.c_iflag &= ~(IXON | ICRNL);
+	settings.c_lflag &= ~(ECHO | ICANON | IEXTEN | ISIG | SIGTSTP);
+	settings.c_cc[VMIN]  = 0;
+	settings.c_cc[VTIME] = 0;
+	tcsetattr(STDIN_FILENO, TCSAFLUSH, &settings);
 
 	/* open the console device */
 	ERR_assert(-1 != (hTerm = open(DEV_TERM, O_NOCTTY)),
@@ -236,16 +250,6 @@ static void* mainThread(void* arg) {
 	/* switch to graphics mode */
 	ERR_assert(-1 != ioctl(hTerm, KDSETMODE, KD_GRAPHICS),
 		"Failed to enter graphics mode");
-
-
-	/* override interrupts so it goes back to text mode CRITICAL! */
-	signal(SIGABRT, __failsafe__); 
-	signal(SIGFPE,  __failsafe__);
-	signal(SIGILL,  __failsafe__);
-	signal(SIGINT,  __failsafe__);
-	signal(SIGTERM, __failsafe__);
-
-
 
 	/* init time */
 	clock_gettime(CLOCK_MONOTONIC, &startTime);
@@ -262,9 +266,14 @@ static void* mainThread(void* arg) {
 		/* time control */
 		double loopBegin = EZ_getTime();
 
-		struct input_event ev;
 
-		/* Handle mouse events */
+		/* Handle mouse and keyboard events */
+
+		for (i = 0; i < _numberOfKeys; i++) {
+			keyStates[i].pressed  = false;
+			keyStates[i].released = false;
+		}
+
 		mouseState.wheel = 0;
 		mouseState.dx = 0;
 		mouseState.dy = 0;
@@ -288,6 +297,22 @@ static void* mainThread(void* arg) {
 
 			}
 
+			/* mouse button presses */
+			else if (ev.type == EV_KEY) {
+				EZ_KeyCode_t kcode = keyMap(ev.code);
+				EZ_Key_t *key = &keyStates[kcode];
+
+				bool isPressed = ev.value > 0;
+
+				key->pressed  =  isPressed;
+				key->held     =  isPressed;
+				key->released = !isPressed;
+
+				if (isPressed && callback_keyPressed) callback_keyPressed(key);
+				else if (!isPressed && callback_keyReleased) callback_keyReleased(key);
+
+			}
+
 		}
 
 		ERR_assert(errno == EAGAIN, "Error while reading mouse device.");
@@ -306,26 +331,31 @@ static void* mainThread(void* arg) {
 		}
 
 
-		/* Handle keyboard events */
-		for (i = 0; i < _numberOfKeys; i++) {
-			keyStates[i].pressed  = false;
-			keyStates[i].released = false;
-		}
 
 		while(0 < read(hKb, &ev, sizeof(struct input_event))  ) {
 			
 			if (ev.type != EV_KEY) continue;
 
 			EZ_KeyCode_t kcode = keyMap(ev.code);
+			EZ_Key_t *key = &keyStates[kcode];
 
 			bool isPressed = ev.value > 0;
 
-			keyStates[kcode].pressed  =  isPressed;
-			keyStates[kcode].held     =  isPressed;
-			keyStates[kcode].released = !isPressed;
+			key->pressed  =  isPressed;
+			key->held     =  isPressed;
+			key->released = !isPressed;
 
-			if (isPressed && callback_keyPressed) callback_keyPressed(&keyStates[kcode]);
-			else if (!isPressed && callback_keyReleased) callback_keyReleased(&keyStates[kcode]);
+			if (isPressed) {
+				char c = '\0';
+				read(STDIN_FILENO, &c, 1);
+				tcflush(STDIN_FILENO, TCIFLUSH);
+
+				key->typed = c;
+			}
+
+			if (isPressed && callback_keyPressed) callback_keyPressed(key);
+			else if (!isPressed && callback_keyReleased) callback_keyReleased(key);
+			
 		}
 
 
@@ -336,7 +366,7 @@ static void* mainThread(void* arg) {
 
 
 		/* display */
-		if (canvas) EZ_redraw();
+		// if (canvas) EZ_redraw();
 
 
 		/* framerate keeping */
@@ -358,6 +388,8 @@ static void* mainThread(void* arg) {
 	/* get back to text mode */
 	ERR_assert(-1 != ioctl(hTerm, KDSETMODE, KD_TEXT),
 		"Failed to get back to text mode");
+
+	tcsetattr(STDIN_FILENO, TCSAFLUSH, &prev);
 
 	munmap(fbmem, buffSize);
 	free(buffer);

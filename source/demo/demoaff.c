@@ -65,6 +65,8 @@ void keydown(EZ_Key_t* k) {
 		case K_R : a += 0.1; break;
 		case K_T : a -= 0.1; break;
 
+		case K_ESCAPE : EZ_stop(); break; 
+
 		default : break;
 	}
 		

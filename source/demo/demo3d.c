@@ -67,13 +67,14 @@ void kill() {
 
 void keydown(EZ_Key_t* k) {
 
-	if (k->code == K_F11)
-		EZ_setFullscreen(true);
+	switch (k->code) {
 
-	else if (k->code == K_F12)
-		EZ_setFullscreen(false);
+		case K_F11 : EZ_setFullscreen(true);  break;
+		case K_F12 : EZ_setFullscreen(false); break;
+		case K_ESCAPE : EZ_stop(); break;
 
-	printf("key %d\n", k->code);
+		default : break;
+	}
 }
 
 

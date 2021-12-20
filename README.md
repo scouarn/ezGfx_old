@@ -33,8 +33,10 @@ https://www.youtube.com/watch?v=nBzCS-Y0FcY&t=853s
 
 ## Misc
 
+* keystate : include mod key
+
 * linux with no WM ==> automatic device detection
-                   ==> mouse buttons
+                   ==> typed
                    ==> pb with stdout when running ? missing newline ?
                    ==> signals
 
