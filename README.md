@@ -6,7 +6,7 @@ Semi-private repo for a simple cross-platform graphics library project.
 Detailed documentation is not yet available. 
 
 <p align="center">
-  <img src="./demo3d.gif"/>
+<img src="./demotex.gif"/>
 </p>
 
 
