@@ -14,24 +14,24 @@ EZ_Mat4_t proj;
 EZ_Mat4_t world;
 EZ_Mat4_t trans;
 
+
 float a = 1.0;
 
 
 void setup() {
 
-	canvas = EZ_image_make(256, 256);
+	canvas = EZ_image_make(WIDTH, HEIGHT);
 
 	EZ_mat4_setProj(&proj, QUARTER_PI, (float)WIDTH / HEIGHT, 0.001, 1000);
 	EZ_mat4_setId(&world);
 	render = EZ_draw3D_makeTarget(canvas, &proj, &world);
 
 	texture = EZ_image_loadBMP("assets/texture.bmp");
-	cube = EZ_mesh_loadOBJ("assets/cube.obj");
+	cube = EZ_mesh_loadOBJ("assets/torus.obj");
 
 	ERR_assert(texture && cube, "Couldn't load assets");
 
-	cube->texture = texture; 
-
+	cube->texture = texture;
 
 
 	// EZ_setFullscreen(true);
@@ -47,11 +47,12 @@ void draw(double dt) {
 	EZ_mat4_setId(&trans);
 	EZ_mat4_applyTranslate(&trans, 0, 0, 10.0);
 	// EZ_mat4_applyTranslate(&trans, 2.0*cos(a), 2.0*sin(a), 5.0-cos(a));
-	// EZ_mat4_applyRotX(&trans, a);
+	EZ_mat4_applyRotX(&trans, a);
 	EZ_mat4_applyRotY(&trans, 1.5*a);
 
 	EZ_draw3D_startScene(render);
-	EZ_draw3D_mesh(render, cube, &trans, EZ_3D_TEXTURE);
+	EZ_draw3D_mesh(render, cube, &trans, EZ_3D_TEXTURED_SHADED);
+
 
 	a += dt;
 

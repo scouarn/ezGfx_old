@@ -18,15 +18,13 @@ TODO
 https://www.youtube.com/watch?v=nBzCS-Y0FcY&t=853s
 https://www.youtube.com/watch?v=A-3T2OvULSc
 
+* triangle mode
 * clipping
-* textri with perspective correction
-* depth buffuring
 
-* face normal information
-* mesh files with material color
+* face normal / material information ?
+* mesh files with material color ?
 
-* transform/3D improvement : stop multipliing matrices for each triangle, pass the precalculated local "3D object" transform which is the same for each triangle of the mesh
-
+* world transform / camera ?
 
 * quaternion rotation on vec4f ?
 * Other projection matrices
