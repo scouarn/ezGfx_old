@@ -18,15 +18,9 @@ TODO
 https://www.youtube.com/watch?v=nBzCS-Y0FcY&t=853s
 https://www.youtube.com/watch?v=A-3T2OvULSc
 
-* triangle mode
-* clipping
-
-* face normal / material information ?
-* mesh files with material color ?
-
 * world transform / camera ?
-
-* quaternion rotation on vec4f ?
+* clipping
+* material information and face normal ==> custom obj format ?
 * Other projection matrices
 
 

@@ -13,6 +13,10 @@ EZ_3DTarget_t* EZ_draw3D_makeTarget(EZ_Image_t* img, EZ_Mat4_t* proj, EZ_Mat4_t*
 	tgt->img = img;
 	tgt->proj = proj;
 	tgt->trns = trns;
+	
+	tgt->shader = EZ_draw3D_textureShader;
+	tgt->do_uv_correction = true;
+
 
 	tgt->zbuff = malloc( img->w * img->h * sizeof(float) );
 
@@ -37,6 +41,10 @@ void EZ_draw3D_startScene(EZ_3DTarget_t* tgt) {
 
 }
 
+void EZ_draw3D_endScene(EZ_3DTarget_t* tgt) {
+
+}
+
 
 /* normal of a plane defined by 3 points by the right hand rule */
 /* p1->p2 : index, p1->p3 : middle, normal : thumb */
@@ -52,26 +60,52 @@ static void _normal(EZ_Vec_t* res, EZ_Vec_t* p1, EZ_Vec_t* p2, EZ_Vec_t* p3) {
 }
 
 
-#define X0 (screen_pos[0].x)
-#define Y0 (screen_pos[0].y)
-#define U0 (screen_pos[0].u)
-#define V0 (screen_pos[0].v)
-#define Z0 (screen_pos[0].z)
 
-#define X1 (screen_pos[1].x)
-#define Y1 (screen_pos[1].y)
-#define U1 (screen_pos[1].u)
-#define V1 (screen_pos[1].v)
-#define Z1 (screen_pos[1].z)
+void EZ_draw3D_textureShader(EZ_Px_t* px, EZ_Image_t* tex, EZ_Px_t col, float illum, float u, float v, float z) {
 
-#define X2 (screen_pos[2].x)
-#define Y2 (screen_pos[2].y)
-#define U2 (screen_pos[2].u)
-#define V2 (screen_pos[2].v)
-#define Z2 (screen_pos[2].z)
+	if (tex == NULL) *px = EZ_MAGENTA;
+
+	EZ_Px_t* sample = EZ_image_samplef(tex, u, v);
+
+	/* apply shading */
+	px->r = sample->r * illum;
+	px->g = sample->g * illum;
+	px->b = sample->b * illum;
+
+}
 
 
-void EZ_draw3D_tri(EZ_3DTarget_t* tgt, EZ_Image_t* tex, EZ_Tri_t* tri, EZ_Mat4_t* trns, EZ_3DMode_t mode) {
+
+void EZ_draw3D_flatShader(EZ_Px_t* px, EZ_Image_t* tex, EZ_Px_t col, float illum, float u, float v, float z) {
+
+	/* apply shading */
+	px->r = col.r * illum;
+	px->g = col.g * illum;
+	px->b = col.b * illum;
+
+}
+
+
+
+void EZ_draw3D_tri(EZ_3DTarget_t* tgt, EZ_Image_t* tex, EZ_Tri_t* tri, EZ_Mat4_t* trns) {
+
+	#define X0 (screen_pos[0].x)
+	#define Y0 (screen_pos[0].y)
+	#define U0 (screen_pos[0].u)
+	#define V0 (screen_pos[0].v)
+	#define Z0 (screen_pos[0].z)
+
+	#define X1 (screen_pos[1].x)
+	#define Y1 (screen_pos[1].y)
+	#define U1 (screen_pos[1].u)
+	#define V1 (screen_pos[1].v)
+	#define Z1 (screen_pos[1].z)
+
+	#define X2 (screen_pos[2].x)
+	#define Y2 (screen_pos[2].y)
+	#define U2 (screen_pos[2].u)
+	#define V2 (screen_pos[2].v)
+	#define Z2 (screen_pos[2].z)
 
 	int i;
 
@@ -113,10 +147,16 @@ void EZ_draw3D_tri(EZ_3DTarget_t* tgt, EZ_Image_t* tex, EZ_Tri_t* tri, EZ_Mat4_t
 		/* from -1 to +1 with y from bottom to top */
 		screen_pos[i].x = (projected[i].x + 1.0f) * 0.5f * tgt->img->w;
 		screen_pos[i].y = (projected[i].y + 1.0f) * 0.5f * tgt->img->h;
-		screen_pos[i].u = tri->vert[i].u * z;
-		screen_pos[i].v = tri->vert[i].v * z;
+		screen_pos[i].u = tri->vert[i].u;
+		screen_pos[i].v = tri->vert[i].v;
 		screen_pos[i].z = z;
+
+		if (tgt->do_uv_correction) {
+			screen_pos[i].u *= z;
+			screen_pos[i].v *= z;
+		}
 	}
+
 
 
 	/* culling */
@@ -232,15 +272,14 @@ void EZ_draw3D_tri(EZ_3DTarget_t* tgt, EZ_Image_t* tex, EZ_Tri_t* tri, EZ_Mat4_t
 				tgt->zbuff[x + y * tgt->img->w] = z;
 			}
 
-		
-			EZ_Px_t px = *EZ_image_samplef(tex, u / z, v / z);
+			EZ_Px_t* px = tgt->img->px + (x + y * tgt->img->w);
 
-			/* apply shading */
-			px.r *= illum;
-			px.g *= illum;
-			px.b *= illum;
-
-			tgt->img->px[x + y * tgt->img->w] = px;
+			if (tgt->do_uv_correction) {
+				tgt->shader(px, tex, tri->col, illum, u/z, v/z, z);
+			}
+			else {
+				tgt->shader(px, tex, tri->col, illum, u, v, z);	
+			}
 
 			u += dudx;  v += dvdx;  z += dzdx;
 		}
@@ -258,11 +297,13 @@ void EZ_draw3D_tri(EZ_3DTarget_t* tgt, EZ_Image_t* tex, EZ_Tri_t* tri, EZ_Mat4_t
 }
 
 
-void EZ_draw3D_mesh(EZ_3DTarget_t* tgt, EZ_Mesh_t* mesh, EZ_Mat4_t* trns, EZ_3DMode_t mode) {
+
+
+void EZ_draw3D_mesh(EZ_3DTarget_t* tgt, EZ_Mesh_t* mesh, EZ_Mat4_t* trns) {
 	int i;
 
 	/* draw each triangle */
 	for (i = 0; i < mesh->nPoly; i++) {
-		EZ_draw3D_tri(tgt, mesh->texture, mesh->triangles + i, trns, mode);
+		EZ_draw3D_tri(tgt, mesh->texture, mesh->triangles + i, trns);
 	}
 }

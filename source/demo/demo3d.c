@@ -51,7 +51,10 @@ void draw(double dt) {
 	EZ_mat4_applyRotY(&trans, 1.5*a);
 
 	EZ_draw3D_startScene(render);
-	EZ_draw3D_mesh(render, cube, &trans, EZ_3D_TEXTURED_SHADED);
+	EZ_draw3D_mesh(render, cube, &trans);
+
+
+	EZ_draw3D_endScene(render);
 
 
 	a += dt;
