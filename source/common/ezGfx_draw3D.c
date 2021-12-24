@@ -48,15 +48,19 @@ void EZ_draw3D_endScene(EZ_3DTarget_t* tgt) {
 
 /* normal of a plane defined by 3 points by the right hand rule */
 /* p1->p2 : index, p1->p3 : middle, normal : thumb */
-static void _normal(EZ_Vec_t* res, EZ_Vec_t* p1, EZ_Vec_t* p2, EZ_Vec_t* p3) {
+static void _normal(EZ_Tri_t* tri) {
 	
 	EZ_Vec_t v1, v2, normal;
+
+	EZ_Vec_t* p1 = &(tri->vert[0].pos);
+	EZ_Vec_t* p2 = &(tri->vert[1].pos);
+	EZ_Vec_t* p3 = &(tri->vert[2].pos);
 
 	EZ_vec_sub(&v1, p3, p1);
 	EZ_vec_sub(&v2, p2, p1);
 
 	EZ_vec_cross(&normal, &v1, &v2);
-	EZ_vec_normal(res, &normal);
+	EZ_vec_normal(&tri->normal, &normal);
 }
 
 
@@ -87,56 +91,42 @@ void EZ_draw3D_flatShader(EZ_Px_t* px, EZ_Image_t* tex, EZ_Px_t col, float illum
 
 
 
-void EZ_draw3D_tri(EZ_3DTarget_t* tgt, EZ_Image_t* tex, EZ_Tri_t* tri, EZ_Mat4_t* trns) {
+#define X0 (tri->vert[0].sx)
+#define Y0 (tri->vert[0].sy)
+#define U0 (tri->vert[0].uv.x)
+#define V0 (tri->vert[0].uv.y)
+#define Z0 (tri->vert[0].uv.z)
 
-	#define X0 (screen_pos[0].x)
-	#define Y0 (screen_pos[0].y)
-	#define U0 (screen_pos[0].u)
-	#define V0 (screen_pos[0].v)
-	#define Z0 (screen_pos[0].z)
+#define X1 (tri->vert[1].sx)
+#define Y1 (tri->vert[1].sy)
+#define U1 (tri->vert[1].uv.x)
+#define V1 (tri->vert[1].uv.y)
+#define Z1 (tri->vert[1].uv.z)
 
-	#define X1 (screen_pos[1].x)
-	#define Y1 (screen_pos[1].y)
-	#define U1 (screen_pos[1].u)
-	#define V1 (screen_pos[1].v)
-	#define Z1 (screen_pos[1].z)
+#define X2 (tri->vert[2].sx)
+#define Y2 (tri->vert[2].sy)
+#define U2 (tri->vert[2].uv.x)
+#define V2 (tri->vert[2].uv.y)
+#define Z2 (tri->vert[2].uv.z)
 
-	#define X2 (screen_pos[2].x)
-	#define Y2 (screen_pos[2].y)
-	#define U2 (screen_pos[2].u)
-	#define V2 (screen_pos[2].v)
-	#define Z2 (screen_pos[2].z)
+
+
+static int _proj(EZ_3DTarget_t* tgt, EZ_Tri_t* tri, EZ_Mat4_t* trns) {
 
 	int i;
-
-	struct {
-		int x, y;
-		float u, v, z;
-	} screen_pos[3];
-
-	EZ_Vec_t transformed[3], projected[3];
-
-
-	/* transform  -  apply transform matrix */
-	for (i = 0; i < 3; i++) {
-		EZ_mat4_vmul(&transformed[i], trns, &(tri->vert[i].pos) );
-
-		/* don't render faces that are behind the camera */
-		if (transformed[i].z < 0.0) 
-			return;
-	}
+	EZ_Vec_t projected[3];
 
 
 	/* project to 2D */
 	for (i = 0; i < 3; i++) {
 
 		/* apply projection matrix */
-		EZ_mat4_vmul(&projected[i], tgt->proj, &transformed[i]);
+		EZ_mat4_vmul(&projected[i], tgt->proj, &(tri->vert[i].pos) );
 
 
 		/* non linear part of the projection */
 		/* don't divide by 0 */
-		if (projected[i].w == 0.0) return;
+		if (projected[i].w == 0.0) return 1;
 
 		const float z = 1.0 / projected[i].w;
 
@@ -145,15 +135,13 @@ void EZ_draw3D_tri(EZ_3DTarget_t* tgt, EZ_Image_t* tex, EZ_Tri_t* tri, EZ_Mat4_t
 
 		/* convert to pixel space */
 		/* from -1 to +1 with y from bottom to top */
-		screen_pos[i].x = (projected[i].x + 1.0f) * 0.5f * tgt->img->w;
-		screen_pos[i].y = (projected[i].y + 1.0f) * 0.5f * tgt->img->h;
-		screen_pos[i].u = tri->vert[i].u;
-		screen_pos[i].v = tri->vert[i].v;
-		screen_pos[i].z = z;
+		tri->vert[i].sx = (projected[i].x + 1.0f) * 0.5f * tgt->img->w;
+		tri->vert[i].sy = (projected[i].y + 1.0f) * 0.5f * tgt->img->h;
+		tri->vert[i].uv.z  = z;
 
 		if (tgt->do_uv_correction) {
-			screen_pos[i].u *= z;
-			screen_pos[i].v *= z;
+			tri->vert[i].uv.x *= z;
+			tri->vert[i].uv.y *= z;
 		}
 	}
 
@@ -166,26 +154,28 @@ void EZ_draw3D_tri(EZ_3DTarget_t* tgt, EZ_Image_t* tex, EZ_Tri_t* tri, EZ_Mat4_t
 	const float nz = (projected[1].x - projected[0].x) * (projected[2].y - projected[0].y) -
 				     (projected[1].y - projected[0].y) * (projected[2].x - projected[0].x);
 
-	if (nz > 0.0f) return;
+	if (nz > 0.0f) return 1;
 	
-
-	/* compute world space normal */
-	_normal(&tri->normal, &transformed[0], &transformed[1], &transformed[2]);
 
 	/* light and shading */
 	EZ_Vec_t l_dir = {{0.0f, 0.0f, 1.0f}};
-	float illum = CLAMP(EZ_vec_dot(&tri->normal, &l_dir), 0.0, 1.0);
+	tri->illum = CLAMP(EZ_vec_dot(&tri->normal, &l_dir), 0.0, 1.0);
 
+
+	return 0;
+}
+
+static void _raster(EZ_3DTarget_t* tgt, EZ_Image_t* tex, EZ_Tri_t* tri) {
 
 	/* sort for drawing */
 	if (Y0 > Y1) {
-		SWAP(screen_pos[0],  screen_pos[1]);
+		SWAP(tri->vert[0],  tri->vert[1]);
 	}
 	if (Y0 > Y2) {
-		SWAP(screen_pos[0],  screen_pos[2]);
+		SWAP(tri->vert[0],  tri->vert[2]);
 	}
 	if (Y1 > Y2) {
-		SWAP(screen_pos[1],  screen_pos[2]);
+		SWAP(tri->vert[1],  tri->vert[2]);
 	}
 
 
@@ -275,10 +265,10 @@ void EZ_draw3D_tri(EZ_3DTarget_t* tgt, EZ_Image_t* tex, EZ_Tri_t* tri, EZ_Mat4_t
 			EZ_Px_t* px = tgt->img->px + (x + y * tgt->img->w);
 
 			if (tgt->do_uv_correction) {
-				tgt->shader(px, tex, tri->col, illum, u/z, v/z, z);
+				tgt->shader(px, tex, tri->col, tri->illum, u/z, v/z, z);
 			}
 			else {
-				tgt->shader(px, tex, tri->col, illum, u, v, z);	
+				tgt->shader(px, tex, tri->col, tri->illum, u, v, z);	
 			}
 
 			u += dudx;  v += dvdx;  z += dzdx;
@@ -293,7 +283,38 @@ void EZ_draw3D_tri(EZ_3DTarget_t* tgt, EZ_Image_t* tex, EZ_Tri_t* tri, EZ_Mat4_t
 	}
 
 
+}
 
+
+void EZ_draw3D_tri(EZ_3DTarget_t* tgt, EZ_Image_t* tex, EZ_Tri_t* tri_ori, EZ_Mat4_t* trns) {
+
+	int i;
+	EZ_Tri_t tri = *tri_ori; /* copy */
+
+	/* transform */
+	for (i = 0; i < 3; i++) {
+		EZ_mat4_vmul( &(tri.vert[i].pos), trns, &(tri_ori->vert[i].pos) );
+
+		/* don't render faces that are behind the camera */
+		if (tri.vert[i].pos.z < 0.0) return;
+	}
+
+	/* compute world space normal */
+	_normal(&tri);
+
+
+	/* project */
+	if (0 != _proj(tgt, &tri, trns)) return;
+
+
+	/* DO CLIPPING */
+		/* */
+		/* */
+		/* */
+
+
+	/* draw */
+	_raster(tgt, tex, &tri);
 }
 
 

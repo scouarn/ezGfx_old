@@ -18,9 +18,11 @@ TODO
 https://www.youtube.com/watch?v=nBzCS-Y0FcY&t=853s
 https://www.youtube.com/watch?v=A-3T2OvULSc
 
-* world transform / camera ?
 * clipping
-* material information and face normal ==> custom obj format ?
+* lights
+* triangle pool / sorting ?
+* world transform / camera ?
+* material information ==> custom obj format ?
 * Other projection matrices
 
 
@@ -71,4 +73,4 @@ https://www.youtube.com/watch?v=A-3T2OvULSc
 * png
 * jpeg
 * config files / json files
-
+* material files for 3D models

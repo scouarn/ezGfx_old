@@ -186,8 +186,8 @@ EZ_Mesh_t* EZ_mesh_loadOBJ(const char* fname) {
 				}
 
 				if (vt > 0) {
-					mesh->triangles[f_index].vert[i].u = vt_buffer[vt - 1].x;
-					mesh->triangles[f_index].vert[i].v = vt_buffer[vt - 1].y;
+					mesh->triangles[f_index].vert[i].uv.x = vt_buffer[vt - 1].x;
+					mesh->triangles[f_index].vert[i].uv.y = vt_buffer[vt - 1].y;
 				}
 
 				if (vn > 0) {
