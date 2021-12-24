@@ -90,6 +90,10 @@ void EZ_redraw() {
 		int sx = (x - rec.x1) * xRatio;
 		int sy = (y - rec.y1) * yRatio;
 
+		if (sx < 0 || sx >= canvas->w
+		 || sy < 0 || sy >= canvas->h) 
+			continue;
+
 		EZ_Px_t px = canvas->px[sx + sy*canvas->w];
 
 		buffer[(x + y*winWidth)*4   ] = px.b;

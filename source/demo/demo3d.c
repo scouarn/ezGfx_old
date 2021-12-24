@@ -3,8 +3,8 @@
 #include <math.h>
 #include <stdio.h>
 
-#define WIDTH  512
-#define HEIGHT 512
+#define WIDTH  1024
+#define HEIGHT 1024
 
 EZ_Image_t* canvas;
 EZ_Image_t* texture;

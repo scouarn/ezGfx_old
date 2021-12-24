@@ -15,8 +15,7 @@ TODO
 
 ## Important
 
-* Segfault linux buffer when window too small with high res ?
-
+* //
 
 ## 3D ext
 
