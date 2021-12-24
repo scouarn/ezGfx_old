@@ -13,6 +13,11 @@ Detailed documentation is not yet available.
 TODO
 ====
 
+## Important
+
+* Segfault linux buffer when window too small with high res ?
+
+
 ## 3D ext
 
 https://www.youtube.com/watch?v=nBzCS-Y0FcY&t=853s

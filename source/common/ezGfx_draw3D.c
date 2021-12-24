@@ -109,13 +109,16 @@ void EZ_draw3D_flatShader(EZ_Px_t* px, EZ_Image_t* tex, EZ_Px_t col, float illum
 #define V2 (tri->vert[2].uv.y)
 #define Z2 (tri->vert[2].uv.z)
 
+#define WIDTH  (tgt->img->w)
+#define HEIGHT (tgt->img->h)
+#define PX (tgt->img->px)
 
 
-static int _proj(EZ_3DTarget_t* tgt, EZ_Tri_t* tri, EZ_Mat4_t* trns) {
+
+static void _proj(EZ_3DTarget_t* tgt, EZ_Tri_t* tri, EZ_Mat4_t* trns) {
 
 	int i;
 	EZ_Vec_t projected[3];
-
 
 	/* project to 2D */
 	for (i = 0; i < 3; i++) {
@@ -123,15 +126,10 @@ static int _proj(EZ_3DTarget_t* tgt, EZ_Tri_t* tri, EZ_Mat4_t* trns) {
 		/* apply projection matrix */
 		EZ_mat4_vmul(&projected[i], tgt->proj, &(tri->vert[i].pos) );
 
-
 		/* non linear part of the projection */
-		/* don't divide by 0 */
-		if (projected[i].w == 0.0) return 1;
-
 		const float z = 1.0 / projected[i].w;
 
 		EZ_vec_scale(&projected[i], &projected[i], z);
-
 
 		/* convert to pixel space */
 		/* from -1 to +1 with y from bottom to top */
@@ -146,23 +144,6 @@ static int _proj(EZ_3DTarget_t* tgt, EZ_Tri_t* tri, EZ_Mat4_t* trns) {
 	}
 
 
-
-	/* culling */
-	/* accurate according to the given perspective matrix */
-	/* projected normal z componant  */
-	/* allow to use other matrices */
-	const float nz = (projected[1].x - projected[0].x) * (projected[2].y - projected[0].y) -
-				     (projected[1].y - projected[0].y) * (projected[2].x - projected[0].x);
-
-	if (nz > 0.0f) return 1;
-	
-
-	/* light and shading */
-	EZ_Vec_t l_dir = {{0.0f, 0.0f, 1.0f}};
-	tri->illum = CLAMP(EZ_vec_dot(&tri->normal, &l_dir), 0.0, 1.0);
-
-
-	return 0;
 }
 
 static void _raster(EZ_3DTarget_t* tgt, EZ_Image_t* tex, EZ_Tri_t* tri) {
@@ -191,7 +172,6 @@ static void _raster(EZ_3DTarget_t* tgt, EZ_Image_t* tex, EZ_Tri_t* tri) {
 
 	float dzdy1 = (float)(Z1 - Z0)/(Y1 - Y0);
 	float dzdy2 = (float)(Z2 - Z0)/(Y2 - Y0);
-
 
 	float x_start = X0;
 	float x_end   = X0;
@@ -255,14 +235,14 @@ static void _raster(EZ_3DTarget_t* tgt, EZ_Image_t* tex, EZ_Tri_t* tri) {
 
 			/* depth buffering */
 
-			if (tgt->zbuff[x + y * tgt->img->w] > z) {
+			if (tgt->zbuff[x + y * WIDTH] > z) {
 				continue;
 			}
 			else {
-				tgt->zbuff[x + y * tgt->img->w] = z;
+				tgt->zbuff[x + y * WIDTH] = z;
 			}
 
-			EZ_Px_t* px = tgt->img->px + (x + y * tgt->img->w);
+			EZ_Px_t* px = PX + (x + y * WIDTH);
 
 			if (tgt->do_uv_correction) {
 				tgt->shader(px, tex, tri->col, tri->illum, u/z, v/z, z);
@@ -299,18 +279,37 @@ void EZ_draw3D_tri(EZ_3DTarget_t* tgt, EZ_Image_t* tex, EZ_Tri_t* tri_ori, EZ_Ma
 		if (tri.vert[i].pos.z < 0.0) return;
 	}
 
+	/* DO Z CLIPPING */
+		/* */
+		/* */
+		/* */
+
+
 	/* compute world space normal */
 	_normal(&tri);
 
-
 	/* project */
-	if (0 != _proj(tgt, &tri, trns)) return;
+	_proj(tgt, &tri, trns);
+
+
+	/* culling -  projected normal z componant  */
+	if ( (tri.vert[1].pos.x - tri.vert[0].pos.x) * (tri.vert[2].pos.y - tri.vert[0].pos.y)
+	   - (tri.vert[1].pos.y - tri.vert[0].pos.y) * (tri.vert[2].pos.x - tri.vert[0].pos.x)
+	   > 0.0f) 
+		return;
+
+
+	/* light and shading */
+	EZ_Vec_t l_dir = {{0.0f, 0.0f, 1.0f}};
+	tri.illum = CLAMP(EZ_vec_dot(&tri.normal, &l_dir), 0.0, 1.0);
+
 
 
 	/* DO CLIPPING */
 		/* */
 		/* */
 		/* */
+
 
 
 	/* draw */
