@@ -231,77 +231,11 @@ EZ_Mesh_t* EZ_mesh_loadOBJ(const char* fname) {
 }
 
 
-void EZ_mesh_saveOBJ(EZ_Mesh_t* mesh, const char* fname) {
-
-
-	/* open file */
-	FILE *file = fopen(fname,"w"); /* TEXT MODE */
-
-	if (file == NULL) {
-		ERR_warning("Couldn't save file %s", fname);
-		return;
-	}
-
-
-	ERR_warning("Not implemented");
-
-	fclose(file);
-
-}
 
 
 
+EZ_Mesh_t* EZ_mesh_loadOFF(const char* fname) {
 
 
-static const EZ_Vec_t cube_data[12][3] = {
-
-		/* south */
-		{ {{ -1.0f, -1.0f, -1.0f }}, {{ -1.0f,  1.0f, -1.0f }}, {{  1.0f,  1.0f, -1.0f }} },
-		{ {{ -1.0f, -1.0f, -1.0f }}, {{  1.0f,  1.0f, -1.0f }}, {{  1.0f, -1.0f, -1.0f }} },
-
-		/* east */
-		{ {{  1.0f, -1.0f, -1.0f }}, {{  1.0f,  1.0f, -1.0f }}, {{  1.0f,  1.0f,  1.0f }} },
-		{ {{  1.0f, -1.0f, -1.0f }}, {{  1.0f,  1.0f,  1.0f }}, {{  1.0f, -1.0f,  1.0f }} },
-
-		/* north */
-		{ {{  1.0f, -1.0f,  1.0f }}, {{  1.0f,  1.0f,  1.0f }}, {{ -1.0f,  1.0f,  1.0f }} },
-		{ {{  1.0f, -1.0f,  1.0f }}, {{ -1.0f,  1.0f,  1.0f }}, {{ -1.0f, -1.0f,  1.0f }} },
-
-		/* west */
-		{ {{ -1.0f, -1.0f,  1.0f }}, {{ -1.0f,  1.0f,  1.0f }}, {{ -1.0f,  1.0f, -1.0f }} },
-		{ {{ -1.0f, -1.0f,  1.0f }}, {{ -1.0f,  1.0f, -1.0f }}, {{ -1.0f, -1.0f, -1.0f }} },
-
-		/* top */
-		{ {{ -1.0f,  1.0f, -1.0f }}, {{ -1.0f,  1.0f,  1.0f }}, {{  1.0f,  1.0f,  1.0f }} },
-		{ {{ -1.0f,  1.0f, -1.0f }}, {{  1.0f,  1.0f,  1.0f }}, {{  1.0f,  1.0f, -1.0f }} },
-
-		/* bot */
-		{ {{ -1.0f, -1.0f, -1.0f }}, {{  1.0f, -1.0f,  1.0f }}, {{ -1.0f, -1.0f,  1.0f }} },
-		{ {{ -1.0f, -1.0f, -1.0f }}, {{  1.0f, -1.0f, -1.0f }}, {{  1.0f, -1.0f,  1.0f }} },
-
-};
-
-
-/* rubik's cube colors */
-static const EZ_Px_t colors[] = {EZ_RED, EZ_YELLOW, EZ_ORANGE, EZ_WHITE, EZ_BLUE, EZ_GREEN};
-
-
-EZ_Mesh_t* DEBUG_EZ_mesh_unitCube() {
-	int i, j;
-
-	EZ_Mesh_t* mesh = malloc( sizeof(EZ_Mesh_t) );
-	mesh->triangles = malloc(12 * sizeof(EZ_Tri_t));
-	mesh->nPoly = 12;
-
-	for (i = 0; i < mesh->nPoly; i++) {
-		mesh->triangles[i].col = colors[i/2];
-
-		for (j = 0; j < 3; j++) {
-			mesh->triangles[i].vert[j].pos = cube_data[i][j];
-			mesh->triangles[i].vert[j].pos.w = 1.0;
-		}
-	}
-
-	return mesh;
-
+	return NULL;
 }

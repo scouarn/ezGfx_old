@@ -29,11 +29,10 @@ typedef struct {
 
 } EZ_Mesh_t;
 
-EZ_Mesh_t* DEBUG_EZ_mesh_unitCube();
+
 void EZ_mesh_free(EZ_Mesh_t* mesh);
 
 EZ_Mesh_t* EZ_mesh_loadOBJ(const char* fname);
-void       EZ_mesh_saveOBJ(EZ_Mesh_t* mesh, const char* fname);
 
 
 #endif /* ezGfx_mesh_h */
