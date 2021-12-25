@@ -65,11 +65,14 @@ static void _normal(EZ_Tri_t* tri) {
 
 
 
-void EZ_draw3D_textureShader(EZ_Px_t* px, EZ_Image_t* tex, EZ_Px_t col, float illum, float u, float v, float z) {
+void EZ_draw3D_textureShader(EZ_3DRenderParam_t* p) {
 
-	if (tex == NULL) *px = EZ_MAGENTA;
+	EZ_Px_t* px = p->tgt->img + (p->x + p->y*p->tgt->img->w);
 
-	EZ_Px_t* sample = EZ_image_samplef(tex, u, v);
+
+	if (p->tex == NULL) *px = EZ_MAGENTA;
+
+	EZ_Px_t* sample = EZ_image_samplef(tex, p->u, p->v);
 
 	/* apply shading */
 	px->r = sample->r * illum;
@@ -80,12 +83,15 @@ void EZ_draw3D_textureShader(EZ_Px_t* px, EZ_Image_t* tex, EZ_Px_t col, float il
 
 
 
-void EZ_draw3D_flatShader(EZ_Px_t* px, EZ_Image_t* tex, EZ_Px_t col, float illum, float u, float v, float z) {
+void EZ_draw3D_flatShader(EZ_3DRenderParam_t* p) {
+
+	EZ_Px_t* px = p->tgt->img + (p->x + p->y*p->tgt->img->w);
+
 
 	/* apply shading */
-	px->r = col.r * illum;
-	px->g = col.g * illum;
-	px->b = col.b * illum;
+	px->r = p->tri.col.r * p->tri.illum;
+	px->g = p->tri.col.g * p->tri.illum;
+	px->b = p->tri.col.b * p->tri.illum;
 
 }
 

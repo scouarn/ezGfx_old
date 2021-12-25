@@ -20,8 +20,18 @@
 #include "ezGfx_mesh.h"
 #include <stdbool.h>
 
+typedef struct {
 
-typedef void (EZ_Shader_t)(EZ_Px_t* px, EZ_Image_t* tex, EZ_Px_t col, float illum, float u, float v, float z);
+	int x, y;
+	float u, v, z;
+
+	EZ_Tri_t* tri;
+	EZ_Image_t* tex;
+	EZ_3DTarget_t* tgt;
+
+} EZ_3DRenderParam_t;
+
+typedef void (EZ_Shader_t)(EZ_3DRenderParam_t* p);
 
 /* default shaders */
 EZ_Shader_t EZ_draw3D_textureShader;
