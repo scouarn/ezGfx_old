@@ -215,6 +215,7 @@ void EZ_draw2D_fillTri(EZ_Image_t* target, EZ_Px_t col, int x1, int y1, int x2, 
 
 	/* "vertical" clipping */
 	int y_start = CLAMP(y1, 0, target->h);
+	int y_mid   = CLAMP(y2, 0, target->h);
 	int y_end   = CLAMP(y3, 0, target->h);
 
 	/* get values of x for left and right line at y0 */
@@ -228,7 +229,7 @@ void EZ_draw2D_fillTri(EZ_Image_t* target, EZ_Px_t col, int x1, int y1, int x2, 
 
 		/* this line actually avoids dividing by zero,
 		   by skipping the top triangle when y1 == y2 (same for y2 == y3) */
-		if (sy == y2) {
+		if (sy == y_mid) {
 			dx_start = (float)dx3/dy3;
 			x_start = x2; /* seems to glitch if not corrected */
 		}

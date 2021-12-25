@@ -22,11 +22,10 @@ TODO
 https://www.youtube.com/watch?v=nBzCS-Y0FcY&t=853s
 https://www.youtube.com/watch?v=A-3T2OvULSc
 
-* clipping
+* material information ==> custom obj format ?
 * lights
 * triangle pool / sorting ?
 * world transform / camera ?
-* material information ==> custom obj format ?
 * Other projection matrices
 
 

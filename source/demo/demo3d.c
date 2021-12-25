@@ -3,8 +3,8 @@
 #include <math.h>
 #include <stdio.h>
 
-#define WIDTH  1024
-#define HEIGHT 1024
+#define WIDTH  512
+#define HEIGHT 512
 
 EZ_Image_t* canvas;
 EZ_Image_t* texture;
@@ -45,8 +45,8 @@ void draw(double dt) {
 	EZ_draw2D_clear(canvas, EZ_BW(51));
 	
 	EZ_mat4_setId(&trans);
-	EZ_mat4_applyTranslate(&trans, 0, 0, 10.0);
-	// EZ_mat4_applyTranslate(&trans, 2.0*cos(a), 2.0*sin(a), 5.0-cos(a));
+	// EZ_mat4_applyTranslate(&trans, 0, 0, 10.0);
+	EZ_mat4_applyTranslate(&trans, 2.0*cos(a), 2.0*sin(a), 5.0-cos(a));
 	EZ_mat4_applyRotX(&trans, a);
 	EZ_mat4_applyRotY(&trans, 1.5*a);
 
@@ -59,7 +59,7 @@ void draw(double dt) {
 
 	a += dt;
 
-	// printf("%lg ms\n", dt*1000.0);
+	printf("%lg ms\n", dt*1000.0);
 }
 
 

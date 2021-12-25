@@ -1,5 +1,4 @@
 #include "ezGfx_draw3D.h"
-#include "ezGfx_draw2D.h"
 #include "ezGfx_utils.h"
 
 #include <stdlib.h>
@@ -15,6 +14,7 @@ EZ_3DTarget_t* EZ_draw3D_makeTarget(EZ_Image_t* img, EZ_Mat4_t* proj, EZ_Mat4_t*
 	tgt->trns = trns;
 	
 	tgt->shader = EZ_draw3D_textureShader;
+	// tgt->shader = EZ_draw3D_flatShader;
 	tgt->do_uv_correction = true;
 
 
@@ -117,24 +117,21 @@ void EZ_draw3D_flatShader(EZ_Px_t* px, EZ_Image_t* tex, EZ_Px_t col, float illum
 
 static void _proj(EZ_3DTarget_t* tgt, EZ_Tri_t* tri, EZ_Mat4_t* trns) {
 
-	int i;
-	EZ_Vec_t projected[3];
-
 	/* project to 2D */
-	for (i = 0; i < 3; i++) {
+	for (int i = 0; i < 3; i++) {
 
 		/* apply projection matrix */
-		EZ_mat4_vmul(&projected[i], tgt->proj, &(tri->vert[i].pos) );
+		EZ_mat4_vmul(&tri->vert[i].pos, tgt->proj, &tri->vert[i].pos );
 
 		/* non linear part of the projection */
-		const float z = 1.0 / projected[i].w;
+		const float z = 1.0 / tri->vert[i].pos.w;
 
-		EZ_vec_scale(&projected[i], &projected[i], z);
+		EZ_vec_scale(&tri->vert[i].pos, &tri->vert[i].pos, z);
 
 		/* convert to pixel space */
 		/* from -1 to +1 with y from bottom to top */
-		tri->vert[i].sx = (projected[i].x + 1.0f) * 0.5f * tgt->img->w;
-		tri->vert[i].sy = (projected[i].y + 1.0f) * 0.5f * tgt->img->h;
+		tri->vert[i].sx = (tri->vert[i].pos.x + 1.0f) * 0.5f * tgt->img->w;
+		tri->vert[i].sy = (tri->vert[i].pos.y + 1.0f) * 0.5f * tgt->img->h;
 		tri->vert[i].uv.z  = z;
 
 		if (tgt->do_uv_correction) {
@@ -173,32 +170,50 @@ static void _raster(EZ_3DTarget_t* tgt, EZ_Image_t* tex, EZ_Tri_t* tri) {
 	float dzdy1 = (float)(Z1 - Z0)/(Y1 - Y0);
 	float dzdy2 = (float)(Z2 - Z0)/(Y2 - Y0);
 
-	float x_start = X0;
-	float x_end   = X0;
+	/* vertical "clipping" */
+	int y_start = CLAMP(Y0, 0, HEIGHT);
+	int y_mid   = CLAMP(Y1, 0, HEIGHT);
+	int y_end   = CLAMP(Y2, 0, HEIGHT);
 
-	float u_start = U0;
-	float u_end   = U0;
+	float x_start = X0 + (y_start - Y0) * dxdy1;
+	float x_end   = X0 + (y_start - Y0) * dxdy2;
+
+	float u_start = U0 + (y_start - Y0) * dudy1;
+	float u_end   = U0 + (y_start - Y0) * dudy2;
 			
-	float v_start = V0;
-	float v_end   = V0;
+	float v_start = V0 + (y_start - Y0) * dvdy1;
+	float v_end   = V0 + (y_start - Y0) * dvdy2;
 
-	float z_start = Z0;
-	float z_end   = Z0;
+	float z_start = Z0 + (y_start - Y0) * dzdy1;
+	float z_end   = Z0 + (y_start - Y0) * dzdy2;
 
+
+	int half = 0;
 
 	/* scan lines */
-	for (int y = Y0; y < Y2; y++) {
+	for (int y = y_start; y < y_end; y++) {
 
 		/* switch to bottom half of the triangle */
-		if (y == Y1) {
+		if (half == 0 && y >= y_mid) {
 			
+			half = 1;
+
 			dxdy1 = (float)(X2 - X1)/(Y2 - Y1);
 			dudy1 = (float)(U2 - U1)/(Y2 - Y1);
 			dvdy1 = (float)(V2 - V1)/(Y2 - Y1);
 			dzdy1 = (float)(Z2 - Z1)/(Y2 - Y1);
 
-			x_start = X1;  u_start = U1;  
-			v_start = V1;  z_start = Z1;
+			x_start = X1 + (y - Y1) * dxdy1; 
+			x_end   = X0 + (y - Y0) * dxdy2;
+
+			u_start = U1 + (y - Y1) * dudy1; 
+			u_end   = U0 + (y - Y0) * dudy2;
+
+			v_start = V1 + (y - Y1) * dvdy1;
+			v_end   = V0 + (y - Y0) * dvdy2;
+
+			z_start = Z1 + (y - Y1) * dzdy1;
+			z_end   = Z0 + (y - Y0) * dzdy2;
 
 		}
 
@@ -209,24 +224,27 @@ static void _raster(EZ_3DTarget_t* tgt, EZ_Image_t* tex, EZ_Tri_t* tri) {
 
 
 		/* sort from left to right */
+		/* horizontal "clipping"   */
 		int x_left, x_right;
 		float u, v, z;
 
 		if (x_start < x_end) {
-			x_left  = x_start;  
-			x_right = x_end;
 
-		   	u = u_start;  
-		   	v = v_start;  
-		   	z = z_start;
-		} 
+			x_left  = CLAMP(x_start, 0, WIDTH);
+			x_right = CLAMP(x_end,   0, WIDTH);
+		
+			u = u_start + (x_left - x_start) * dudx;
+			v = v_start + (x_left - x_start) * dvdx;
+			z = z_start + (x_left - x_start) * dzdx;
+		}
 		else {
-			x_left  = x_end;  
-			x_right = x_start;
 
-		    u = u_end;  
-		    v = v_end;  
-		    z = z_end;
+			x_left  = CLAMP(x_end,   0, WIDTH);
+			x_right = CLAMP(x_start, 0, WIDTH);
+		
+			u = u_end + (x_left - x_end) * dudx;
+			v = v_end + (x_left - x_end) * dvdx;
+			z = z_end + (x_left - x_end) * dzdx;
 		}
 
 
@@ -234,13 +252,13 @@ static void _raster(EZ_3DTarget_t* tgt, EZ_Image_t* tex, EZ_Tri_t* tri) {
 		for (int x = x_left; x < x_right; x++) {
 
 			/* depth buffering */
-
 			if (tgt->zbuff[x + y * WIDTH] > z) {
 				continue;
 			}
 			else {
 				tgt->zbuff[x + y * WIDTH] = z;
 			}
+
 
 			EZ_Px_t* px = PX + (x + y * WIDTH);
 
@@ -268,21 +286,16 @@ static void _raster(EZ_3DTarget_t* tgt, EZ_Image_t* tex, EZ_Tri_t* tri) {
 
 void EZ_draw3D_tri(EZ_3DTarget_t* tgt, EZ_Image_t* tex, EZ_Tri_t* tri_ori, EZ_Mat4_t* trns) {
 
-	int i;
 	EZ_Tri_t tri = *tri_ori; /* copy */
 
 	/* transform */
-	for (i = 0; i < 3; i++) {
+	for (int i = 0; i < 3; i++) {
 		EZ_mat4_vmul( &(tri.vert[i].pos), trns, &(tri_ori->vert[i].pos) );
 
 		/* don't render faces that are behind the camera */
+		/* some sort of Z clipping */
 		if (tri.vert[i].pos.z < 0.0) return;
 	}
-
-	/* DO Z CLIPPING */
-		/* */
-		/* */
-		/* */
 
 
 	/* compute world space normal */
@@ -304,16 +317,9 @@ void EZ_draw3D_tri(EZ_3DTarget_t* tgt, EZ_Image_t* tex, EZ_Tri_t* tri_ori, EZ_Ma
 	tri.illum = CLAMP(EZ_vec_dot(&tri.normal, &l_dir), 0.0, 1.0);
 
 
-
-	/* DO CLIPPING */
-		/* */
-		/* */
-		/* */
-
-
-
 	/* draw */
 	_raster(tgt, tex, &tri);
+
 }
 
 
