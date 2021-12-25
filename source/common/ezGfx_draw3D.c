@@ -67,17 +67,17 @@ static void _normal(EZ_Tri_t* tri) {
 
 void EZ_draw3D_textureShader(EZ_3DRenderParam_t* p) {
 
-	EZ_Px_t* px = p->tgt->img + (p->x + p->y*p->tgt->img->w);
+	EZ_Px_t* px = p->tgt->img->px + (p->x + p->y * p->tgt->img->w);
 
 
 	if (p->tex == NULL) *px = EZ_MAGENTA;
 
-	EZ_Px_t* sample = EZ_image_samplef(tex, p->u, p->v);
+	EZ_Px_t* sample = EZ_image_samplef(p->tex, p->u, p->v);
 
 	/* apply shading */
-	px->r = sample->r * illum;
-	px->g = sample->g * illum;
-	px->b = sample->b * illum;
+	px->r = sample->r * p->tri->illum;
+	px->g = sample->g * p->tri->illum;
+	px->b = sample->b * p->tri->illum;
 
 }
 
@@ -85,13 +85,13 @@ void EZ_draw3D_textureShader(EZ_3DRenderParam_t* p) {
 
 void EZ_draw3D_flatShader(EZ_3DRenderParam_t* p) {
 
-	EZ_Px_t* px = p->tgt->img + (p->x + p->y*p->tgt->img->w);
+	EZ_Px_t* px = p->tgt->img->px + (p->x + p->y * p->tgt->img->w);
 
 
 	/* apply shading */
-	px->r = p->tri.col.r * p->tri.illum;
-	px->g = p->tri.col.g * p->tri.illum;
-	px->b = p->tri.col.b * p->tri.illum;
+	px->r = p->tri->col.r * p->tri->illum;
+	px->g = p->tri->col.g * p->tri->illum;
+	px->b = p->tri->col.b * p->tri->illum;
 
 }
 
@@ -151,6 +151,12 @@ static void _proj(EZ_3DTarget_t* tgt, EZ_Tri_t* tri, EZ_Mat4_t* trns) {
 
 static void _raster(EZ_3DTarget_t* tgt, EZ_Image_t* tex, EZ_Tri_t* tri) {
 
+	EZ_3DRenderParam_t p;
+
+	p.tgt = tgt;
+	p.tex = tex;
+	p.tri = tri;
+
 	/* sort for drawing */
 	if (Y0 > Y1) {
 		SWAP(tri->vert[0],  tri->vert[1]);
@@ -197,10 +203,10 @@ static void _raster(EZ_3DTarget_t* tgt, EZ_Image_t* tex, EZ_Tri_t* tri) {
 	int half = 0;
 
 	/* scan lines */
-	for (int y = y_start; y < y_end; y++) {
+	for (p.y = y_start; p.y < y_end; p.y++) {
 
 		/* switch to bottom half of the triangle */
-		if (half == 0 && y >= y_mid) {
+		if (half == 0 && p.y >= y_mid) {
 			
 			half = 1;
 
@@ -209,17 +215,17 @@ static void _raster(EZ_3DTarget_t* tgt, EZ_Image_t* tex, EZ_Tri_t* tri) {
 			dvdy1 = (float)(V2 - V1)/(Y2 - Y1);
 			dzdy1 = (float)(Z2 - Z1)/(Y2 - Y1);
 
-			x_start = X1 + (y - Y1) * dxdy1; 
-			x_end   = X0 + (y - Y0) * dxdy2;
+			x_start = X1 + (p.y - Y1) * dxdy1; 
+			x_end   = X0 + (p.y - Y0) * dxdy2;
 
-			u_start = U1 + (y - Y1) * dudy1; 
-			u_end   = U0 + (y - Y0) * dudy2;
+			u_start = U1 + (p.y - Y1) * dudy1; 
+			u_end   = U0 + (p.y - Y0) * dudy2;
 
-			v_start = V1 + (y - Y1) * dvdy1;
-			v_end   = V0 + (y - Y0) * dvdy2;
+			v_start = V1 + (p.y - Y1) * dvdy1;
+			v_end   = V0 + (p.y - Y0) * dvdy2;
 
-			z_start = Z1 + (y - Y1) * dzdy1;
-			z_end   = Z0 + (y - Y0) * dzdy2;
+			z_start = Z1 + (p.y - Y1) * dzdy1;
+			z_end   = Z0 + (p.y - Y0) * dzdy2;
 
 		}
 
@@ -255,24 +261,24 @@ static void _raster(EZ_3DTarget_t* tgt, EZ_Image_t* tex, EZ_Tri_t* tri) {
 
 
 		/* draw line */
-		for (int x = x_left; x < x_right; x++) {
+		for (p.x = x_left; p.x < x_right; p.x++) {
 
 			/* depth buffering */
-			if (tgt->zbuff[x + y * WIDTH] > z) {
+			if (tgt->zbuff[p.x + p.y * WIDTH] > z) {
 				continue;
 			}
 			else {
-				tgt->zbuff[x + y * WIDTH] = z;
+				tgt->zbuff[p.x + p.y * WIDTH] = z;
 			}
 
-
-			EZ_Px_t* px = PX + (x + y * WIDTH);
 
 			if (tgt->do_uv_correction) {
-				tgt->shader(px, tex, tri->col, tri->illum, u/z, v/z, z);
+				p.u = u/z; p.v = v/z; p.z = z;
+				tgt->shader(&p);
 			}
 			else {
-				tgt->shader(px, tex, tri->col, tri->illum, u, v, z);	
+				p.u = u; p.v = v; p.z = z;
+				tgt->shader(&p);
 			}
 
 			u += dudx;  v += dvdx;  z += dzdx;

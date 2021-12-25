@@ -59,7 +59,7 @@ void draw(double dt) {
 
 	a += dt;
 
-	printf("%lg ms\n", dt*1000.0);
+	// printf("%lg ms\n", dt*1000.0);
 }
 
 

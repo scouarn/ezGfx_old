@@ -20,14 +20,19 @@
 #include "ezGfx_mesh.h"
 #include <stdbool.h>
 
-typedef struct {
+
+/* (cyclic definition) */
+struct EZ_3DTarget_t; 
+struct EZ_3DRenderParam_t;
+
+typedef struct EZ_3DRenderParam_t {
 
 	int x, y;
 	float u, v, z;
 
 	EZ_Tri_t* tri;
 	EZ_Image_t* tex;
-	EZ_3DTarget_t* tgt;
+	struct EZ_3DTarget_t* tgt;
 
 } EZ_3DRenderParam_t;
 
@@ -37,7 +42,7 @@ typedef void (EZ_Shader_t)(EZ_3DRenderParam_t* p);
 EZ_Shader_t EZ_draw3D_textureShader;
 EZ_Shader_t EZ_draw3D_flatShader;
 
-typedef struct {
+typedef struct EZ_3DTarget_t {
 	EZ_Image_t* img;
 	EZ_Mat4_t* proj;
 	EZ_Mat4_t* trns;
