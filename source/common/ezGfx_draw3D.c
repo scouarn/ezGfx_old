@@ -67,17 +67,23 @@ static void _normal(EZ_Tri_t* tri) {
 
 void EZ_draw3D_textureShader(EZ_3DRenderParam_t* p) {
 
-	EZ_Px_t* px = p->tgt->img->px + (p->x + p->y * p->tgt->img->w);
+	/* depth buffering */
+	if (*p->zloc > p->z) {
+		return;
+	}
+	else {
+		*p->zloc = p->z;
+	}
 
 
-	if (p->tex == NULL) *px = EZ_MAGENTA;
+	if (p->tex == NULL) *p->px = EZ_MAGENTA;
 
 	EZ_Px_t* sample = EZ_image_samplef(p->tex, p->u, p->v);
 
 	/* apply shading */
-	px->r = sample->r * p->tri->illum;
-	px->g = sample->g * p->tri->illum;
-	px->b = sample->b * p->tri->illum;
+	p->px->r = sample->r * p->tri->illum;
+	p->px->g = sample->g * p->tri->illum;
+	p->px->b = sample->b * p->tri->illum;
 
 }
 
@@ -85,13 +91,19 @@ void EZ_draw3D_textureShader(EZ_3DRenderParam_t* p) {
 
 void EZ_draw3D_flatShader(EZ_3DRenderParam_t* p) {
 
-	EZ_Px_t* px = p->tgt->img->px + (p->x + p->y * p->tgt->img->w);
 
+	/* depth buffering */
+	if (*p->zloc > p->z) {
+		return;
+	}
+	else {
+		*p->zloc = p->z;
+	}
 
 	/* apply shading */
-	px->r = p->tri->col.r * p->tri->illum;
-	px->g = p->tri->col.g * p->tri->illum;
-	px->b = p->tri->col.b * p->tri->illum;
+	p->px->r = p->tri->col.r * p->tri->illum;
+	p->px->g = p->tri->col.g * p->tri->illum;
+	p->px->b = p->tri->col.b * p->tri->illum;
 
 }
 
@@ -117,7 +129,6 @@ void EZ_draw3D_flatShader(EZ_3DRenderParam_t* p) {
 
 #define WIDTH  (tgt->img->w)
 #define HEIGHT (tgt->img->h)
-#define PX (tgt->img->px)
 
 
 
@@ -263,14 +274,8 @@ static void _raster(EZ_3DTarget_t* tgt, EZ_Image_t* tex, EZ_Tri_t* tri) {
 		/* draw line */
 		for (p.x = x_left; p.x < x_right; p.x++) {
 
-			/* depth buffering */
-			if (tgt->zbuff[p.x + p.y * WIDTH] > z) {
-				continue;
-			}
-			else {
-				tgt->zbuff[p.x + p.y * WIDTH] = z;
-			}
-
+			p.zloc = tgt->zbuff   + p.x + p.y * WIDTH;
+			p.px   = tgt->img->px + p.x + p.y * WIDTH;
 
 			if (tgt->do_uv_correction) {
 				p.u = u/z; p.v = v/z; p.z = z;

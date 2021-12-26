@@ -30,6 +30,9 @@ typedef struct EZ_3DRenderParam_t {
 	int x, y;
 	float u, v, z;
 
+	EZ_Px_t* px;
+	float* zloc;
+
 	EZ_Tri_t* tri;
 	EZ_Image_t* tex;
 	struct EZ_3DTarget_t* tgt;

@@ -232,10 +232,3 @@ EZ_Mesh_t* EZ_mesh_loadOBJ(const char* fname) {
 
 
 
-
-
-EZ_Mesh_t* EZ_mesh_loadOFF(const char* fname) {
-
-
-	return NULL;
-}
