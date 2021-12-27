@@ -45,26 +45,12 @@ void EZ_draw3D_endScene(EZ_3DTarget_t* tgt) {
 }
 
 
-/* normal of a plane defined by 3 points by the right hand rule */
-/* p1->p2 : index, p1->p3 : middle, normal : thumb */
-static void _normal(EZ_Tri_t* tri) {
-	
-	EZ_Vec_t v1, v2, normal;
-
-	EZ_Vec_t* p1 = &(tri->vert[0].pos);
-	EZ_Vec_t* p2 = &(tri->vert[1].pos);
-	EZ_Vec_t* p3 = &(tri->vert[2].pos);
-
-	EZ_vec_sub(&v1, p3, p1);
-	EZ_vec_sub(&v2, p2, p1);
-
-	EZ_vec_cross(&normal, &v1, &v2);
-	EZ_vec_normal(&tri->normal, &normal);
-}
-
-
 
 void EZ_draw3D_textureShader(EZ_3DRenderParam_t* p) {
+
+	EZ_Px_t sample = *EZ_image_samplef(p->tex, p->u, p->v);
+
+	if (sample.a == 0) return;
 
 	/* depth buffering */
 	if (*p->zloc > p->z) {
@@ -77,12 +63,11 @@ void EZ_draw3D_textureShader(EZ_3DRenderParam_t* p) {
 
 	if (p->tex == NULL) *p->px = EZ_MAGENTA;
 
-	EZ_Px_t* sample = EZ_image_samplef(p->tex, p->u, p->v);
 
 	/* apply shading */
-	p->px->r = sample->r * p->tri->illum;
-	p->px->g = sample->g * p->tri->illum;
-	p->px->b = sample->b * p->tri->illum;
+	p->px->r = sample.r * p->tri->illum;
+	p->px->g = sample.g * p->tri->illum;
+	p->px->b = sample.b * p->tri->illum;
 
 }
 
@@ -90,6 +75,7 @@ void EZ_draw3D_textureShader(EZ_3DRenderParam_t* p) {
 
 void EZ_draw3D_flatShader(EZ_3DRenderParam_t* p) {
 
+	if (p->tri->col.a == 0) return;
 
 	/* depth buffering */
 	if (*p->zloc > p->z) {
@@ -108,27 +94,22 @@ void EZ_draw3D_flatShader(EZ_3DRenderParam_t* p) {
 
 
 
-#define X0 (tri->vert[0].sx)
-#define Y0 (tri->vert[0].sy)
-#define U0 (tri->vert[0].uv.x)
-#define V0 (tri->vert[0].uv.y)
-#define Z0 (tri->vert[0].uv.z)
+/* normal of a plane defined by 3 points by the right hand rule */
+/* p1->p2 : index, p1->p3 : middle, normal : thumb */
+static void _normal(EZ_Tri_t* tri) {
+	
+	EZ_Vec_t v1, v2, normal;
 
-#define X1 (tri->vert[1].sx)
-#define Y1 (tri->vert[1].sy)
-#define U1 (tri->vert[1].uv.x)
-#define V1 (tri->vert[1].uv.y)
-#define Z1 (tri->vert[1].uv.z)
+	EZ_Vec_t* p1 = &(tri->vert[0].pos);
+	EZ_Vec_t* p2 = &(tri->vert[1].pos);
+	EZ_Vec_t* p3 = &(tri->vert[2].pos);
 
-#define X2 (tri->vert[2].sx)
-#define Y2 (tri->vert[2].sy)
-#define U2 (tri->vert[2].uv.x)
-#define V2 (tri->vert[2].uv.y)
-#define Z2 (tri->vert[2].uv.z)
+	EZ_vec_sub(&v1, p3, p1);
+	EZ_vec_sub(&v2, p2, p1);
 
-#define WIDTH  (tgt->img->w)
-#define HEIGHT (tgt->img->h)
-
+	EZ_vec_cross(&normal, &v1, &v2);
+	EZ_vec_normal(&tri->normal, &normal);
+}
 
 
 static void _proj(EZ_3DTarget_t* tgt, EZ_Tri_t* tri, EZ_Mat4_t* trns) {
@@ -160,6 +141,28 @@ static void _proj(EZ_3DTarget_t* tgt, EZ_Tri_t* tri, EZ_Mat4_t* trns) {
 }
 
 static void _raster(EZ_3DTarget_t* tgt, EZ_Image_t* tex, EZ_Tri_t* tri) {
+
+	#define X0 (tri->vert[0].sx)
+	#define Y0 (tri->vert[0].sy)
+	#define U0 (tri->vert[0].uv.x)
+	#define V0 (tri->vert[0].uv.y)
+	#define Z0 (tri->vert[0].uv.z)
+
+	#define X1 (tri->vert[1].sx)
+	#define Y1 (tri->vert[1].sy)
+	#define U1 (tri->vert[1].uv.x)
+	#define V1 (tri->vert[1].uv.y)
+	#define Z1 (tri->vert[1].uv.z)
+
+	#define X2 (tri->vert[2].sx)
+	#define Y2 (tri->vert[2].sy)
+	#define U2 (tri->vert[2].uv.x)
+	#define V2 (tri->vert[2].uv.y)
+	#define Z2 (tri->vert[2].uv.z)
+
+	#define WIDTH  (tgt->img->w)
+	#define HEIGHT (tgt->img->h)
+
 
 	EZ_3DRenderParam_t p;
 
