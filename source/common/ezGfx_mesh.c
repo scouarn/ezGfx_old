@@ -6,7 +6,16 @@
 
 
 void EZ_mesh_free(EZ_Mesh_t* mesh) {
-	free(mesh->triangles);
+
+	EZ_Tri_t *tri = mesh->triangles;
+
+	while (tri) {
+
+		EZ_Tri_t* next = tri->next;
+		free(tri);
+		tri = next;
+	}
+
 	free(mesh);
 }
 
@@ -88,15 +97,15 @@ EZ_Mesh_t* EZ_mesh_loadOBJ(const char* fname) {
 
 	/* init mesh data */
 	EZ_Mesh_t* mesh = malloc( sizeof(EZ_Mesh_t) );
-	mesh->triangles = calloc(nFaces, sizeof(EZ_Tri_t));
+	mesh->triangles = calloc(nFaces, sizeof(EZ_Tri_t)); /* allocating the triangle in a contiguous chunk is simpler */
 	mesh->nPoly = nFaces;
-
 
 
 	/* allocate room for parsing */
 	EZ_Vec_t* v_buffer  = malloc( nPos  * sizeof(EZ_Vec_t) );
 	EZ_Vec_t* vt_buffer = malloc( nUV   * sizeof(EZ_Vec_t) );
 	EZ_Vec_t* vn_buffer = malloc( nNorm * sizeof(EZ_Vec_t) );
+
 
 	int v_index  = 0, vt_index = 0, vn_index = 0, f_index = 0;
 
@@ -174,12 +183,15 @@ EZ_Mesh_t* EZ_mesh_loadOBJ(const char* fname) {
 				else ungetc(c, fp);
 
 
+
+
 				/* write information */
 				/* -1 means the last one */
 				/* 1 means the first*/
 				/* 0 means nothing (default to 0,0,0,0 : cf calloc) */
+
 				if (v < 0) {
-					mesh->triangles[f_index].vert[i].pos = v_buffer[v_index + v];	
+					mesh->triangles[f_index].vert[i].pos = v_buffer[v_index + v];
 				}
 				else if (v > 0) {
 					mesh->triangles[f_index].vert[i].pos = v_buffer[v - 1];
@@ -194,8 +206,14 @@ EZ_Mesh_t* EZ_mesh_loadOBJ(const char* fname) {
 					mesh->triangles[f_index].vert[i].normal = vn_buffer[vn - 1];
 				}
 
-				mesh->triangles[f_index].col = EZ_WHITE;	
+				mesh->triangles[f_index].vert[i].col = EZ_WHITE;
+
+				if (f_index != nFaces-1)
+					mesh->triangles[f_index].next = mesh->triangles + f_index + 1;
+
 			}
+			
+			mesh->triangles[f_index].col = EZ_WHITE;
 
 			f_index++;
 

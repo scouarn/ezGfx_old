@@ -345,10 +345,13 @@ void EZ_draw3D_tri(EZ_3DTarget_t* tgt, EZ_Image_t* tex, EZ_Tri_t* tri_ori, EZ_Ma
 
 
 void EZ_draw3D_mesh(EZ_3DTarget_t* tgt, EZ_Mesh_t* mesh, EZ_Mat4_t* trns) {
-	int i;
+	
+	EZ_Tri_t* tri = mesh->triangles;
 
-	/* draw each triangle */
-	for (i = 0; i < mesh->nPoly; i++) {
-		EZ_draw3D_tri(tgt, mesh->texture, mesh->triangles + i, trns);
+	while (tri) {
+
+		EZ_draw3D_tri(tgt, mesh->texture, tri, trns);
+
+		tri = tri->next;
 	}
 }

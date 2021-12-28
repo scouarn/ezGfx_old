@@ -10,20 +10,25 @@ typedef struct {
 	EZ_Vec_t normal;
 	EZ_Vec_t uv;
 	int sx, sy;
+
+	EZ_Px_t col;
 	
 } EZ_Vertex_t;
 
-typedef struct {
+typedef struct EZ_Tri_t {
 	EZ_Vertex_t vert[3];
+
 	EZ_Vec_t normal;
 	EZ_Px_t col;
 	float illum;
+
+	struct EZ_Tri_t* next;
 
 } EZ_Tri_t;
 
 
 typedef struct {
-  EZ_Tri_t* triangles;
+  EZ_Tri_t* triangles; /* LINKED LIST of triangles */
   unsigned long nPoly;
   EZ_Image_t* texture;
 
