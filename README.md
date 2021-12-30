@@ -22,19 +22,22 @@ TODO
 https://www.youtube.com/watch?v=nBzCS-Y0FcY&t=853s
 https://www.youtube.com/watch?v=A-3T2OvULSc
 
-* better obj parser (line by line)
-* triangle vertex as pointers so they are shared between triangles
+* OFF parser
 * OFF blender script that export material color as face color
-* normal and true normal
+* world space normal and screen space normal
+* material / texture information (tex file name)
+
 * wireframe shader
-* vertex color
+* vertex color shader
 * mipmap / smooth / color interpolation on textures
 * antialiasing
+
+* triangle vertex as pointers so they are shared between triangles
 * proper clipping
-* material / texture information ==> custom obj format ?
+* triangle pool / sorting
+
 * lights
-* triangle pool / sorting ?
-* world transform / camera ?
+* world transform / camera
 * Other projection matrices
 
 

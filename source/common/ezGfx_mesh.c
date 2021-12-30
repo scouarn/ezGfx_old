@@ -1,8 +1,9 @@
 #include "ezErr.h"
 #include "ezGfx_mesh.h"
 
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 
 void EZ_mesh_free(EZ_Mesh_t* mesh) {
@@ -29,10 +30,19 @@ void EZ_mesh_free(EZ_Mesh_t* mesh) {
 
 
 
+static int startwith(char* haystack, char* needle) {
+
+	char* location = strstr(haystack, needle);
+
+	return location == haystack; /* test if the substring found is at the begining */
+
+}
+
 
 
 EZ_Mesh_t* EZ_mesh_loadOBJ(const char* fname) {
 
+	#define LINE_BUFF_LEN 1024
 
 
 	/* open file in text mode */
@@ -47,142 +57,110 @@ EZ_Mesh_t* EZ_mesh_loadOBJ(const char* fname) {
 
 	/* 1ST PASS : COUNT HOW MANY THINGS ARE TO PARSE */
 
+	char line[LINE_BUFF_LEN];
+
+	int v_count  = 0, vt_count = 0, vn_count = 0, f_count = 0;
+	
+	while ( fgets(line, LINE_BUFF_LEN, fp) != NULL ) {
 
 
-	char c;
-	int nPos = 0, nFaces = 0, nUV = 0, nNorm = 0;
+		if      (startwith(line, "v "))  v_count++;
+		else if (startwith(line, "vt ")) vt_count++;
+		else if (startwith(line, "vn ")) vn_count++;
+		else if (startwith(line, "f "))  f_count++;
 
-	/* go to next line, stop if end_of_file encountered */
-	#define NEXTLINE() while(c != '\n' && c != EOF) c = getc(fp);
-
-	do {
-		c = getc(fp);
-
-		switch (c) {
-
-			case 'v' :
-				if ((c = getc(fp)) == 't') nUV++;
-				else if (c == 'n') nNorm++;
-
-				else {
-					ungetc(c, fp);
-					nPos++;
-				}
-
-			break;
-
-			case 'f' :
-				nFaces++;
-			break;
-
-			default : 
-
-			break;
-		}
-
-		NEXTLINE();
-
-	} while (c != EOF);
-
-
-
-	fseek(fp, 0, SEEK_SET);
-
-
-
+	}
 
 	/* 2ND PASS : PARSING	*/
 
+	fseek(fp, 0, SEEK_SET); /* begining of file */
 
 
 	/* init mesh data */
 	EZ_Mesh_t* mesh = malloc( sizeof(EZ_Mesh_t) );
-	mesh->triangles = calloc(nFaces, sizeof(EZ_Tri_t)); /* allocating the triangle in a contiguous chunk is simpler */
-	mesh->nPoly = nFaces;
+	mesh->triangles = calloc( f_count, sizeof(EZ_Tri_t) ); /* allocating the triangle in a contiguous chunk is simpler */
+	mesh->nPoly = f_count;
+
+	EZ_Tri_t* tri = mesh->triangles; /* current triangle beeing parse */
 
 
 	/* allocate room for parsing */
-	EZ_Vec_t* v_buffer  = malloc( nPos  * sizeof(EZ_Vec_t) );
-	EZ_Vec_t* vt_buffer = malloc( nUV   * sizeof(EZ_Vec_t) );
-	EZ_Vec_t* vn_buffer = malloc( nNorm * sizeof(EZ_Vec_t) );
+	EZ_Vec_t* v_buffer  = malloc( v_count  * sizeof(EZ_Vec_t) );
+	EZ_Vec_t* vt_buffer = malloc( vt_count * sizeof(EZ_Vec_t) );
+	EZ_Vec_t* vn_buffer = malloc( vn_count * sizeof(EZ_Vec_t) );
+
+	/* allow negative / relative indexing */
+	int v_index = 0, vt_index = 0, vn_index = 0, f_index = 0;
 
 
-	int v_index  = 0, vt_index = 0, vn_index = 0, f_index = 0;
+	while ( fgets(line, LINE_BUFF_LEN, fp) != NULL ) {
 
+		if (startwith(line, "vt ")) {
 
-	do {
-
-		c = getc(fp);
-
-		switch (c) {
-
-		case 'v' :
-
-			/* UV */
-			if ((c = getc(fp)) == 't') {
-
-				fscanf(fp, "%g %g", 
-					&vt_buffer[vt_index].x, 
+			sscanf(line, "vt %g %g", 
+					&vt_buffer[vt_index].x,
 					&vt_buffer[vt_index].y
 				);
 
-				vt_index++;
-			}
+			vt_buffer[vt_index].z = 1.0;
+			vt_buffer[vt_index].w = 1.0;
 
-			else if (c == 'n') {
+			vt_index++;
+		}
 
-				fscanf(fp, "%g %g %g", 
-					&vn_buffer[v_index].x, 
-					&vn_buffer[v_index].y, 
-					&vn_buffer[v_index].z
+		else if (startwith(line, "vn ")) {
+
+			sscanf(line, "vn %g %g %g", 
+					&vn_buffer[vn_index].x, 
+					&vn_buffer[vn_index].y, 
+					&vn_buffer[vn_index].z
 				);
 
-				vn_index++;
-			}
+			vn_buffer[vn_index].w = 1.0;
 
-			/* POSITION */
-			else {
-				ungetc(c, fp);
+			vn_index++;
+		}
 
-				fscanf(fp, "%g %g %g", 
+		else if (startwith(line, "v ")) {
+			
+			sscanf(line, "v %g %g %g", 
 					&v_buffer[v_index].x, 
 					&v_buffer[v_index].y, 
 					&v_buffer[v_index].z
 				);
 
-				v_buffer[v_index].w = 1.0;
+			v_buffer[v_index].w = 1.0;
 
-				v_index++;
-			}
+			v_index++;
+		}
 
-		break;
+		else if (startwith(line, "f ")) {
 
 
-		/* Write directly to the mesh structure */
-		case 'f' : {
-			int i, v = 0, vt = 0, vn = 0; 
+			int i;
+			char* token = strtok(line+2, " ");  /* skip "f " */
 
 			for (i = 0; i < 3; i++) {
+				int v, vt, vn; 
 
-				/* parse v */
-				fscanf(fp, "%d", &v);
-
-				if ((c = getc(fp)) == '/') {
-
-					/* parse vt (can fail) */
-					fscanf(fp, "%d", &vt);
-
-					/* parse vn */
-					if ((c = getc(fp)) == '/')
-						fscanf(fp, "%d", &vn);
-					
-					else 
-						ungetc(c, fp);
+				if (3 == sscanf(token, "%d/%d/%d",  &v, &vt, &vn) ) {
 
 				}
-				else ungetc(c, fp);
+				else if (2 == sscanf(token, "%d/%d", &v, &vt) ) {
+					vn = 0;
+				}
+				else if (2 == sscanf(token, "%d//%d", &v, &vn) ) {
+					vt = 0;
+				}
+				else if (1 == sscanf(token, "%d", &v) ) {
+					vt = 0; vn = 0;
+				}
+				else {
+					ERR_warning("Couldn't parse a face in %s", fname);
+					v = 0; vt = 0; vn = 0;
+				}
 
-
+				token = strtok(NULL, " ");
 
 
 				/* write information */
@@ -191,56 +169,43 @@ EZ_Mesh_t* EZ_mesh_loadOBJ(const char* fname) {
 				/* 0 means nothing (default to 0,0,0,0 : cf calloc) */
 
 				if (v < 0) {
-					mesh->triangles[f_index].vert[i].pos = v_buffer[v_index + v];
+					tri->vert[i].pos = v_buffer[v_index + v];
 				}
 				else if (v > 0) {
-					mesh->triangles[f_index].vert[i].pos = v_buffer[v - 1];
+					tri->vert[i].pos = v_buffer[v - 1];
 				}
 
 				if (vt > 0) {
-					mesh->triangles[f_index].vert[i].uv.x = vt_buffer[vt - 1].x;
-					mesh->triangles[f_index].vert[i].uv.y = vt_buffer[vt - 1].y;
+					tri->vert[i].uv = vt_buffer[vt - 1];
 				}
 
 				if (vn > 0) {
-					mesh->triangles[f_index].vert[i].normal = vn_buffer[vn - 1];
+					tri->vert[i].normal = vn_buffer[vn - 1];
 				}
 
-				mesh->triangles[f_index].vert[i].col = EZ_WHITE;
-
-				if (f_index != nFaces-1)
-					mesh->triangles[f_index].next = mesh->triangles + f_index + 1;
+				tri->vert[i].col = EZ_WHITE;
 
 			}
-			
-			mesh->triangles[f_index].col = EZ_WHITE;
 
-			f_index++;
+			tri->col = EZ_WHITE;
 
-		}
-		break;
+			if (f_index < f_count-1) {
 
-
-
-		default : 
-
-		break;
+				tri->next = tri+1;
+				tri++;
+				f_index++;
+			}
 
 		}
-		
 
-		NEXTLINE();
-
-	} while (c != EOF);
-
-
-	fclose(fp);
-
+	}
 
 
 	free(v_buffer);
 	free(vt_buffer);
 	free(vn_buffer);
+	
+	fclose(fp);
 
 
 	return mesh;

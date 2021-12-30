@@ -60,7 +60,6 @@ void EZ_draw3D_textureShader(EZ_3DRenderParam_t* p) {
 		*p->zloc = p->z;
 	}
 
-
 	if (p->tex == NULL) *p->px = EZ_MAGENTA;
 
 
@@ -349,9 +348,7 @@ void EZ_draw3D_mesh(EZ_3DTarget_t* tgt, EZ_Mesh_t* mesh, EZ_Mat4_t* trns) {
 	EZ_Tri_t* tri = mesh->triangles;
 
 	while (tri) {
-
 		EZ_draw3D_tri(tgt, mesh->texture, tri, trns);
-
 		tri = tri->next;
 	}
 }
