@@ -25,13 +25,16 @@ void setup() {
 	EZ_mat4_setProj(&proj, QUARTER_PI, (float)WIDTH / HEIGHT, 0.001, 1000);
 	EZ_mat4_setId(&world);
 	render = EZ_draw3D_makeTarget(canvas, &proj, &world);
+	render->shader = EZ_draw3D_flatShader;
 
 	texture = EZ_image_loadBMP("assets/texture.bmp");
-	cube = EZ_mesh_loadOBJ("assets/torus.obj");
+	cube = EZ_mesh_loadOFF("assets/cube.off");
+	// cube = EZ_mesh_loadOBJ("assets/cube.obj");
 
 	ERR_assert(texture && cube, "Couldn't load assets");
 
 	cube->texture = texture;
+
 
 
 	// EZ_setFullscreen(true);
