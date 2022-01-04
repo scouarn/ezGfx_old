@@ -18,41 +18,25 @@
 #include "ezGfx_vec.h"
 #include "ezGfx_mat4.h"
 #include "ezGfx_mesh.h"
+#include "ezGfx_shader.h"
+
 #include <stdbool.h>
 
+#define EZ_DRAW3D_MODE_FLAT     0
+#define EZ_DRAW3D_MODE_TEXTURED 1
 
-/* (cyclic definition) */
-struct EZ_3DTarget_t; 
-struct EZ_3DRenderParam_t;
 
-typedef struct EZ_3DRenderParam_t {
+typedef struct {
+	EZ_Image_t* img; /* target image */
+	EZ_Mat4_t* proj; /* camera projection */
+	EZ_Mat4_t* trns; /* world transform */
 
-	int x, y;
-	float u, v, z;
+	float* zbuff;    /* z buffer */
+	EZ_Tri_t* faces; /* list of triangles to be rendered */
 
-	EZ_Px_t* px;
-	float* zloc;
-
-	EZ_Tri_t* tri;
-	EZ_Image_t* tex;
-	struct EZ_3DTarget_t* tgt;
-
-} EZ_3DRenderParam_t;
-
-typedef void (EZ_Shader_t)(EZ_3DRenderParam_t* p);
-
-/* default shaders */
-EZ_Shader_t EZ_draw3D_textureShader;
-EZ_Shader_t EZ_draw3D_flatShader;
-
-typedef struct EZ_3DTarget_t {
-	EZ_Image_t* img;
-	EZ_Mat4_t* proj;
-	EZ_Mat4_t* trns;
-	float* zbuff;
-
-	EZ_Shader_t* shader;
-	bool do_uv_correction;
+ 	/* render parameters */
+	unsigned int do_uv_correction : 1; /* default true */
+	unsigned int do_tri_sorting   : 1; /* default false */
 
 } EZ_3DTarget_t;
 
@@ -60,10 +44,11 @@ typedef struct EZ_3DTarget_t {
 EZ_3DTarget_t* EZ_draw3D_makeTarget(EZ_Image_t* img, EZ_Mat4_t* proj, EZ_Mat4_t* trns);
 void           EZ_draw3D_freeTarget(EZ_3DTarget_t* tgt);
 
+
 void EZ_draw3D_startScene(EZ_3DTarget_t* tgt);
 void EZ_draw3D_endScene  (EZ_3DTarget_t* tgt);
 
-void EZ_draw3D_tri (EZ_3DTarget_t* tgt, EZ_Image_t* tex, EZ_Tri_t* tri, EZ_Mat4_t* trns);
+void EZ_draw3D_tri (EZ_3DTarget_t* tgt, EZ_Tri_t* tri,   EZ_Mat4_t* trns);
 void EZ_draw3D_mesh(EZ_3DTarget_t* tgt, EZ_Mesh_t* mesh, EZ_Mat4_t* trns);
 
 

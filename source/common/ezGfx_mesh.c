@@ -8,7 +8,7 @@
 
 void EZ_mesh_free(EZ_Mesh_t* mesh) {
 
-	EZ_Tri_t *tri = mesh->triangles;
+	EZ_Tri_t *tri = mesh->faces;
 
 	while (tri) {
 
@@ -17,6 +17,9 @@ void EZ_mesh_free(EZ_Mesh_t* mesh) {
 		tri = next;
 	}
 
+	if (mesh->m_count > 0)
+		free(mesh->materials);
+	
 	free(mesh);
 }
 
@@ -86,10 +89,19 @@ EZ_Mesh_t* EZ_mesh_loadOBJ(const char* fname) {
 
 	/* init mesh data */
 	EZ_Mesh_t* mesh = calloc( 1, sizeof(EZ_Mesh_t) );
-	mesh->triangles = calloc( f_count, sizeof(EZ_Tri_t) ); /* allocating the triangle in a contiguous chunk is simpler */
-	mesh->nPoly = f_count;
+	mesh->faces = calloc( f_count, sizeof(EZ_Tri_t) ); /* allocating the triangle in a contiguous chunk is simpler */
+	mesh->f_count = f_count;
 
-	EZ_Tri_t* tri = mesh->triangles; /* current triangle beeing parse */
+	mesh->materials = malloc( sizeof(EZ_Material_t) );
+	mesh->materials[0] = (EZ_Material_t) { 0, NULL, EZ_WHITE };
+	mesh->m_count = 1;
+
+	EZ_Tri_t* tri = mesh->faces; /* current triangle beeing parse */
+
+	for (int i = 0; i < f_count-1; i++) {
+		mesh->faces[i].next = &mesh->faces[i+1];
+	}
+	
 
 
 	/* allocate room for parsing */
@@ -196,7 +208,7 @@ EZ_Mesh_t* EZ_mesh_loadOBJ(const char* fname) {
 
 			}
 
-			tri->col = EZ_WHITE;
+			tri->mat = mesh->materials;
 
 			tri++;
 			f_index++;
@@ -205,10 +217,6 @@ EZ_Mesh_t* EZ_mesh_loadOBJ(const char* fname) {
 
 	}
 
-	for (int i = 0; i < f_count-1; i++) {
-		mesh->triangles[i].next = &mesh->triangles[i+1];
-	}
-	
 	if (f_index != f_count)
 		ERR_warning("Unparsed faces in %s", fname);
 	if (v_index != v_count)
@@ -233,141 +241,128 @@ EZ_Mesh_t* EZ_mesh_loadOBJ(const char* fname) {
 
 
 
-EZ_Mesh_t* EZ_mesh_loadOFF(const char* fname) {
+// EZ_Mesh_t* EZ_mesh_loadOFF(const char* fname) {
 
-	#define LINE_BUFF_LEN 1024
-
-
-	/* open file in text mode */
-	FILE *fp = fopen(fname,"r");
-
-	if (fp == NULL) {
-		ERR_warning("Couldn't open file %s", fname);
-		return NULL;
-	}
+// 	#define LINE_BUFF_LEN 1024
 
 
-	char line[LINE_BUFF_LEN];
+// 	/* open file in text mode */
+// 	FILE *fp = fopen(fname,"r");
+
+// 	if (fp == NULL) {
+// 		ERR_warning("Couldn't open file %s", fname);
+// 		return NULL;
+// 	}
 
 
-	/* read the number of things to parse */
-	int v_count, f_count, e_count; /* edge count is irrelevent and can be ignored */
-
-	while ( fgets(line, LINE_BUFF_LEN, fp) != NULL
-	    && 3 != sscanf(line, "%d %d %d", &v_count, &f_count, &e_count)
-		);
+// 	char line[LINE_BUFF_LEN];
 
 
-	if (v_count == 0 || f_count == 0) {
-		ERR_warning("No vertices or faces in %s", fname);
-		fclose(fp);
-		return NULL;
-	}
+// 	/* read the number of things to parse */
+// 	int v_count, f_count, e_count; /* edge count is irrelevent and can be ignored */
 
-	printf("current line is %s \n", line);
-	printf("f_count = %d\n", f_count);
-	printf("v_count = %d\n", v_count);
+// 	while ( fgets(line, LINE_BUFF_LEN, fp) != NULL
+// 	    && 3 != sscanf(line, "%d %d %d", &v_count, &f_count, &e_count)
+// 		);
 
 
-	/* allocate for parsing vertices */
-	EZ_Vec_t* v_buffer = calloc( v_count, sizeof(EZ_Vec_t) );
+// 	if (v_count == 0 || f_count == 0) {
+// 		ERR_warning("No vertices or faces in %s", fname);
+// 		fclose(fp);
+// 		return NULL;
+// 	}
 
-
-	/* parse vertices */
-	int i = 0;
-
-	while (i < v_count) {
-
-		if (fgets(line, LINE_BUFF_LEN, fp) == NULL) {
-			ERR_warning("Unexpected end of file during vertex parsing in %s", fname);
-			break;
-		}
 	
-		int parsed = sscanf(line, "%g %g %g", 
-						&v_buffer[i].x,
-						&v_buffer[i].y,
-						&v_buffer[i].z
-					);
 
-		v_buffer[i].w = 1.0;
-
-		if (parsed == 3) {
-			i++;
-		}
-		else if (parsed > 0) { 
-			ERR_warning("Error while parsing a vertex in %s", fname);
-			break;
-		}
-		/* else : zero --> empty line or comment */
-
-	}
+// 	/* allocate for parsing vertices */
+// 	EZ_Vec_t* v_buffer = calloc( v_count, sizeof(EZ_Vec_t) );
 
 
-	// for (i = 0; i < v_count; i++) {
-	// 	printf("%g %g %g\n", 
-	// 		v_buffer[i].x,
-	// 		v_buffer[i].y,
-	// 		v_buffer[i].z
-	// 	);
-	// }
+// 	/* parse vertices */
+// 	int i = 0;
+
+// 	while (i < v_count) {
+
+// 		if (fgets(line, LINE_BUFF_LEN, fp) == NULL) {
+// 			ERR_warning("Unexpected end of file during vertex parsing in %s", fname);
+// 			break;
+// 		}
+	
+// 		int parsed = sscanf(line, "%g %g %g", 
+// 						&v_buffer[i].x,
+// 						&v_buffer[i].y,
+// 						&v_buffer[i].z
+// 					);
+
+// 		v_buffer[i].w = 1.0;
+
+// 		if (parsed == 3) {
+// 			i++;
+// 		}
+// 		else if (parsed > 0) { 
+// 			ERR_warning("Error while parsing a vertex in %s", fname);
+// 			break;
+// 		}
+// 		/* else : zero --> empty line or comment */
+
+// 	}
 
 
-
-	/* alloc for face parsing */
-	EZ_Mesh_t* mesh = calloc( 1, sizeof(EZ_Mesh_t) );
-	mesh->triangles = calloc( f_count, sizeof(EZ_Tri_t) ); /* allocating the triangle in a contiguous chunk is simpler */
-	mesh->nPoly = f_count;
-
-
-	/* set up the linked list */
-	for (i = 0; i < f_count-1; i++) {
-		mesh->triangles[i].next = &mesh->triangles[i+1];
-	}
+// 	/* alloc for face parsing */
+// 	EZ_Mesh_t* mesh = calloc( 1, sizeof(EZ_Mesh_t) );
+// 	mesh->faces = calloc( f_count, sizeof(EZ_Tri_t) ); /* allocating the triangle in a contiguous chunk is simpler */
+// 	mesh->f_count = f_count;
 
 
-	/* parse faces */
-	EZ_Tri_t* tri = mesh->triangles;
-	i = 0;
+// 	/* set up the linked list */
+// 	for (i = 0; i < f_count-1; i++) {
+// 		mesh->faces[i].next = &mesh->faces[i+1];
+// 	}
 
-	while (i < f_count) {
 
-		if (fgets(line, LINE_BUFF_LEN, fp) == NULL) {
-			ERR_warning("Unexpected end of file during face parsing in %s", fname);
-			break;
-		}
+// 	/* parse faces */
+// 	EZ_Tri_t* tri = mesh->faces;
+// 	i = 0;
+
+// 	while (i < f_count) {
+
+// 		if (fgets(line, LINE_BUFF_LEN, fp) == NULL) {
+// 			ERR_warning("Unexpected end of file during face parsing in %s", fname);
+// 			break;
+// 		}
 		
-		tri->col = EZ_WHITE; /* set default alpha */
+// 		tri->col = EZ_WHITE; /* set default alpha */
 
-		int parsed, nb_edges, v1, v2, v3;
-		parsed = sscanf(line, "%d %d %d %d %hhd %hhd %hhd", 
-				&nb_edges, 
-				&v1, &v2, &v3, 
-				&tri->col.r, &tri->col.g, &tri->col.b
-			);
-
-
-		if (nb_edges != 3) {
-			ERR_warning("Unsupported non-triangular face in %s", fname);
-		}	
-
-		if (parsed != 4 && parsed != 7) {
-			ERR_warning("Error while parsing a face in %s", fname);
-		}
+// 		int parsed, nb_edges, v1, v2, v3;
+// 		parsed = sscanf(line, "%d %d %d %d %hhd %hhd %hhd", 
+// 				&nb_edges, 
+// 				&v1, &v2, &v3, 
+// 				&tri->col.r, &tri->col.g, &tri->col.b
+// 			);
 
 
-		tri->vert[0].pos = v_buffer[v1];
-		tri->vert[1].pos = v_buffer[v2];
-		tri->vert[2].pos = v_buffer[v3];
+// 		if (nb_edges != 3) {
+// 			ERR_warning("Unsupported non-triangular face in %s", fname);
+// 		}	
+
+// 		if (parsed != 4 && parsed != 7) {
+// 			ERR_warning("Error while parsing a face in %s", fname);
+// 		}
 
 
-		tri++;
-		i++;
-	}
+// 		tri->vert[0].pos = v_buffer[v1];
+// 		tri->vert[1].pos = v_buffer[v2];
+// 		tri->vert[2].pos = v_buffer[v3];
 
-	free(v_buffer);
-	fclose(fp);
 
-	return mesh;
-}
+// 		tri++;
+// 		i++;
+// 	}
+
+// 	free(v_buffer);
+// 	fclose(fp);
+
+// 	return mesh;
+// }
 
 

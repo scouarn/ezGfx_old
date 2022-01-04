@@ -1,6 +1,7 @@
 #include "ezGfx_draw3D.h"
 #include "ezGfx_utils.h"
 
+
 #include <stdlib.h>
 
 
@@ -12,8 +13,6 @@ EZ_3DTarget_t* EZ_draw3D_makeTarget(EZ_Image_t* img, EZ_Mat4_t* proj, EZ_Mat4_t*
 	tgt->proj = proj;
 	tgt->trns = trns;
 	
-	tgt->shader = EZ_draw3D_textureShader;
-	// tgt->shader = EZ_draw3D_flatShader;
 	tgt->do_uv_correction = true;
 
 
@@ -41,53 +40,6 @@ void EZ_draw3D_startScene(EZ_3DTarget_t* tgt) {
 }
 
 void EZ_draw3D_endScene(EZ_3DTarget_t* tgt) {
-
-}
-
-
-
-void EZ_draw3D_textureShader(EZ_3DRenderParam_t* p) {
-
-	EZ_Px_t sample = *EZ_image_samplef(p->tex, p->u, p->v);
-
-	if (sample.a == 0) return;
-
-	/* depth buffering */
-	if (*p->zloc > p->z) {
-		return;
-	}
-	else {
-		*p->zloc = p->z;
-	}
-
-	if (p->tex == NULL) *p->px = EZ_MAGENTA;
-
-
-	/* apply shading */
-	p->px->r = sample.r * p->tri->illum;
-	p->px->g = sample.g * p->tri->illum;
-	p->px->b = sample.b * p->tri->illum;
-
-}
-
-
-
-void EZ_draw3D_flatShader(EZ_3DRenderParam_t* p) {
-
-	if (p->tri->col.a == 0) return;
-
-	/* depth buffering */
-	if (*p->zloc > p->z) {
-		return;
-	}
-	else {
-		*p->zloc = p->z;
-	}
-
-	/* apply shading */
-	p->px->r = p->tri->col.r * p->tri->illum;
-	p->px->g = p->tri->col.g * p->tri->illum;
-	p->px->b = p->tri->col.b * p->tri->illum;
 
 }
 
@@ -139,7 +91,19 @@ static void _proj(EZ_3DTarget_t* tgt, EZ_Tri_t* tri, EZ_Mat4_t* trns) {
 
 }
 
-static void _raster(EZ_3DTarget_t* tgt, EZ_Image_t* tex, EZ_Tri_t* tri) {
+static void _call_shader(int mode, EZ_3DRenderParam_t* p) {
+
+	switch (mode) {
+
+		case EZ_DRAW3D_MODE_FLAT : EZ_shader_flat(p); break;
+		case EZ_DRAW3D_MODE_TEXTURED : EZ_shader_textured(p); break;
+
+		default : EZ_shader_flat(p);
+	}
+
+}
+
+static void _raster(EZ_3DTarget_t* tgt, EZ_Tri_t* tri) {
 
 	#define X0 (tri->vert[0].sx)
 	#define Y0 (tri->vert[0].sy)
@@ -164,9 +128,6 @@ static void _raster(EZ_3DTarget_t* tgt, EZ_Image_t* tex, EZ_Tri_t* tri) {
 
 
 	EZ_3DRenderParam_t p;
-
-	p.tgt = tgt;
-	p.tex = tex;
 	p.tri = tri;
 
 	/* sort for drawing */
@@ -280,11 +241,11 @@ static void _raster(EZ_3DTarget_t* tgt, EZ_Image_t* tex, EZ_Tri_t* tri) {
 
 			if (tgt->do_uv_correction) {
 				p.u = u/z; p.v = v/z; p.z = z;
-				tgt->shader(&p);
+				_call_shader(tri->mat->mode, &p);
 			}
 			else {
 				p.u = u; p.v = v; p.z = z;
-				tgt->shader(&p);
+				_call_shader(tri->mat->mode, &p);
 			}
 
 			u += dudx;  v += dvdx;  z += dzdx;
@@ -302,7 +263,7 @@ static void _raster(EZ_3DTarget_t* tgt, EZ_Image_t* tex, EZ_Tri_t* tri) {
 }
 
 
-void EZ_draw3D_tri(EZ_3DTarget_t* tgt, EZ_Image_t* tex, EZ_Tri_t* tri_ori, EZ_Mat4_t* trns) {
+void EZ_draw3D_tri(EZ_3DTarget_t* tgt, EZ_Tri_t* tri_ori, EZ_Mat4_t* trns) {
 
 	EZ_Tri_t tri = *tri_ori; /* copy */
 
@@ -336,7 +297,7 @@ void EZ_draw3D_tri(EZ_3DTarget_t* tgt, EZ_Image_t* tex, EZ_Tri_t* tri_ori, EZ_Ma
 
 
 	/* draw */
-	_raster(tgt, tex, &tri);
+	_raster(tgt, &tri);
 
 }
 
@@ -345,10 +306,10 @@ void EZ_draw3D_tri(EZ_3DTarget_t* tgt, EZ_Image_t* tex, EZ_Tri_t* tri_ori, EZ_Ma
 
 void EZ_draw3D_mesh(EZ_3DTarget_t* tgt, EZ_Mesh_t* mesh, EZ_Mat4_t* trns) {
 	
-	EZ_Tri_t* tri = mesh->triangles;
+	EZ_Tri_t* tri = mesh->faces;
 
 	while (tri) {
-		EZ_draw3D_tri(tgt, mesh->texture, tri, trns);
+		EZ_draw3D_tri(tgt, tri, trns);
 		tri = tri->next;
 	}
 }
