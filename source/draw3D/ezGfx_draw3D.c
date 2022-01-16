@@ -91,14 +91,13 @@ static void _proj(EZ_3DTarget_t* tgt, EZ_Tri_t* tri, EZ_Mat4_t* trns) {
 
 }
 
-static void _call_shader(int mode, EZ_3DRenderParam_t* p) {
+static void _call_shader(EZ_Shader_t* func, EZ_3DRenderParam_t* p) {
 
-	switch (mode) {
-
-		case EZ_DRAW3D_MODE_FLAT : EZ_shader_flat(p); break;
-		case EZ_DRAW3D_MODE_TEXTURED : EZ_shader_textured(p); break;
-
-		default : EZ_shader_flat(p);
+	if (func == NULL) {
+		EZ_shader_flat(p);
+	}
+	else {
+		p->tri->mat->shad(p);
 	}
 
 }
@@ -241,11 +240,11 @@ static void _raster(EZ_3DTarget_t* tgt, EZ_Tri_t* tri) {
 
 			if (tgt->do_uv_correction) {
 				p.u = u/z; p.v = v/z; p.z = z;
-				_call_shader(tri->mat->mode, &p);
+				_call_shader(tri->mat->shad, &p);
 			}
 			else {
 				p.u = u; p.v = v; p.z = z;
-				_call_shader(tri->mat->mode, &p);
+				_call_shader(tri->mat->shad, &p);
 			}
 
 			u += dudx;  v += dvdx;  z += dzdx;

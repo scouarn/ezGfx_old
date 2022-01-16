@@ -31,7 +31,7 @@ void setup() {
 
 	ERR_assert(texture && cube, "Couldn't load assets");
 
-	cube->materials[0] = (EZ_Material_t){ EZ_DRAW3D_MODE_TEXTURED, texture, EZ_WHITE };
+	cube->materials[0] = (EZ_Material_t){ EZ_shader_textured, texture, EZ_WHITE };
 
 
 	// EZ_setFullscreen(true);

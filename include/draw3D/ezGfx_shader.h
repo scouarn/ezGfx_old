@@ -2,9 +2,9 @@
 #define _EZGFX_SHADER_H_
 
 #include "ezGfx_mesh.h"
+#include "ezGfx_shader_def.h"
 
-
-typedef struct {
+struct __EZ_3DRenderParam_t__ {
 
 	int x, y;      /* target coordinates */
 	float u, v, z; /* uv coordinates */
@@ -14,11 +14,8 @@ typedef struct {
 
 	EZ_Tri_t* tri; /* triangle being rendered */
 	
-} EZ_3DRenderParam_t;
+};
 
-
-
-typedef void (EZ_Shader_t)(EZ_3DRenderParam_t* p);
 
 /* default shaders */
 EZ_Shader_t EZ_shader_textured;

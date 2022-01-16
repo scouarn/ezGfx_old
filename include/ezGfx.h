@@ -15,6 +15,7 @@
 
 #include "ezGfx_mesh.h"
 #include "ezGfx_shader.h"
+#include "ezGfx_shader_def.h"
 #include "ezGfx_draw3D.h"
 #include "ezGfx_mat4.h"
 

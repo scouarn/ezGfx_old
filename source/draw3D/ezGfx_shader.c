@@ -15,12 +15,12 @@ void EZ_shader_textured(EZ_3DRenderParam_t* p) {
 		*p->zloc = p->z;
 	}
 
-	if (p->tri->mat->texture == NULL) {
+	if (p->tri->mat->tex == NULL) {
 		*p->px = EZ_MAGENTA;
 		return;	
-	} 
-
-	EZ_Px_t sample = *EZ_image_samplef(p->tri->mat->texture, p->u, p->v);
+	}
+	
+	EZ_Px_t sample = *EZ_image_samplef(p->tri->mat->tex, p->u, p->v);
 
 	if (sample.a == 0) return;
 

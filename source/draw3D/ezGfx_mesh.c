@@ -93,7 +93,7 @@ EZ_Mesh_t* EZ_mesh_loadOBJ(const char* fname) {
 	mesh->f_count = f_count;
 
 	mesh->materials = malloc( sizeof(EZ_Material_t) );
-	mesh->materials[0] = (EZ_Material_t) { 0, NULL, EZ_WHITE };
+	mesh->materials[0] = DEFAULT_MAT;
 	mesh->m_count = 1;
 
 	EZ_Tri_t* tri = mesh->faces; /* current triangle beeing parse */

@@ -22,9 +22,6 @@
 
 #include <stdbool.h>
 
-#define EZ_DRAW3D_MODE_FLAT     0
-#define EZ_DRAW3D_MODE_TEXTURED 1
-
 
 typedef struct {
 	EZ_Image_t* img; /* target image */
