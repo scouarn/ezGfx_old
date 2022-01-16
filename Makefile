@@ -1,7 +1,7 @@
 include config.mk
 
 
-SRC := $(wildcard source/common/*.c) $(wildcard source/draw3d/*.c) source/core/$(CORE).c
+SRC := $(wildcard source/common/*.c) $(wildcard source/draw3D/*.c) source/core/$(CORE).c
 OBJ := $(patsubst %.c,%.o,$(SRC))
 
 

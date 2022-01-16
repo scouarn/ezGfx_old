@@ -1,5 +1,5 @@
 
-CFLAGS := -O3 -Wall -Iinclude
+CFLAGS := -O3 -Wall -Iinclude -Iinclude/draw3D
 
 
 ifeq ($(OS),Windows_NT)
