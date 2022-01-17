@@ -1,9 +1,0 @@
-# cube.ezoff
-# A cube
-
-v_count 8
-f_count 12
-tex texture.bmp
-
-v  x y z   r g b   u v   nx ny nz
-f  v1 v2 v3  r g b

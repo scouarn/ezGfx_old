@@ -31,6 +31,9 @@ EZ_Font_t* EZ_createFont(int w, int h) {
 
 
 void EZ_freeFont(EZ_Font_t* font) {
+
+	if (font == NULL) return;
+
 	free(font->data[0]);
 	free(font->data);
 	free(font);

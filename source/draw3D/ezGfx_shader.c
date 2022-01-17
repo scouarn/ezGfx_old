@@ -5,8 +5,6 @@
 
 void EZ_shader_textured(EZ_3DRenderParam_t* p) {
 
-
-
 	/* depth buffering */
 	if (*p->zloc > p->z) {
 		return;

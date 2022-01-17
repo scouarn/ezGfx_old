@@ -22,7 +22,6 @@ TODO
 https://www.youtube.com/watch?v=nBzCS-Y0FcY&t=853s
 https://www.youtube.com/watch?v=A-3T2OvULSc
 
-* EZOFF custom format with texture file name, normals and UVs
 * world space normal and screen space normal
 
 * wireframe shader

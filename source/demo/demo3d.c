@@ -7,7 +7,6 @@
 #define HEIGHT 512
 
 EZ_Image_t* canvas;
-EZ_Image_t* texture;
 EZ_Mesh_t* cube;
 EZ_3DTarget_t* render;
 EZ_Mat4_t proj;
@@ -26,12 +25,7 @@ void setup() {
 	EZ_mat4_setId(&world);
 	render = EZ_draw3D_makeTarget(canvas, &proj, &world);
 
-	texture = EZ_image_loadBMP("assets/obama.bmp");
-	cube = EZ_mesh_loadOBJ("assets/obama.obj");
-
-	ERR_assert(texture && cube, "Couldn't load assets");
-
-	cube->materials[0] = (EZ_Material_t){ EZ_shader_textured, texture, EZ_WHITE };
+	cube = EZ_mesh_loadOBJ("assets/cube2.obj");
 
 
 	// EZ_setFullscreen(true);
@@ -65,7 +59,6 @@ void draw(double dt) {
 
 void kill() {
 	EZ_image_free(canvas);
-	EZ_image_free(texture);
 	EZ_draw3D_freeTarget(render);
 	EZ_mesh_free(cube);
 }

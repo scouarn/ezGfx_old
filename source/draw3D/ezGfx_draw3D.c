@@ -22,6 +22,8 @@ EZ_3DTarget_t* EZ_draw3D_makeTarget(EZ_Image_t* img, EZ_Mat4_t* proj, EZ_Mat4_t*
 }
 
 void EZ_draw3D_freeTarget(EZ_3DTarget_t* tgt) {
+	if (tgt == NULL) return;
+
 	free(tgt->zbuff);
 	free(tgt);
 }

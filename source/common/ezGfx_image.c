@@ -19,7 +19,8 @@ EZ_Image_t* EZ_image_make(int w, int h) {
 
 
 void EZ_image_free(EZ_Image_t* img) {
-	free(img->px);
+
+	if (img) free(img->px);
 	free(img);
 }
 
