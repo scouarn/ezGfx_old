@@ -44,14 +44,13 @@ typedef struct EZ_Tri_t {
 	EZ_Vec_t cam_normal;
 	float illum;
 
-	struct EZ_Tri_t* next;
 
 } EZ_Tri_t;
 
 
 typedef struct {
 
-	EZ_Tri_t* faces;	/* list */
+	EZ_Tri_t* faces;
 	EZ_Material_t materials[MESH_MAT_COUNT];
 
 	int f_count;

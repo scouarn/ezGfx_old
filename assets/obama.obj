@@ -1,5 +1,6 @@
 # Blender v3.0.0 OBJ File: ''
 # www.blender.org
+mtllib assets/obama.mtl
 o Cube
 v 0.000000 0.850000 0.000000
 v 1.000000 -0.650000 -1.000000
@@ -22,6 +23,7 @@ vt 0.0 0.0
 vt 0.564824 0.0
 vt 0.289002 0.5
 vt 0.8 1.0
+usemtl Material
 s off
 f 3/1 1/2 5/3
 f 5/4 1/5 4/6

@@ -62,6 +62,7 @@ https://www.youtube.com/watch?v=A-3T2OvULSc
 * splines calculation / bezier curves 2D/3D
 * voxel engine
 
+* =>> python API
 * lua / python / lisp / perl / js / bash / brainfuck / BNF defined / ocaml/ ??
 	=> on the fly compiled scripting language ?
 	https://github.com/lua/lua

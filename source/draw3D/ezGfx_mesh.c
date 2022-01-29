@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 
 #define LINE_BUFF_LEN 1024
 
@@ -15,12 +16,18 @@
  */
 
 
-static int startwith(char* haystack, char* needle) {
+static bool startwith(char* haystack, char* needle) {
 
-	char* location = strstr(haystack, needle);
+	char *n = needle, *h = haystack;
 
-	return location == haystack; /* test if the substring found is at the begining */
+	while (*n != '\0' && *h != 0) {
+		if (*n != *h) return false;
 
+		n++;
+		h++;
+	}
+
+	return true;
 }
 
 
@@ -28,31 +35,26 @@ void EZ_mesh_free(EZ_Mesh_t* mesh) {
 
 	if (mesh == NULL) return;
 
-	EZ_Tri_t *tri = mesh->faces;
-
-	while (tri) {
-
-		EZ_Tri_t* next = tri->next;
-		free(tri);
-		tri = next;
-	}
-
 	EZ_mesh_freeTextures(mesh);
 
+	free(mesh->faces);
 	free(mesh);
 }
+
 
 void EZ_mesh_freeTextures(EZ_Mesh_t* mesh) {
 
 	if (mesh == NULL) return;
 
-	for (int i = 0; i < MESH_MAT_COUNT; i++) {
+	int i;
+	for (i = 0; i < MESH_MAT_COUNT; i++) {
 		if (mesh->materials[i].tex)
 			EZ_image_free(mesh->materials[i].tex);
 
 		mesh->materials[i].tex = NULL;
 	}
 }
+
 
 void EZ_mesh_loadSingleTexture(EZ_Mesh_t* mesh, const char* fname) {
 
@@ -65,6 +67,7 @@ void EZ_mesh_loadSingleTexture(EZ_Mesh_t* mesh, const char* fname) {
 	mesh->materials[0].col  = EZ_WHITE;
 
 }
+
 
 void EZ_mesh_loadMTL(EZ_Mesh_t* mesh, const char* fname) {
 
@@ -173,10 +176,7 @@ EZ_Mesh_t* EZ_mesh_loadOBJ(const char* fname) {
 	mesh->f_count = f_count;
 	mesh->faces = calloc( f_count, sizeof(EZ_Tri_t) ); /* allocating the triangle in a contiguous chunk is simpler */
 
-	for (int i = 0; i < f_count-1; i++) {
-		mesh->faces[i].next = &mesh->faces[i+1];
-	}
-	
+
 	EZ_Tri_t* tri = mesh->faces; /* current triangle beeing parse */
 	int current_mat = 0; /* index of the current material beeing used */
 
