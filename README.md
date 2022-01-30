@@ -24,6 +24,7 @@ https://www.youtube.com/watch?v=A-3T2OvULSc
 
 * triangle sorting
 * proper clipping
+* camera point to function
 
 * lights
 * triangle vertex as pointers so they are shared between triangles
