@@ -22,20 +22,19 @@ TODO
 https://www.youtube.com/watch?v=nBzCS-Y0FcY&t=853s
 https://www.youtube.com/watch?v=A-3T2OvULSc
 
-* world space normal and screen space normal
+* triangle sorting
+* proper clipping
+
+* lights
+* triangle vertex as pointers so they are shared between triangles
+* Other projection matrices
 
 * wireframe shader
 * vertex color shader
 * mipmap / smooth / color interpolation on textures
 * antialiasing
 
-* triangle vertex as pointers so they are shared between triangles
-* proper clipping
-* triangle pooling / sorting
 
-* lights
-* world transform / camera
-* Other projection matrices
 
 
 

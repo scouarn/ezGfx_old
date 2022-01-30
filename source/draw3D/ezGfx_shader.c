@@ -33,7 +33,7 @@ void EZ_shader_textured(EZ_3DRenderParam_t* p) {
 
 
 void EZ_shader_flat(EZ_3DRenderParam_t* p) {
-
+	
 	if (p->tri->mat->col.a == 0) return;
 
 	/* depth buffering */

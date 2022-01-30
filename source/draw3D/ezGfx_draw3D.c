@@ -1,6 +1,6 @@
 #include "ezGfx_draw3D.h"
 #include "ezGfx_utils.h"
-
+#include "ezErr.h"
 
 #include <stdlib.h>
 
@@ -12,6 +12,7 @@ EZ_3DTarget_t* EZ_draw3D_makeTarget(EZ_Image_t* img, EZ_Mat4_t* proj, EZ_Mat4_t*
 	tgt->img = img;
 	tgt->proj = proj;
 	tgt->trns = trns;
+	tgt->faces = NULL;
 	
 	tgt->do_uv_correction = true;
 
@@ -21,9 +22,52 @@ EZ_3DTarget_t* EZ_draw3D_makeTarget(EZ_Image_t* img, EZ_Mat4_t* proj, EZ_Mat4_t*
 	return tgt;
 }
 
+
+static void _free_tri_list(EZ_3DTarget_t* tgt) {
+
+	if (tgt == NULL) return;
+
+	while (tgt->faces != NULL) {
+
+		EZ_Tri_list* next = tgt->faces->next;
+		free(tgt->faces);
+		tgt->faces = next;
+	}
+
+}
+
+
+static void _compute_normal(EZ_Tri_t* tri, EZ_Vec_t* dest) {
+
+	EZ_Vec_t v1, v2, normal;
+
+	EZ_Vec_t* p1 = &(tri->vert[0].pos);
+	EZ_Vec_t* p2 = &(tri->vert[1].pos);
+	EZ_Vec_t* p3 = &(tri->vert[2].pos);
+
+	EZ_vec_sub(&v1, p3, p1);
+	EZ_vec_sub(&v2, p2, p1);
+
+	EZ_vec_cross(&normal, &v1, &v2);
+	EZ_vec_normal(dest, &normal);
+}
+
+
+static void _transform_tri(EZ_Tri_t* tri, EZ_Mat4_t* trns) {
+
+	int i;
+	for (i = 0; i < 3; i++) {
+		EZ_mat4_vmul( &(tri->vert[i].pos), trns, &(tri->vert[i].pos) );
+	}
+}
+
+
+
+
 void EZ_draw3D_freeTarget(EZ_3DTarget_t* tgt) {
 	if (tgt == NULL) return;
 
+	_free_tri_list(tgt);
 	free(tgt->zbuff);
 	free(tgt);
 }
@@ -39,10 +83,34 @@ void EZ_draw3D_startScene(EZ_3DTarget_t* tgt) {
 		tgt->zbuff[x + y * tgt->img->w] = 0.0;
 	}
 
+	_free_tri_list(tgt);
+
 }
 
 void EZ_draw3D_endScene(EZ_3DTarget_t* tgt) {
 
+	EZ_Tri_list* node;
+
+
+	/* clipping */
+	/**/
+
+	/* transoform and compute normals */
+	for (node = tgt->faces; node != NULL; node = node->next) {
+
+		_compute_normal(&node->tri, &node->tri.world_normal);
+		_transform_tri(&node->tri, tgt->trns);
+		_compute_normal(&node->tri, &node->tri.cam_normal);
+	}
+
+	/* sort */
+	/**/
+
+	/* render */
+	for (node = tgt->faces; node != NULL; node = node->next) { 
+		EZ_draw3D_renderTri(tgt, &node->tri);
+		
+	}
 }
 
 
@@ -55,105 +123,87 @@ void EZ_draw3D_mesh(EZ_3DTarget_t* tgt, EZ_Mesh_t* mesh, EZ_Mat4_t* trns) {
 
 }
 
+void EZ_draw3D_tri(EZ_3DTarget_t* tgt, EZ_Tri_t* tri, EZ_Mat4_t* trns) {
+
+	/* add triangle to list */
+	EZ_Tri_list *new = malloc( sizeof(EZ_Tri_list) );
+
+	new->next = tgt->faces;
+	new->tri = *tri;
+	_transform_tri(&new->tri, trns);
+
+	tgt->faces = new;
+}
 
 
-void EZ_draw3D_tri(EZ_3DTarget_t* tgt, EZ_Tri_t* tri_ori, EZ_Mat4_t* trns) {
 
-	EZ_Tri_t tri = *tri_ori;
-
-	/* transform */
-	{	
-		int i;
-		for (i = 0; i < 3; i++) {
-			EZ_mat4_vmul( &(tri.vert[i].pos), trns, &(tri_ori->vert[i].pos) );
-
-			/* don't render faces that are behind the camera */
-			/* some sort of Z clipping */
-			if (tri.vert[i].pos.z < 0.0) return;
-		}
-	}
-
-
-	/* compute world space normal */
-	{
-		EZ_Vec_t v1, v2, normal;
-
-		EZ_Vec_t* p1 = &(tri.vert[0].pos);
-		EZ_Vec_t* p2 = &(tri.vert[1].pos);
-		EZ_Vec_t* p3 = &(tri.vert[2].pos);
-
-		EZ_vec_sub(&v1, p3, p1);
-		EZ_vec_sub(&v2, p2, p1);
-
-		EZ_vec_cross(&normal, &v1, &v2);
-		EZ_vec_normal(&tri.normal, &normal);
-
-	}
+void EZ_draw3D_renderTri(EZ_3DTarget_t* tgt, EZ_Tri_t* tri) {
 
 
 
 	/* project to 2D */
-	{
-		int i;
-		for (i = 0; i < 3; i++) {
+	int i;
+	for (i = 0; i < 3; i++) {
 
-			/* apply projection matrix */
-			EZ_mat4_vmul(&tri.vert[i].pos, tgt->proj, &tri.vert[i].pos );
+		/* "z clipping" */
+		if (tri->vert[i].pos.z < 0.0) return;
 
-			/* non linear part of the projection */
-			const float z = 1.0 / tri.vert[i].pos.w;
+		/* apply projection matrix */
+		EZ_mat4_vmul(&tri->vert[i].pos, tgt->proj, &tri->vert[i].pos );
 
-			EZ_vec_scale(&tri.vert[i].pos, &tri.vert[i].pos, z);
+		/* non linear part of the projection */
+		const float z = 1.0 / tri->vert[i].pos.w;
 
-			/* convert to pixel space */
-			/* from -1 to +1 with y from bottom to top */
-			tri.vert[i].sx = (tri.vert[i].pos.x + 1.0f) * 0.5f * tgt->img->w;
-			tri.vert[i].sy = (tri.vert[i].pos.y + 1.0f) * 0.5f * tgt->img->h;
-			tri.vert[i].uv.z  = z;
+		EZ_vec_scale(&tri->vert[i].pos, &tri->vert[i].pos, z);
 
-			if (tgt->do_uv_correction) {
-				tri.vert[i].uv.x *= z;
-				tri.vert[i].uv.y *= z;
-			}
+		/* convert to pixel space */
+		/* from -1 to +1 with y from bottom to top */
+		tri->vert[i].sx = (tri->vert[i].pos.x + 1.0f) * 0.5f * tgt->img->w;
+		tri->vert[i].sy = (tri->vert[i].pos.y + 1.0f) * 0.5f * tgt->img->h;
+		tri->vert[i].uv.z  = z;
+
+		if (tgt->do_uv_correction) {
+			tri->vert[i].uv.x *= z;
+			tri->vert[i].uv.y *= z;
 		}
-
 	}
 
 
 
-	/* culling -  projected normal z componant  */
 
-	if ( (tri.vert[1].pos.x - tri.vert[0].pos.x) * (tri.vert[2].pos.y - tri.vert[0].pos.y)
-	   - (tri.vert[1].pos.y - tri.vert[0].pos.y) * (tri.vert[2].pos.x - tri.vert[0].pos.x)
+	/* culling -  projected normal z componant  */
+	if ( (tri->vert[1].pos.x - tri->vert[0].pos.x) * (tri->vert[2].pos.y - tri->vert[0].pos.y)
+	   - (tri->vert[1].pos.y - tri->vert[0].pos.y) * (tri->vert[2].pos.x - tri->vert[0].pos.x)
 	   > 0.0f) 
 	return;
 
 
 	/* light and shading */
 	EZ_Vec_t l_dir = {{0.0f, 0.0f, 1.0f}};
-	tri.illum = CLAMP(EZ_vec_dot(&tri.normal, &l_dir), 0.0, 1.0);
+	tri->illum = CLAMP(EZ_vec_dot(&tri->world_normal, &l_dir), 0.0, 1.0);
+
 
 
 	/* raster */
 	{
 
-		#define X0 (tri.vert[0].sx)
-		#define Y0 (tri.vert[0].sy)
-		#define U0 (tri.vert[0].uv.x)
-		#define V0 (tri.vert[0].uv.y)
-		#define Z0 (tri.vert[0].uv.z)
+		#define X0 (tri->vert[0].sx)
+		#define Y0 (tri->vert[0].sy)
+		#define U0 (tri->vert[0].uv.x)
+		#define V0 (tri->vert[0].uv.y)
+		#define Z0 (tri->vert[0].uv.z)
 
-		#define X1 (tri.vert[1].sx)
-		#define Y1 (tri.vert[1].sy)
-		#define U1 (tri.vert[1].uv.x)
-		#define V1 (tri.vert[1].uv.y)
-		#define Z1 (tri.vert[1].uv.z)
+		#define X1 (tri->vert[1].sx)
+		#define Y1 (tri->vert[1].sy)
+		#define U1 (tri->vert[1].uv.x)
+		#define V1 (tri->vert[1].uv.y)
+		#define Z1 (tri->vert[1].uv.z)
 
-		#define X2 (tri.vert[2].sx)
-		#define Y2 (tri.vert[2].sy)
-		#define U2 (tri.vert[2].uv.x)
-		#define V2 (tri.vert[2].uv.y)
-		#define Z2 (tri.vert[2].uv.z)
+		#define X2 (tri->vert[2].sx)
+		#define Y2 (tri->vert[2].sy)
+		#define U2 (tri->vert[2].uv.x)
+		#define V2 (tri->vert[2].uv.y)
+		#define Z2 (tri->vert[2].uv.z)
 
 		#define WIDTH  (tgt->img->w)
 		#define HEIGHT (tgt->img->h)
@@ -161,19 +211,19 @@ void EZ_draw3D_tri(EZ_3DTarget_t* tgt, EZ_Tri_t* tri_ori, EZ_Mat4_t* trns) {
 
 
 		EZ_3DRenderParam_t p;
-		p.tri = &tri;
+		p.tri = tri;
 
 
 
 		/* sort for drawing */
 		if (Y0 > Y1) {
-			SWAP(tri.vert[0],  tri.vert[1]);
+			SWAP(tri->vert[0],  tri->vert[1]);
 		}
 		if (Y0 > Y2) {
-			SWAP(tri.vert[0],  tri.vert[2]);
+			SWAP(tri->vert[0],  tri->vert[2]);
 		}
 		if (Y1 > Y2) {
-			SWAP(tri.vert[1],  tri.vert[2]);
+			SWAP(tri->vert[1],  tri->vert[2]);
 		}
 
 
@@ -283,7 +333,7 @@ void EZ_draw3D_tri(EZ_3DTarget_t* tgt, EZ_Tri_t* tri_ori, EZ_Mat4_t* trns) {
 
 				/* call shader */
 				if (p.tri->mat->shad == NULL) {
-					EZ_shader_flat(&p);
+					// EZ_shader_flat(&p);
 				}
 				else {
 					p.tri->mat->shad(&p);
@@ -302,6 +352,9 @@ void EZ_draw3D_tri(EZ_3DTarget_t* tgt, EZ_Tri_t* tri_ori, EZ_Mat4_t* trns) {
 		}
 
 	}
+
+
+
 
 }
 

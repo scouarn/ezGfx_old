@@ -22,7 +22,10 @@ void setup() {
 	canvas = EZ_image_make(WIDTH, HEIGHT);
 
 	EZ_mat4_setProj(&proj, QUARTER_PI, (float)WIDTH / HEIGHT, 0.001, 1000);
+	
 	EZ_mat4_setId(&world);
+	EZ_mat4_setTranslate(&world, 0, 0, 10.0);
+
 	render = EZ_draw3D_makeTarget(canvas, &proj, &world);
 
 	cube = EZ_mesh_loadOBJ("assets/cube2.obj");
@@ -40,14 +43,12 @@ void draw(double dt) {
 	
 	EZ_mat4_setId(&trans);
 	// EZ_mat4_applyTranslate(&trans, 0, 0, 10.0);
-	EZ_mat4_applyTranslate(&trans, 2.0*cos(a), 2.0*sin(a), 5.0-cos(a));
+	// EZ_mat4_applyTranslate(&trans, 2.0*cos(a), 2.0*sin(a), 5.0-cos(a));
 	EZ_mat4_applyRotX(&trans, a);
 	EZ_mat4_applyRotY(&trans, 1.5*a);
 
 	EZ_draw3D_startScene(render);
 	EZ_draw3D_mesh(render, cube, &trans);
-
-
 	EZ_draw3D_endScene(render);
 
 
@@ -71,6 +72,30 @@ void keydown(EZ_Key_t* k) {
 		case K_F12 : EZ_setFullscreen(false); break;
 		case K_ESCAPE : EZ_stop(); break;
 		case K_TAB : EZ_image_saveBMP(canvas, "screenshot.bmp");
+
+		case K_LEFT :
+			EZ_mat4_applyTranslate(render->trns, 0.5, 0.0, 0.0);
+		break;
+
+		case K_RIGHT :
+			EZ_mat4_applyTranslate(render->trns, -0.5, 0.0, 0.0);
+		break;
+
+		case K_UP :
+			EZ_mat4_applyTranslate(render->trns, 0.0, 0.0, 0.5);
+		break;
+
+		case K_DOWN :
+			EZ_mat4_applyTranslate(render->trns, 0.0, 0.0, -0.5);
+		break;
+
+		case K_Q :
+			EZ_mat4_applyRotY(render->trns, -0.1);
+		break;
+
+		case K_E :
+			EZ_mat4_applyRotY(render->trns, 0.1);
+		break;
 
 		default : break;
 	}

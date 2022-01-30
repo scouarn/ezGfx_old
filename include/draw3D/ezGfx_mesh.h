@@ -28,22 +28,21 @@ typedef struct {
 	EZ_Vec_t uv;
 	EZ_Vec_t normal;
 	EZ_Px_t col;
-
-	int sx, sy; /* projected screen position */
 	
+	int sx, sy; /* projected screen position */
+
 } EZ_Vertex_t;
 
 
 typedef struct EZ_Tri_t {
 	
 	EZ_Vertex_t vert[3];
-
 	EZ_Material_t* mat;
-
-	EZ_Vec_t normal;
-	EZ_Vec_t cam_normal;
 	float illum;
 
+	EZ_Vec_t world_normal;
+	EZ_Vec_t cam_normal;
+	EZ_Vec_t screen_normal;
 
 } EZ_Tri_t;
 

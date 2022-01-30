@@ -23,13 +23,19 @@
 #include <stdbool.h>
 
 
+typedef struct __EZ_Tri_list__ {
+	EZ_Tri_t tri;
+	struct __EZ_Tri_list__ *next;
+} EZ_Tri_list;
+
+
 typedef struct {
 	EZ_Image_t* img; /* target image */
 	EZ_Mat4_t* proj; /* camera projection */
 	EZ_Mat4_t* trns; /* world transform */
 
 	float* zbuff;    /* z buffer */
-	EZ_Tri_t* faces; /* list of triangles to be rendered */
+	EZ_Tri_list* faces; /* list of triangles to be rendered */
 
  	/* render parameters */
 	unsigned int do_uv_correction : 1; /* default true */
@@ -47,6 +53,6 @@ void EZ_draw3D_endScene  (EZ_3DTarget_t* tgt);
 
 void EZ_draw3D_tri (EZ_3DTarget_t* tgt, EZ_Tri_t* tri,   EZ_Mat4_t* trns);
 void EZ_draw3D_mesh(EZ_3DTarget_t* tgt, EZ_Mesh_t* mesh, EZ_Mat4_t* trns);
-
+void EZ_draw3D_renderTri(EZ_3DTarget_t* tgt, EZ_Tri_t* tri);
 
 #endif /* ezGfx_draw3D_h */
