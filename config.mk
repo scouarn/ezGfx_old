@@ -16,12 +16,12 @@ ifeq ($(OS),Windows_NT)
 	CORE := ezGfx_core_win_gdi
 	LIB_CORE := libezgfx-core.dll
 	LIB_COMMON := libezgfx-common.dll
-	INSTALL_PATH := .
+	INSTALL_LIB_PATH := .
+	INSTALL_INC_PATH := .
 
 	RM = del /F /Q $(subst /,\\, $(1))
-	
 	MAKE := mingw32-make
-	CP := cp
+
 
 
 else 
@@ -39,7 +39,8 @@ else
 # 	CORE := ezGfx_core_linux_void
 	LIB_CORE := libezgfx-core.so
 	LIB_COMMON := libezgfx-common.so
-	INSTALL_PATH := /usr/local/lib
+	INSTALL_LIB_PATH := /usr/lib
+	INSTALL_INC_PATH := /usr/include
 
 	RM = rm -rf $(1)
 	MAKE := make
