@@ -5,10 +5,8 @@ include config.mk
 
 all : $(LIB_CORE) $(LIB_COMMON) demo
 
-install : $(LIB_CORE) $(LIB_COMMON)
+install : $(LIB_CORE) $(LIB_COMMON) $(INSTALL_INC_PATH)/ezGfx
 	cp bin/$(LIB_CORE) bin/$(LIB_COMMON) $(INSTALL_LIB_PATH)
-	
-	mkdir $(INSTALL_INC_PATH)/ezGfx
 	cp $(wildcard include/*.h) $(INSTALL_INC_PATH)/ezGfx
 
 uninstall :
@@ -29,7 +27,8 @@ demo : bin
 bin :
 	mkdir bin
 
-
+$(INSTALL_INC_PATH)/ezGfx :
+	mkdir $(INSTALL_INC_PATH)/ezGfx
 
 clean :
 	$(MAKE) -C source/demo clean
