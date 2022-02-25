@@ -1,5 +1,7 @@
 
-CFLAGS := -O3 -Wall -Iinclude -Iinclude/draw3D
+CFLAGS := -O3 -Wall 
+INCLUDE := -I../../include
+LINK := -L../../bin
 
 
 ifeq ($(OS),Windows_NT)
@@ -12,9 +14,15 @@ ifeq ($(OS),Windows_NT)
 	LIBFLAGS := -shared
 
 	CORE := ezGfx_core_win_gdi
-	LIB := bin/libezgfx.dll
+	LIB_CORE := libezgfx-core.dll
+	LIB_COMMON := libezgfx-common.dll
+	INSTALL_PATH := .
 
-	forceremove = del /F /Q $(subst /,\\, $(1))
+	RM = del /F /Q $(subst /,\\, $(1))
+	
+	MAKE := mingw32-make
+	CP := cp
+
 
 else 
 
@@ -29,8 +37,11 @@ else
 
 	CORE := ezGfx_core_linux_xorg
 # 	CORE := ezGfx_core_linux_void
-	LIB := bin/libezgfx.so
+	LIB_CORE := libezgfx-core.so
+	LIB_COMMON := libezgfx-common.so
+	INSTALL_PATH := /usr/local/lib
 
-	forceremove = rm -rf $(1)
+	RM = rm -rf $(1)
+	MAKE := make
 
 endif

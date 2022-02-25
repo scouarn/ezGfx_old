@@ -1,41 +1,31 @@
 include config.mk
 
 
-SRC := $(wildcard source/common/*.c) $(wildcard source/draw3D/*.c) source/core/$(CORE).c
-OBJ := $(patsubst %.c,%.o,$(SRC))
-
-
-DEMOSRC := $(wildcard source/demo/*.c)
-DEMO := $(patsubst source/demo/%.c,bin/%,$(DEMOSRC))
-
-CLEAN := $(OBJ) $(wildcard bin/*)
-
 .PHONY : all lib demo
 
-all : lib
-all : demo
+all : $(LIB_CORE) $(LIB_COMMON) demo
 
-lib : bin $(LIB)
-demo : bin $(LIB) $(DEMO)
-
-
-clean :
-	$(call forceremove,$(CLEAN))
+install : $(LIB_CORE) $(LIB_COMMON)
+	cp bin/$(LIB_CORE) bin/$(LIB_COMMON) $(INSTALL_PATH)
 
 
-#make so	
-$(LIB) : $(OBJ)
-	$(CC) $(CFLAGS) $(LIBFLAGS) -o $@ $^ $(LIBS)
+$(LIB_CORE) : bin
+	$(MAKE) -C source/core
+	
+$(LIB_COMMON) : bin
+	$(MAKE) -C source/common
 
+demo : bin
+	$(MAKE) -C source/demo
 
-#compile demos
-bin/% : source/demo/%.c
-	$(CC) $(CFLAGS) -o $@ $^ -lm -Wl,-rpath,`pwd`/bin -Lbin -lezgfx
-
-#gitignore wants to ignore the directory itself...
 bin :
 	mkdir bin
 
-#make objects
-%.o : %.c
-	$(CC) $(CFLAGS) $(OBJFLAGS) -o $@ $<
+
+
+clean :
+	$(MAKE) -C source/demo clean
+	$(MAKE) -C source/core clean
+	$(MAKE) -C source/common clean
+
+	$(RM) $(wildcard bin/*)
