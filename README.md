@@ -13,9 +13,9 @@ Detailed documentation is not yet available.
 TODO
 ====
 
-## Important
+## Important/Misc
 
-* //
+* make on windows (path with backslash)
 
 ## 3D ext
 
