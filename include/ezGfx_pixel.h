@@ -33,9 +33,9 @@ EZ_Px_t EZ_randCol();	/* random white noise RGB color */
 #define EZ_GRAY	   ((EZ_Px_t)0x7F7F7FFFU)
 
 
-#define EZ_RGB(r,g,b) 	 ((EZ_Px_t){.a = 255, .b = b, .g = g, .r = r})
-#define EZ_RGBA(r,g,b,a) ((EZ_Px_t){.a =   a, .b = b, .g = g, .r = r})
-#define EZ_BW(c) 		 ((EZ_Px_t){.a = 255, .b = c, .g = c, .r = c})
+#define EZ_RGB(R,G,B) 	 ((EZ_Px_t){.a = 255, .b = B, .g = G, .r = R})
+#define EZ_RGBA(R,G,B,A) ((EZ_Px_t){.a =   A, .b = B, .g = G, .r = R})
+#define EZ_BW(C) 		 ((EZ_Px_t){.a = 255, .b = C, .g = C, .r = C})
 
 
 

@@ -15,6 +15,7 @@ TODO
 
 ## Important/Misc
 
+* alpha blending is off
 * make on windows (path with backslash)
 
 ## 3D ext
